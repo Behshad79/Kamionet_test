@@ -1,0 +1,145 @@
+@import "tailwindcss";
+@import "vazirmatn/Vazirmatn-Variable-font-face.css";
+@import "leaflet/dist/leaflet.css";
+
+/* ───────── Design tokens ───────── */
+@theme {
+  --font-sans: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand — yellow (primary) */
+  --color-brand-50: #fff8e6;
+  --color-brand-100: #ffefc2;
+  --color-brand-400: #ffc533;
+  --color-brand-500: #ffb000;
+  --color-brand-600: #e69d00;
+  --color-brand-700: #b87a00;
+
+  /* Accent — blue (links, info, map, active) */
+  --color-accent-50: #e8f6fc;
+  --color-accent-100: #cdeefa;
+  --color-accent-500: #00a8e1;
+  --color-accent-600: #146eb4;
+  --color-accent-700: #0f5590;
+
+  /* Neutrals */
+  --color-ink: #111827;
+  --color-ink-2: #374151;
+  --color-ink-3: #6b7280;
+  --color-ink-4: #9ca3af;
+  --color-surface: #ffffff;
+  --color-surface-2: #f9fafb;
+  --color-surface-3: #f3f4f6;
+  --color-line: #e5e7eb;
+
+  /* Status */
+  --color-ok: #15803d;
+  --color-ok-bg: #dcfce7;
+  --color-danger: #dc2626;
+  --color-danger-bg: #fee2e2;
+  --color-warn: #c2410c;
+  --color-warn-bg: #ffedd5;
+
+  /* One radius token for the whole system (pills use rounded-full) */
+  --radius-ui: 14px;
+
+  --shadow-soft: 0 1px 2px rgb(16 24 40 / 0.04), 0 4px 16px rgb(16 24 40 / 0.06);
+  --shadow-lift: 0 2px 4px rgb(16 24 40 / 0.05), 0 12px 32px rgb(16 24 40 / 0.12);
+
+  --animate-pop: pop 260ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  --animate-rise: rise 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-fade: fade 200ms ease both;
+  --animate-shimmer: shimmer 1.4s infinite linear;
+
+  @keyframes pop {
+    from { opacity: 0; transform: scale(0.6); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+}
+
+:root { color-scheme: light; }
+
+html, body { height: 100%; }
+body {
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--color-brand-100); }
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-600);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #eef0f3 25%, #f8f9fb 37%, #eef0f3 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* ───────── Map ───────── */
+.leaflet-container { font-family: var(--font-sans); background: #eef1f4; direction: ltr; isolation: isolate; }
+.leaflet-control-attribution { font-size: 10px !important; }
+
+.km-pin {
+  position: absolute; translate: -50% -50%;
+  width: 40px; height: 40px; white-space: nowrap;
+  display: grid; place-items: center;
+  border-radius: 9999px;
+  background: var(--color-brand-500);
+  color: var(--color-ink);
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-lift);
+  font: 700 12px var(--font-sans);
+  direction: rtl; unicode-bidi: isolate;
+  transition: transform 160ms ease;
+}
+.km-pin:hover { scale: 1.1; }
+.km-pin.sel { background: var(--color-accent-600); color: #fff; scale: 1.18; z-index: 5; }
+.km-pin.order { width: auto; min-width: 48px; height: 34px; padding: 0 11px; }
+.km-pin.new { animation: pop 420ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+.km-pin.new::after {
+  content: ""; position: absolute; inset: -6px; border-radius: 9999px;
+  border: 2px solid var(--color-brand-500);
+  animation: ring 1.4s ease-out 2;
+}
+.km-pin.dot { width: 18px; height: 18px; border-width: 3px; }
+.km-pin.origin { background: var(--color-accent-600); color: #fff; }
+.km-pin.dest { background: var(--color-ink); color: #fff; }
+.km-pin.truck { background: var(--color-brand-500); width: 44px; height: 44px; }
+@keyframes ring {
+  from { transform: scale(0.8); opacity: 0.9; }
+  to { transform: scale(1.7); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+}
+
+input[type="range"] { accent-color: var(--color-accent-600); }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
 import { MapView } from "@/components/MapView";
-import { BackLink, Countdown, RouteLine, StatusBadge, TempChip } from "@/components/molecules";
+import { BackLink, Countdown, RouteLine, StatusBadge, TempChip, CargoLabel } from "@/components/molecules";
 import { toast } from "@/components/Toaster";
 import { Button, Card, EmptyState, Skeleton } from "@/components/ui";
 import { CARGO, fa, jDateTime, toman } from "@/lib/format";
@@ -85,7 +85,7 @@ export default function DriverOrder() {
         <Card className="space-y-4 p-5">
           <RouteLine from={pub.originCity} to={pub.destCity} sub={["محدوده‌ی تقریبی بارگیری", `${fa(pub.distanceKm)} کیلومتر`]} />
           <dl className="grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm">
-            <div><dt className="text-ink-3">نوع بار</dt><dd className="font-bold">{CARGO[pub.cargo].emoji} {CARGO[pub.cargo].label}</dd></div>
+            <div><dt className="text-ink-3">نوع بار</dt><dd className="font-bold"><CargoLabel type={pub.cargo} /></dd></div>
             <div><dt className="text-ink-3">دمای موردنیاز</dt><dd className="mt-0.5"><TempChip tempMax={pub.tempMax} /></dd></div>
             <div className="col-span-2"><dt className="text-ink-3">زمان بارگیری</dt><dd className="font-bold">{jDateTime(pub.pickupAt)}</dd></div>
             {pub.insurance && <div className="col-span-2"><dd className="inline-flex items-center gap-1.5 rounded-full bg-ok-bg px-3 py-1 text-xs font-bold text-ok"><ShieldCheck className="size-3.5" />بار بیمه‌شده است</dd></div>}

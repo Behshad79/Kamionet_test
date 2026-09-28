@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowLeft, BadgeCheck, Camera, Clock, Loader2, MapPin, ShieldAlert, Snowflake, Thermometer, Truck } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Beef, Camera, Clock, IceCreamCone, Loader2, MapPin, Milk, Package, Pill, ShieldAlert, Snowflake, Thermometer, Truck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { CARGO, STATUS, degrees, fa, jDateTime, jShort, hhmm, mmss, toman } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
-import type { KycStatus, OrderStatus, OrderView, Role } from "@/lib/types";
+import type { CargoType, KycStatus, OrderStatus, OrderView, Role } from "@/lib/types";
 import { switchRole } from "@/lib/store";
 import type { DriverStanding } from "@/lib/matching";
 import { Badge, Card, cx } from "./ui";
@@ -119,7 +119,7 @@ export function OrderCard({
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 rounded-full bg-surface-3 px-2.5 py-1 text-xs font-bold text-ink-2">{CARGO[v.cargo].emoji} {CARGO[v.cargo].label}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-surface-3 px-2.5 py-1 text-xs font-bold text-ink-2"><CargoLabel type={v.cargo} /></span>
               <TempChip tempMax={v.tempMax} />
             </div>
             <div className="text-end">
@@ -154,7 +154,7 @@ export function FilterBar({ children }: { children: React.ReactNode }) {
 export function Chip({ active, onClick, children }: { active?: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick} aria-pressed={active}
-      className={cx("h-9 shrink-0 rounded-full px-4 text-sm font-medium transition", active ? "bg-ink text-white" : "bg-white text-ink-2 shadow-soft hover:bg-surface-3")}>
+      className={cx("h-11 shrink-0 rounded-full px-4 text-sm font-medium transition", active ? "bg-ink text-white" : "bg-white text-ink-2 shadow-soft hover:bg-surface-3")}>
       {children}
     </button>
   );
@@ -253,3 +253,12 @@ export function FileDrop({
 }
 
 export { Truck };
+
+const CARGO_ICON = { dairy: Milk, meat: Beef, pharma: Pill, icecream: IceCreamCone, other: Package } as const;
+export function CargoIcon({ type, className = "size-4" }: { type: CargoType; className?: string }) {
+  const I = CARGO_ICON[type];
+  return <I className={className} aria-hidden />;
+}
+export function CargoLabel({ type }: { type: CargoType }) {
+  return <span className="inline-flex items-center gap-1.5"><CargoIcon type={type} />{CARGO[type].label}</span>;
+}

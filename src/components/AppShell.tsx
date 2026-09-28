@@ -42,8 +42,8 @@ function Bell_() {
   const list = s.notifications.filter((n) => n.userId === me?.id).slice(0, 8);
   return (
     <div className="relative">
-      <button aria-label="اعلان‌ها" onClick={() => { setOpen((o) => !o); if (!open) setTimeout(markNotificationsRead, 1500); }}
-        className="relative grid size-10 place-items-center rounded-full hover:bg-surface-3">
+      <button aria-label={unread > 0 ? `اعلان‌ها، ${new Intl.NumberFormat("fa-IR").format(unread)} خوانده‌نشده` : "اعلان‌ها"} onClick={() => { setOpen((o) => !o); if (!open) setTimeout(markNotificationsRead, 1500); }}
+        className="relative grid size-11 place-items-center rounded-full hover:bg-surface-3">
         <Bell className="size-5" />
         {unread > 0 && <span className="absolute end-1.5 top-1.5 grid size-4 animate-pop place-items-center rounded-full bg-danger text-[10px] font-bold text-white">{new Intl.NumberFormat("fa-IR").format(unread)}</span>}
       </button>
@@ -106,7 +106,7 @@ export function AppShell({ children, area, wide }: { children: ReactNode; area?:
             {me && <div className="hidden sm:block"><RoleSwitch role={role} /></div>}
             {me && <Bell_ />}
             {me ? (
-              <button onClick={() => { logout(); router.push("/"); }} aria-label="خروج" className="grid size-10 place-items-center rounded-full hover:bg-surface-3"><LogOut className="size-5" /></button>
+              <button onClick={() => { logout(); router.push("/"); }} aria-label="خروج" className="grid size-11 place-items-center rounded-full hover:bg-surface-3"><LogOut className="size-5" /></button>
             ) : admin ? (
               <Link href="/admin/" className="text-sm font-bold text-accent-600">پنل مدیریت</Link>
             ) : (

@@ -1,5 +1,6 @@
 "use client";
 
+import { CargoIcon } from "./molecules";
 import { AlertTriangle, ArrowLeft, ArrowRight, Info, Repeat, ShieldCheck, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -89,7 +90,7 @@ export function OrderWizard() {
                   {(Object.keys(CARGO) as CargoType[]).map((k) => (
                     <button key={k} type="button" onClick={() => { setCargo(k); if (k === "icecream") setTempMax(-18); }}
                       className={cx("flex items-center gap-2 rounded-ui border-2 px-3 py-3 text-start text-sm font-bold transition", cargo === k ? "border-brand-500 bg-brand-50" : "border-line hover:border-ink-4")}>
-                      <span className="text-xl">{CARGO[k].emoji}</span>{CARGO[k].label}
+                      <CargoIcon type={k} className="size-5 shrink-0 text-ink-2" />{CARGO[k].label}
                     </button>
                   ))}
                 </div>

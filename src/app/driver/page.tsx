@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DriverBanner } from "@/components/DriverBanner";
 import { MapView } from "@/components/MapView";
-import { Chip, FilterBar, OrderCard, OrderCardSkeleton, VerificationBadge } from "@/components/molecules";
+import { Chip, FilterBar, OrderCard, OrderCardSkeleton, VerificationBadge, CargoLabel } from "@/components/molecules";
 import { Card, EmptyState, cx } from "@/components/ui";
 import { CARGO, fa } from "@/lib/format";
 import { useApp } from "@/lib/hooks";
@@ -72,7 +72,7 @@ export default function DriverMarket() {
 
       <FilterBar>
         <Chip active={cargo === "all"} onClick={() => setCargo("all")}>همه‌ی بارها</Chip>
-        {(Object.keys(CARGO) as CargoType[]).map((k) => <Chip key={k} active={cargo === k} onClick={() => setCargo(k)}>{CARGO[k].emoji} {CARGO[k].label}</Chip>)}
+        {(Object.keys(CARGO) as CargoType[]).map((k) => <Chip key={k} active={cargo === k} onClick={() => setCargo(k)}><CargoLabel type={k} /></Chip>)}
       </FilterBar>
 
       <div className="no-scrollbar mt-3 flex items-center gap-2 overflow-x-auto whitespace-nowrap text-sm">

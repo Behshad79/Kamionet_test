@@ -23,7 +23,7 @@ export function Button({ variant = "primary", size = "md", loading, block, class
     ghost: "text-ink-2 hover:bg-surface-3 font-medium",
     danger: "bg-danger-bg text-danger hover:bg-red-200 font-bold",
   }[variant];
-  const sz = { sm: "h-9 px-3 text-sm", md: "h-11 px-5 text-[15px]", lg: "h-13 px-6 text-base" }[size];
+  const sz = { sm: "h-11 px-4 text-sm", md: "h-12 px-5 text-[15px]", lg: "h-14 px-6 text-base" }[size];
   return (
     <button
       {...rest}
@@ -40,7 +40,7 @@ export function Button({ variant = "primary", size = "md", loading, block, class
 }
 
 const fieldBase =
-  "w-full rounded-ui border border-line bg-white px-4 text-[15px] text-ink placeholder:text-ink-4 transition focus:border-accent-600 focus:outline-none focus:ring-4 focus:ring-accent-100 disabled:bg-surface-3 disabled:text-ink-3";
+  "w-full rounded-ui border border-line bg-white px-4 text-[15px] text-ink transition focus:border-accent-600 focus:outline-none focus:ring-4 focus:ring-accent-100 disabled:bg-surface-3 disabled:text-ink-3";
 
 export function Input({ className, ...p }: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...p} className={cx(fieldBase, "h-12", className)} />;
@@ -146,7 +146,7 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
         className="w-full max-w-md animate-rise rounded-t-3xl bg-white p-5 shadow-lift sm:rounded-ui">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">{title}</h2>
-          <button onClick={onClose} aria-label="بستن" className="grid size-9 place-items-center rounded-full hover:bg-surface-3"><X className="size-5" /></button>
+          <button onClick={onClose} aria-label="بستن" className="grid size-11 place-items-center rounded-full hover:bg-surface-3"><X className="size-5" /></button>
         </div>
         {children}
       </div>

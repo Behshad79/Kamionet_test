@@ -35,7 +35,7 @@ export default function ShipperDashboard() {
     <AppShell area="shipper">
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black">سلام {me?.name?.split(" ")[0] ?? ""} 👋</h1>
+          <h1 className="text-2xl font-black">سلام {me?.name?.split(" ")[0] ?? ""}</h1>
           <p className="mt-1 text-sm text-ink-3">وضعیت سفارش‌های شما به‌صورت زنده به‌روز می‌شود.</p>
         </div>
         <Link href="/shipper/new/" className="hidden sm:block"><Button><Plus className="size-5" />سفارش جدید</Button></Link>

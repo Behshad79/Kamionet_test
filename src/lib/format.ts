@@ -33,12 +33,12 @@ export const mmss = (ms: number) => {
   return `${fa(Math.floor(s / 60))}:${String(s % 60).padStart(2, "0").replace(/\d/g, (d) => fa(+d))}`;
 };
 
-export const CARGO: Record<CargoType, { label: string; emoji: string }> = {
-  dairy: { label: "لبنیات", emoji: "🥛" },
-  meat: { label: "گوشت و پروتئین", emoji: "🥩" },
-  pharma: { label: "دارو و تجهیزات دارویی", emoji: "💊" },
-  icecream: { label: "بستنی و انجمادی", emoji: "🍦" },
-  other: { label: "سایر مواد فسادپذیر", emoji: "📦" },
+export const CARGO: Record<CargoType, { label: string }> = {
+  dairy: { label: "لبنیات" },
+  meat: { label: "گوشت و پروتئین" },
+  pharma: { label: "دارو و تجهیزات دارویی" },
+  icecream: { label: "بستنی و انجمادی" },
+  other: { label: "سایر مواد فسادپذیر" },
 };
 
 export const VEHICLES: Record<VehicleType, string> = {

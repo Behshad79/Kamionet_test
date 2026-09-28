@@ -23,3 +23,16 @@ npm run build          # خروجی استاتیک در out/
 ## استقرار
 
 Workflow آماده‌ی GitHub Pages در `.github/workflows/pages.yml` است (روی push به `main` یا اجرای دستی). در تنظیمات ریپو: Settings → Pages → Source = GitHub Actions.
+
+## بک‌اند واقعی (Supabase / Postgres)
+
+`supabase/migrations` معادل واقعی «سرور شبیه‌سازی‌شده» است:
+
+- جدول `orders` (اطلاعات عمومی + مختصات **تقریبی** که سمت سرور ساخته می‌شود) جدا از `order_private` (نشانی و مختصات دقیق) است؛ RLS فقط به صاحب بار، یا راننده‌ی **پس از ASSIGNED**، اجازه‌ی خواندن دومی را می‌دهد.
+- تغییر وضعیت فقط از طریق RPCهای `claim_order`، `confirm_assign`، `start_trip`، `deliver_order`، `cancel_order` (بدون policy برای UPDATE مستقیم).
+- `claim_order` با `SELECT … FOR UPDATE SKIP LOCKED`: همزمان دو راننده ← یکی برنده، دیگری فوراً `ALREADY_TAKEN` (بدون انتظار).
+- قیدهای `driver_id <> shipper_id` و تطبیق دما (`min_temp_capacity <= required_temp_max`) در خود دیتابیس اعمال می‌شود.
+- `reap_locks()` باید با pg_cron هر ۱۰ ثانیه اجرا شود: `select cron.schedule('reap','10 seconds','select reap_locks()')`.
+- تست: `bash supabase/tests/run.sh` (یک Postgres موقت می‌سازد؛ ۱۷ سناریو + تست رقابت همزمان).
+
+هنوز وصل نشده: جایگزینی `store.ts` با کلاینت Supabase، Realtime روی `orders`، Storage برای عکس‌ها، احراز OTP (کاوه‌نگار).

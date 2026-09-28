@@ -1,5 +1,6 @@
 "use client";
 
+import { CargoLabel } from "@/components/molecules";
 import { Play, Repeat, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
@@ -33,7 +34,7 @@ export default function Recurring() {
               </div>
               <div className="flex flex-wrap gap-2 text-xs">
                 <Badge tone="info">{t.cadence === "daily" ? "هر روز" : "هر هفته"} · {fa(t.hour)}:۰۰</Badge>
-                <Badge>{CARGO[t.draft.cargo].emoji} {CARGO[t.draft.cargo].label}</Badge>
+                <Badge><CargoLabel type={t.draft.cargo} /></Badge>
                 <Badge>{toman(t.draft.price)}</Badge>
               </div>
               <p className="text-sm text-ink-3">{t.active ? `سفارش بعدی: بارگیری ${jDateTime(t.nextRunAt)}` : "متوقف شده"}</p>

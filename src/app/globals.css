@@ -12,7 +12,7 @@
   --color-brand-400: #ffc533;
   --color-brand-500: #ffb000;
   --color-brand-600: #e69d00;
-  --color-brand-700: #b87a00;
+  --color-brand-700: #7a5200;
 
   /* Accent — blue (links, info, map, active) */
   --color-accent-50: #e8f6fc;
@@ -24,7 +24,7 @@
   /* Neutrals */
   --color-ink: #111827;
   --color-ink-2: #374151;
-  --color-ink-3: #6b7280;
+  --color-ink-3: #5b6472;
   --color-ink-4: #9ca3af;
   --color-surface: #ffffff;
   --color-surface-2: #f9fafb;
@@ -32,11 +32,11 @@
   --color-line: #e5e7eb;
 
   /* Status */
-  --color-ok: #15803d;
+  --color-ok: #12703a;
   --color-ok-bg: #dcfce7;
-  --color-danger: #dc2626;
+  --color-danger: #b91c1c;
   --color-danger-bg: #fee2e2;
-  --color-warn: #c2410c;
+  --color-warn: #b13a0b;
   --color-warn-bg: #ffedd5;
 
   /* One radius token for the whole system (pills use rounded-full) */
@@ -143,3 +143,9 @@ input[type="range"] { accent-color: var(--color-accent-600); }
 
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Tailwind v4 dropped the default pointer cursor on buttons. */
+button:not(:disabled), [role="button"], [role="tab"], [role="radio"], [role="switch"], select, summary, label[for] { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+input::placeholder, textarea::placeholder { color: #6b7280; opacity: 1; }

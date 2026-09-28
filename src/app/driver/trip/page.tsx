@@ -4,7 +4,7 @@ import { AlertTriangle, ClipboardCheck, Navigation, PackageX, Play, Undo2 } from
 import Link from "next/link";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { BackLink, FileDrop, RouteLine, StatusBadge, TempChip, type Captured } from "@/components/molecules";
+import { BackLink, FileDrop, RouteLine, StatusBadge, TempChip, type Captured, CargoLabel } from "@/components/molecules";
 import { MediaGallery, MismatchButton, OrderTimeline, PartyCard, RatingBox, TrackingMap, WaybillLink } from "@/components/order";
 import { toast } from "@/components/Toaster";
 import { Button, Card, EmptyState, Field, Input, Skeleton, cx } from "@/components/ui";
@@ -105,7 +105,7 @@ export default function Trip() {
         <Card className="space-y-4 p-5">
           <RouteLine from={v.origin.city} to={v.dest.city} sub={[v.origin.address, v.dest.address]} />
           <dl className="grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm">
-            <div><dt className="text-ink-3">نوع بار</dt><dd className="font-bold">{CARGO[v.cargo].emoji} {CARGO[v.cargo].label}</dd></div>
+            <div><dt className="text-ink-3">نوع بار</dt><dd className="font-bold"><CargoLabel type={v.cargo} /></dd></div>
             <div><dt className="text-ink-3">دما</dt><dd className="mt-0.5"><TempChip tempMax={v.tempMax} /></dd></div>
             <div><dt className="text-ink-3">بارگیری</dt><dd className="font-bold">{jDateTime(v.pickupAt)}</dd></div>
             <div><dt className="text-ink-3">سهم شما</dt><dd className="font-black">{toman(net)}</dd></div>

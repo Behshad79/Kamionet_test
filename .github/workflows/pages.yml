@@ -2,7 +2,7 @@ name: Deploy preview (GitHub Pages)
 
 on:
   push:
-    branches: [main]
+    branches: [main, claude/kamionet-cold-chain-platform-s1yzhy]
   workflow_dispatch:
 
 permissions:

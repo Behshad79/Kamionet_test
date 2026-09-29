@@ -4,6 +4,7 @@ import { PackagePlus, Plus, Truck } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { LiveTempBadge } from "@/components/TempPanel";
 import { Chip, FilterBar, OrderCard, OrderCardSkeleton } from "@/components/molecules";
 import { Button, EmptyState, Stat } from "@/components/ui";
 import { fa } from "@/lib/format";
@@ -51,7 +52,7 @@ export default function ShipperDashboard() {
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {!ready ? [0, 1, 2, 3].map((i) => <OrderCardSkeleton key={i} />)
-          : shown.map((v, i) => <OrderCard key={v.id} v={v} delay={i} href={`/shipper/order/?id=${v.id}`} />)}
+          : shown.map((v, i) => <OrderCard key={v.id} v={v} delay={i} href={`/shipper/order/?id=${v.id}`} footer={v.status === "IN_TRANSIT" ? <LiveTempBadge o={v} /> : undefined} />)}
       </div>
       {ready && shown.length === 0 && (
         <EmptyState

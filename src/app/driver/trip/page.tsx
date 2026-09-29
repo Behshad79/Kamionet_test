@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { BackLink, FileDrop, RouteLine, StatusBadge, TempChip, type Captured, CargoLabel } from "@/components/molecules";
+import { TempPanel } from "@/components/TempPanel";
 import { MediaGallery, MismatchButton, OrderTimeline, PartyCard, RatingBox, TrackingMap, WaybillLink } from "@/components/order";
 import { toast } from "@/components/Toaster";
 import { Button, Card, EmptyState, Field, Input, Skeleton, cx } from "@/components/ui";
@@ -101,6 +102,7 @@ export default function Trip() {
           <div className="flex items-center gap-2 rounded-ui bg-ok-bg px-4 py-3 text-sm font-bold text-ok"><Navigation className="size-4" />اشتراک موقعیت زنده فعال است</div>
         )}
         {(v.status === "IN_TRANSIT" || v.status === "DELIVERED") && <TrackingMap v={v} className="h-60 shadow-soft" />}
+        {(v.status === "IN_TRANSIT" || v.status === "DELIVERED") && <TempPanel o={v} contact={v.shipper} />}
 
         <Card className="space-y-4 p-5">
           <RouteLine from={v.origin.city} to={v.dest.city} sub={[v.origin.address, v.dest.address]} />

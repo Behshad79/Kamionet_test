@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { BackLink, RouteLine, StatusBadge, TempChip, CargoLabel } from "@/components/molecules";
+import { TempPanel } from "@/components/TempPanel";
 import { MediaGallery, MismatchButton, OrderTimeline, PartyCard, RatingBox, TrackingMap, WaybillLink } from "@/components/order";
 import { toast } from "@/components/Toaster";
 import { Button, Card, EmptyState, Modal, Skeleton, Textarea } from "@/components/ui";
@@ -44,6 +45,7 @@ export default function ShipperOrder() {
         {v.flag && <Card className="bg-warn-bg p-4 text-sm leading-7 text-warn shadow-none"><b>مغایرت فاکتور:</b> {v.flag.note} — {v.flag.status === "open" ? "در دست بررسی پشتیبانی" : "بررسی و بسته شد"}</Card>}
 
         {showMap && <TrackingMap v={v} className="h-72 shadow-soft sm:h-96" />}
+        {(v.status === "IN_TRANSIT" || v.status === "DELIVERED") && <TempPanel o={v} contact={v.driver} />}
 
         <Card className="space-y-4 p-5">
           <RouteLine from={v.origin.city} to={v.dest.city} sub={[v.origin.address, v.dest.address]} />

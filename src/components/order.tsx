@@ -12,8 +12,7 @@ import { MapView } from "./MapView";
 import { toast } from "./Toaster";
 import { Badge, Button, Card, Modal, Stars, Textarea, cx } from "./ui";
 
-/** Demo trip length: the truck crosses the whole route in this many ms. */
-export const DEMO_TRIP_MS = 150_000;
+import { DEMO_TRIP_MS } from "@/lib/telemetry";
 
 const STEPS = [
   { key: "OPEN", label: "ثبت سفارش" },

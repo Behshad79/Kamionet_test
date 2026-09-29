@@ -3,6 +3,7 @@
 import { Route } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
+import { LiveTempBadge } from "@/components/TempPanel";
 import { OrderCard, OrderCardSkeleton } from "@/components/molecules";
 import { Button, EmptyState, Stat } from "@/components/ui";
 import { fa, toman } from "@/lib/format";

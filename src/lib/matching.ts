@@ -1,4 +1,4 @@
-import type { DriverProfile, DocKey } from "./types";
+import type { DriverProfile, DocKey, Vehicle, VehicleType } from "./types";
 import { daysUntil } from "./format";
 
 /**
@@ -8,6 +8,25 @@ import { daysUntil } from "./format";
  * serve −18° frozen orders.
  */
 export const canCarry = (vehicleMinTemp: number, orderTempMax: number) => vehicleMinTemp <= orderTempMax;
+
+export type MatchFail = "TEMP" | "TYPE" | "CAPACITY";
+
+/**
+ * Full match: temperature alone is never enough. The truck must also be the
+ * class the shipper asked for and have the payload for the cargo weight.
+ */
+export function matchVehicle(v: Vehicle, o: { tempMax: number; vehicleType: VehicleType; weightKg: number }): { ok: true } | { ok: false; why: MatchFail } {
+  if (v.type !== o.vehicleType) return { ok: false, why: "TYPE" };
+  if (v.capacityKg < o.weightKg) return { ok: false, why: "CAPACITY" };
+  if (!canCarry(v.minTemp, o.tempMax)) return { ok: false, why: "TEMP" };
+  return { ok: true };
+}
+
+export const MATCH_FAIL_TEXT: Record<MatchFail, string> = {
+  TEMP: "یخچال خودروی شما دمای موردنیاز این بار را پشتیبانی نمی‌کند.",
+  TYPE: "نوع خودروی شما با خودروی درخواستی صاحب بار یکی نیست.",
+  CAPACITY: "ظرفیت خودروی شما برای وزن این بار کافی نیست.",
+};
 
 export type DriverStanding = "none" | "draft" | "pending" | "rejected" | "verified" | "suspended";
 

@@ -149,3 +149,23 @@ button:not(:disabled), [role="button"], [role="tab"], [role="radio"], [role="swi
 button:disabled { cursor: not-allowed; }
 
 input::placeholder, textarea::placeholder { color: #6b7280; opacity: 1; }
+
+/* Dual-thumb temperature slider: only the thumbs take pointer events. */
+.dual-range input[type="range"] {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
+  background: none; pointer-events: none; appearance: none; -webkit-appearance: none;
+}
+.dual-range input[type="range"]::-webkit-slider-runnable-track { background: transparent; height: 100%; }
+.dual-range input[type="range"]::-moz-range-track { background: transparent; }
+.dual-range input[type="range"]::-webkit-slider-thumb {
+  pointer-events: auto; -webkit-appearance: none; appearance: none;
+  width: 30px; height: 30px; border-radius: 9999px; background: #fff;
+  border: 3px solid var(--color-accent-600); box-shadow: var(--shadow-soft); cursor: grab; margin-top: 5px;
+}
+.dual-range input[type="range"]::-moz-range-thumb {
+  pointer-events: auto; width: 24px; height: 24px; border-radius: 9999px; background: #fff;
+  border: 3px solid var(--color-accent-600); box-shadow: var(--shadow-soft); cursor: grab;
+}
+.dual-range input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 3px solid var(--color-accent-100); outline-offset: 2px; }
+
+.km-pin.cluster { width: 46px; height: 46px; background: var(--color-ink); color: #fff; font-size: 14px; }

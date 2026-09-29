@@ -1,21 +1,22 @@
 "use client";
 
-import { Check, Loader2, Star, X } from "lucide-react";
-import { useEffect, useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { Check, ChevronLeft, ChevronRight, Loader2, Star, X } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ComponentProps, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 
 const cx = (...a: (string | false | undefined | null)[]) => a.filter(Boolean).join(" ");
 export { cx };
 
 /* ───────── Atoms ───────── */
 
-type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type BtnStyle = {
   variant?: "primary" | "secondary" | "ghost" | "danger" | "accent";
   size?: "sm" | "md" | "lg";
-  loading?: boolean;
   block?: boolean;
 };
+type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & BtnStyle & { loading?: boolean };
 
-export function Button({ variant = "primary", size = "md", loading, block, className, children, disabled, ...rest }: BtnProps) {
+function btnClass({ variant = "primary", size = "md", block }: BtnStyle, extra?: string) {
   const v = {
     primary: "bg-brand-500 text-ink hover:bg-brand-400 active:bg-brand-600 shadow-soft font-bold",
     accent: "bg-accent-600 text-white hover:bg-accent-700 shadow-soft font-bold",
@@ -24,18 +25,27 @@ export function Button({ variant = "primary", size = "md", loading, block, class
     danger: "bg-danger-bg text-danger hover:bg-red-200 font-bold",
   }[variant];
   const sz = { sm: "h-11 px-4 text-sm", md: "h-12 px-5 text-[15px]", lg: "h-14 px-6 text-base" }[size];
+  return cx(
+    "inline-flex items-center justify-center gap-2 rounded-ui transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
+    v, sz, block && "w-full", extra,
+  );
+}
+
+export function Button({ variant, size, loading, block, className, children, disabled, ...rest }: BtnProps) {
   return (
-    <button
-      {...rest}
-      disabled={disabled || loading}
-      className={cx(
-        "inline-flex items-center justify-center gap-2 rounded-ui transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
-        v, sz, block && "w-full", className,
-      )}
-    >
+    <button {...rest} disabled={disabled || loading} className={btnClass({ variant, size, block }, className)}>
       {loading && <Loader2 className="size-4 animate-spin" />}
       {children}
     </button>
+  );
+}
+
+/** A real link that looks like a button: one interactive element, never `<a><button>`. */
+export function ButtonLink({ variant, size, block, className, children, ...rest }: ComponentProps<typeof Link> & BtnStyle) {
+  return (
+    <Link {...rest} className={btnClass({ variant, size, block }, className)}>
+      {children}
+    </Link>
   );
 }
 
@@ -211,6 +221,70 @@ export function Progress({ value, tone = "brand" }: { value: number; tone?: "bra
   return (
     <div className="h-2 overflow-hidden rounded-full bg-surface-3">
       <div className={cx("h-full rounded-full transition-all duration-500", c)} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
+    </div>
+  );
+}
+
+/* ───────── Numeric input: Persian digits + grouping, ASCII in state ───────── */
+
+const toAscii = (s: string) => s.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+const faGroup = new Intl.NumberFormat("fa-IR");
+
+export function NumInput({ value, onChange, suffix, allowDecimal, className, ...p }: {
+  value: number | undefined; onChange: (n: number | undefined) => void; suffix?: string; allowDecimal?: boolean;
+} & Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
+  const shown = value === undefined ? "" : faGroup.format(value);
+  return (
+    <div className="relative">
+      <input
+        {...p}
+        inputMode={allowDecimal ? "decimal" : "numeric"}
+        dir="ltr"
+        value={shown}
+        onChange={(e) => {
+          const raw = toAscii(e.target.value).replace(/[٬,]/g, "").replace(allowDecimal ? /[^\d.]/g : /\D/g, "");
+          onChange(raw === "" ? undefined : Number(raw));
+        }}
+        className={cx(fieldBase, "h-12 text-right tabular", suffix && "pe-20", className)}
+      />
+      {suffix && <span className="pointer-events-none absolute end-4 top-1/2 -translate-y-1/2 text-sm text-ink-3">{suffix}</span>}
+    </div>
+  );
+}
+
+/* ───────── Horizontal scroller with edge fades and arrows ───────── */
+
+export function ScrollRow({ children, className }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [edge, setEdge] = useState({ start: false, end: false });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const pos = Math.abs(el.scrollLeft);
+      setEdge({ start: pos > 4, end: pos < max - 4 });
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", update); ro.disconnect(); };
+  }, []);
+  const go = (dir: 1 | -1) => {
+    const el = ref.current;
+    if (!el) return;
+    const rtl = getComputedStyle(el).direction === "rtl";
+    el.scrollBy({ left: dir * (rtl ? -1 : 1) * el.clientWidth * 0.7, behavior: "smooth" });
+  };
+  const fade = "pointer-events-none absolute inset-y-0 w-12 from-white to-transparent";
+  return (
+    <div className="relative">
+      <div ref={ref} className={cx("no-scrollbar flex gap-2 overflow-x-auto px-1 py-1", className)}>{children}</div>
+      {edge.start && <><span className={cx(fade, "start-0 bg-gradient-to-l rtl:bg-gradient-to-l ltr:bg-gradient-to-r")} aria-hidden />
+        <button type="button" aria-label="قبلی" onClick={() => go(-1)} className="absolute start-0 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full bg-white shadow-soft"><ChevronRight className="size-4 ltr:rotate-180" /></button></>}
+      {edge.end && <><span className={cx(fade, "end-0 bg-gradient-to-r rtl:bg-gradient-to-r ltr:bg-gradient-to-l")} aria-hidden />
+        <button type="button" aria-label="بعدی" onClick={() => go(1)} className="absolute end-0 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full bg-white shadow-soft"><ChevronLeft className="size-4 ltr:rotate-180" /></button></>}
     </div>
   );
 }

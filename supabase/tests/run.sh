@@ -24,7 +24,7 @@ run "$Q" < "$HERE/scenario.sql"
 # ── true concurrency: two sessions claim the same OPEN order at once ──
 run "$Q" <<'SQL' >/dev/null
 select set_config('request.jwt.sub','00000000-0000-0000-0000-00000000000a',false);
-create table race as select create_order('تهران','قم',35.69,51.39,'x',34.64,50.87,'y',150,now()+interval '4 hours','dairy',4,4000000,false) as id;
+create table race as select create_order('تهران','قم',35.69,51.39,'x',34.64,50.87,'y',150,now()+interval '4 hours',now()+interval '6 hours',now()+interval '12 hours','dairy',0,4,'truck10',5000,200000000,4000000,'prepaid',null,false) as id;
 SQL
 RID=$(run "$Q -tA -c 'select id from race'")
 ( run "$Q -tA" <<SQL > "$D/w1.txt" 2>&1 ) &

@@ -100,7 +100,7 @@ export default function DriverMarket() {
       {view === "list" && ready && items.length === 0 && (
         <EmptyState icon={<PackageSearch className="size-7" />} title="باری مطابق فیلترها پیدا نشد" body="فیلتر را تغییر دهید یا چند لحظه صبر کنید؛ بارهای جدید زنده اضافه می‌شوند." />
       )}
-      <p className="mt-3 text-xs text-ink-3">قیمت‌ها «سهم شما» بعد از کسر {fa(s.config.commission * 100)}٪ کارمزد کامیونت است. موقعیت نقشه، محدوده‌ی تقریبی است.</p>
+      <p className="mt-3 text-xs text-ink-3">مبلغ هر کارت «سهم خالص شما» پس از کارمزد {fa(s.config.commission * 100)}٪ پلتفرم است. موقعیت نقشه، محدوده‌ی تقریبی است.</p>
     </AppShell>
   );
 }

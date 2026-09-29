@@ -3,14 +3,14 @@
 import { ArrowLeft, ArrowRight, BadgeCheck, CheckCircle2, Circle, Clock, Snowflake, ThermometerSnowflake } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { degrees, fa, jNum, VEHICLES } from "@/lib/format";
+import { degrees, fa, jNum, VEHICLE_CAPACITY, VEHICLE_ORDER, VEHICLE_SHORT, weightLabel } from "@/lib/format";
 import { useApp } from "@/lib/hooks";
 import { expiryStatus } from "@/lib/matching";
 import { REQUIRED_DOCS, saveDriver, submitKyc } from "@/lib/store";
 import type { DocKey, VehicleType } from "@/lib/types";
 import { FileDrop, VerificationBadge } from "./molecules";
 import { toast } from "./Toaster";
-import { Button, Card, Field, Input, Segmented, Stepper, cx } from "./ui";
+import { Button, Card, Field, Input, NumInput, Segmented, Stepper, cx } from "./ui";
 
 const STEPS = ["هویت", "خودرو", "بیمه و معاینه", "سیستم برودتی", "مرور و ارسال"];
 const DAY = 86_400_000;
@@ -98,6 +98,7 @@ export function KycWizard() {
     const m = (need[step] ?? []).filter((k) => !done(k));
     if (m.length) return setErr(`بارگذاری این موارد باقی مانده: ${m.map((k) => DOC_LABEL[k]).join("، ")}`);
     if (step === 1 && !veh?.plate.trim()) return setErr("پلاک خودرو را وارد کنید.");
+    if (step === 1 && !(veh?.capacityKg && veh.capacityKg > 0)) return setErr("ظرفیت باربری خودرو را وارد کنید.");
     if (step === 2 && (!driver?.docs.insurance?.expiresAt || !driver?.docs.inspection?.expiresAt)) return setErr("تاریخ انقضای بیمه و معاینه فنی را انتخاب کنید.");
     if (step === 3 && !veh?.fridgeBrand.trim()) return setErr("برند و مدل یخچال را وارد کنید.");
     if (step === 3 && !veh?.lastServiceAt) return setErr("تاریخ آخرین سرویس یخچال را انتخاب کنید.");
@@ -127,7 +128,8 @@ export function KycWizard() {
         {step === 1 && (
           <>
             <h2 className="text-lg font-black">مشخصات خودرو</h2>
-            <Field label="نوع خودرو (یخچال‌دار)">{() => <Segmented<VehicleType> value={veh?.type ?? "truck"} onChange={(t) => saveDriver({ vehicle: { type: t } })} options={(Object.keys(VEHICLES) as VehicleType[]).map((k) => ({ value: k, label: VEHICLES[k].replace(" یخچال‌دار", "") }))} />}</Field>
+            <Field label="نوع خودرو (یخچال‌دار)">{() => <Segmented<VehicleType> value={veh?.type ?? "khavar"} onChange={(t) => saveDriver({ vehicle: { type: t, capacityKg: VEHICLE_CAPACITY[t] } })} options={VEHICLE_ORDER.map((k) => ({ value: k, label: VEHICLE_SHORT[k], sub: `تا ${weightLabel(VEHICLE_CAPACITY[k])}` }))} />}</Field>
+            <Field label="ظرفیت باربری واقعی خودرو" hint="برای تطبیق با وزن بار استفاده می‌شود؛ اگر با مقدار پیش‌فرض تفاوت دارد، اصلاح کنید.">{(id) => <NumInput id={id} value={veh?.capacityKg} onChange={(n) => saveDriver({ vehicle: { capacityKg: n ?? 0 } })} suffix="کیلوگرم" />}</Field>
             <Field label="پلاک خودرو">{(id) => <Input id={id} value={veh?.plate ?? ""} placeholder="مثلاً ۱۲ ب ۳۴۵ ایران ۶۸" onChange={(e) => saveDriver({ vehicle: { plate: e.target.value } })} />}</Field>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3"><Doc k="regFront" /><Doc k="regBack" /><Doc k="carExterior" /></div>
           </>

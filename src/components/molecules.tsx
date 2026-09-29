@@ -1,10 +1,10 @@
 "use client";
 
-import { ArrowLeft, BadgeCheck, Beef, Camera, Clock, IceCreamCone, Loader2, MapPin, Milk, Package, Pill, ShieldAlert, Snowflake, Thermometer, Truck } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Beef, Camera, Clock, IceCreamCone, Loader2, MapPin, Milk, Package, Pill, ShieldAlert, Snowflake, Star, Thermometer, Truck, Wallet, Weight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { CARGO, STATUS, degrees, fa, jDateTime, jShort, hhmm, mmss, toman } from "@/lib/format";
+import { CARGO, STATUS, VEHICLE_SHORT, fa, jDateTime, jShort, mmss, payLabel, stars, tempClass, tempClassLabel, tempRange, toman, weightLabel, windowLabel } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import type { CargoType, KycStatus, OrderStatus, OrderView, Role } from "@/lib/types";
 import { switchRole } from "@/lib/store";
@@ -46,14 +46,25 @@ export function RoleSwitch({ role }: { role: Role }) {
   );
 }
 
-export function TempChip({ tempMax }: { tempMax: number }) {
-  const frozen = tempMax <= -10;
+/** Class label and range come from the same tempClass(), so they can never contradict each other. */
+export function TempChip({ min, max }: { min: number; max: number }) {
+  const c = tempClass(min, max);
+  const tone = c === "frozen" ? "bg-accent-50 text-accent-700" : c === "cool" ? "bg-ok-bg text-ok" : "bg-surface-3 text-ink-2";
   return (
-    <span className={cx("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold", frozen ? "bg-accent-50 text-accent-700" : "bg-surface-3 text-ink-2")}>
-      {frozen ? <Snowflake className="size-3.5" /> : <Thermometer className="size-3.5" />}
-      {frozen ? `انجمادی ${degrees(tempMax)}` : `تا ${degrees(tempMax)}`}
+    <span className={cx("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold", tone)}>
+      {c === "frozen" ? <Snowflake className="size-3.5" aria-hidden /> : <Thermometer className="size-3.5" aria-hidden />}
+      {tempClassLabel(min, max)} · {tempRange(min, max)}
     </span>
   );
+}
+
+export function Chip2({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
+  return <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-3 px-2.5 py-1 text-xs font-bold text-ink-2">{icon}{children}</span>;
+}
+
+export function RatingPill({ r }: { r?: { avg: number; count: number } }) {
+  if (!r) return <span className="text-xs text-ink-3">بدون امتیاز</span>;
+  return <span className="inline-flex items-center gap-1 text-xs font-bold" aria-label={`امتیاز ${stars(r.avg)} از ${fa(r.count)} رأی`}><Star className="size-3.5 fill-brand-500 text-brand-500" aria-hidden />{stars(r.avg)}<span className="font-normal text-ink-3">({fa(r.count)})</span></span>;
 }
 
 export function Countdown({ until, total }: { until: number; total: number }) {
@@ -92,25 +103,38 @@ export function RouteLine({ from, to, sub }: { from: string; to: string; sub?: [
 }
 
 export function OrderCard({
-  v, href, net, footer, selected, onClick, delay = 0,
+  v, href, net, footer, selected, onClick, delay = 0, hideOpenStatus, extra,
 }: {
   v: OrderView; href?: string; net?: number; footer?: React.ReactNode; selected?: boolean; onClick?: () => void; delay?: number;
+  /** Drop the status badge when it says "open" (redundant in an open-loads list). */
+  hideOpenStatus?: boolean; extra?: React.ReactNode;
 }) {
+  const showStatus = !(hideOpenStatus && v.status === "OPEN");
+  const detailed = v.level !== "guest";
   const body = (
     <Card
-      className={cx("animate-rise p-4 transition hover:shadow-lift", selected && "ring-2 ring-accent-600")}
+      className={cx("flex h-full animate-rise flex-col p-4 transition hover:shadow-lift", selected && "ring-2 ring-accent-600")}
       style={{ animationDelay: `${Math.min(delay, 8) * 40}ms` }}
     >
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <StatusBadge status={v.status} />
-        {v.level !== "guest" && <span className="text-[13px] text-ink-3">{v.level === "full" && v.groupSize > 1 ? `خودروی ${fa(v.groupIndex)} از ${fa(v.groupSize)} · ` : ""}{jShort(v.pickupAt)}، {hhmm(v.pickupAt)}</span>}
+      <div className="mb-3 flex min-h-7 items-center justify-between gap-2">
+        {showStatus ? <StatusBadge status={v.status} /> : <span className="text-xs font-bold text-ink-3">{v.level !== "guest" && v.distanceKm ? `${fa(v.distanceKm)} کیلومتر` : ""}</span>}
+        {detailed && <span className="text-end text-[13px] text-ink-3">{v.level === "full" && v.groupSize > 1 ? `خودروی ${fa(v.groupIndex)} از ${fa(v.groupSize)} · ` : ""}{windowLabel(v.pickupAt, v.pickupTo)}</span>}
       </div>
       <RouteLine
         from={v.originCity}
         to={v.destCity}
-        sub={v.level === "full" ? [v.origin.address, v.dest.address] : v.level === "public" ? ["حدود دقیق پس از تأیید", `${fa(v.distanceKm)} کیلومتر`] : undefined}
+        sub={v.level === "full" ? [v.origin.address, v.dest.address] : v.level === "public" ? ["محدوده‌ی تقریبی بارگیری", `تحویل تا ${jShort(v.deliverBy)}، ${new Intl.DateTimeFormat("fa-IR", { hour: "2-digit", minute: "2-digit" }).format(v.deliverBy)}`] : undefined}
       />
-      <div className="mt-4 flex items-end justify-between gap-2 border-t border-line pt-3">
+      {detailed && (
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <Chip2 icon={<CargoIcon type={v.cargo} />}>{CARGO[v.cargo].label}</Chip2>
+          <TempChip min={v.tempMin} max={v.tempMax} />
+          <Chip2 icon={<Weight className="size-3.5" aria-hidden />}>{weightLabel(v.weightKg)}</Chip2>
+          <Chip2 icon={<Truck className="size-3.5" aria-hidden />}>{VEHICLE_SHORT[v.vehicleType]}</Chip2>
+          <Chip2 icon={<Wallet className="size-3.5" aria-hidden />}>{payLabel(v.payment)}</Chip2>
+        </div>
+      )}
+      <div className="mt-auto flex items-end justify-between gap-2 border-t border-line pt-3" style={{ marginTop: "auto" }}>
         {v.level === "guest" ? (
           <div>
             <div className="text-xs text-ink-3">بازه‌ی تقریبی کرایه</div>
@@ -118,12 +142,12 @@ export function OrderCard({
           </div>
         ) : (
           <>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 rounded-full bg-surface-3 px-2.5 py-1 text-xs font-bold text-ink-2"><CargoLabel type={v.cargo} /></span>
-              <TempChip tempMax={v.tempMax} />
+            <div className="min-w-0">
+              {v.level === "public" && <RatingPill r={v.shipperRating} />}
+              {extra}
             </div>
             <div className="text-end">
-              <div className="text-[11px] text-ink-3">{net !== undefined ? "سهم شما" : "کرایه"}</div>
+              <div className="text-[11px] text-ink-3">{net !== undefined ? "سهم شما" : v.level === "full" ? "کرایه" : "کرایه"}</div>
               <div className="whitespace-nowrap font-black tabular">{toman(net ?? v.price)}</div>
             </div>
           </>
@@ -132,8 +156,8 @@ export function OrderCard({
       {footer && <div className="mt-3">{footer}</div>}
     </Card>
   );
-  if (href) return <Link href={href} className="block">{body}</Link>;
-  if (onClick) return <button onClick={onClick} className="block w-full text-start">{body}</button>;
+  if (href) return <Link href={href} className="block h-full">{body}</Link>;
+  if (onClick) return <button onClick={onClick} className="block h-full w-full text-start">{body}</button>;
   return body;
 }
 

@@ -1,4 +1,4 @@
-import type { CargoType, OrderStatus, VehicleType } from "./types";
+import type { CargoType, OrderStatus, PayMethod, Payment, VehicleType } from "./types";
 
 const nf = new Intl.NumberFormat("fa-IR");
 export const fa = (n: number) => nf.format(Math.round(n));
@@ -42,11 +42,17 @@ export const CARGO: Record<CargoType, { label: string }> = {
 };
 
 export const VEHICLES: Record<VehicleType, string> = {
-  truck: "کامیونت یخچال‌دار",
-  nissan: "وانت نیسان یخچال‌دار",
-  pride: "وانت پراید یخچال‌دار",
+  pickup: "وانت یخچال‌دار",
+  khavar: "خاور یخچال‌دار",
+  truck10: "کامیون ۱۰ تنی یخچال‌دار",
   trailer: "تریلی یخچال‌دار",
 };
+export const VEHICLE_SHORT: Record<VehicleType, string> = { pickup: "وانت", khavar: "خاور", truck10: "کامیون ۱۰ تنی", trailer: "تریلی" };
+/** Default payload (kg) per vehicle class. */
+export const VEHICLE_CAPACITY: Record<VehicleType, number> = { pickup: 1500, khavar: 4500, truck10: 10_000, trailer: 24_000 };
+export const VEHICLE_ORDER: VehicleType[] = ["pickup", "khavar", "truck10", "trailer"];
+/** Relative price level of each class versus the 10-ton reference. */
+export const VEHICLE_PRICE_FACTOR: Record<VehicleType, number> = { pickup: 0.5, khavar: 0.75, truck10: 1, trailer: 1.6 };
 
 export const STATUS: Record<OrderStatus, { label: string; tone: "ok" | "warn" | "danger" | "info" | "neutral" | "brand" }> = {
   DRAFT: { label: "پیش‌نویس", tone: "neutral" },
@@ -59,5 +65,44 @@ export const STATUS: Record<OrderStatus, { label: string; tone: "ok" | "warn" | 
   EXPIRED: { label: "منقضی شد", tone: "neutral" },
 };
 
-export const tempLabel = (t: number) => (t <= -10 ? `انجمادی (${fa(t)}°)` : `سردخانه‌ای (تا ${fa(t)}°)`);
-export const degrees = (t: number) => `${t < 0 ? "−" : ""}${fa(Math.abs(t))}°C`;
+/* ───── Temperature: one source of truth for class, label and digits ───── */
+
+const LRI = "\u2066";
+const PDI = "\u2069";
+/** Direction-isolated, Persian digits, true minus sign: renders identically inside any RTL sentence. */
+export const degrees = (t: number) => `${LRI}${t < 0 ? "\u2212" : ""}${fa(Math.abs(t))}°${PDI}`;
+export const tempRange = (min: number, max: number) => `${degrees(min)} تا ${degrees(max)}`;
+
+export type TempClass = "frozen" | "chilled" | "cool";
+export const TEMP_PRESETS: Record<TempClass, { min: number; max: number; label: string }> = {
+  frozen: { min: -25, max: -18, label: "انجمادی" },
+  chilled: { min: 0, max: 4, label: "سردخانه‌ای" },
+  cool: { min: 8, max: 15, label: "خنک" },
+};
+/** Frozen means the ceiling is at or below −18°; cool means the floor is at or above 8°. */
+export function tempClass(min: number, max: number): TempClass {
+  if (max <= -18) return "frozen";
+  if (min >= 8) return "cool";
+  return "chilled";
+}
+export const tempClassLabel = (min: number, max: number) => TEMP_PRESETS[tempClass(min, max)].label;
+
+export const weightLabel = (kg: number) => (kg >= 1000 ? `${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(kg / 1000)} تن` : `${fa(kg)} کیلوگرم`);
+
+export const PAY: Record<PayMethod, string> = {
+  prepaid: "پیش‌پرداخت کامل",
+  deposit: "بیعانه و مابقی هنگام تحویل",
+  cod: "پرداخت هنگام تحویل",
+};
+export const payLabel = (p: Payment) => (p.method === "deposit" ? `بیعانه ${fa(p.depositPct ?? 30)}٪، مابقی هنگام تحویل` : PAY[p.method]);
+
+/** "۱۴ میلیون تومان" / "۵ میلیارد تومان": explicit, never a bare "م". */
+export function tomanWords(n: number) {
+  const f = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 });
+  if (n >= 1e9) return `${f.format(n / 1e9)} میلیارد تومان`;
+  if (n >= 1e6) return `${f.format(n / 1e6)} میلیون تومان`;
+  return `${fa(n)} تومان`;
+}
+
+export const windowLabel = (from: number, to: number) => `${jShort(from)}، ${hhmm(from)} تا ${hhmm(to)}`;
+export const stars = (avg: number) => new Intl.NumberFormat("fa-IR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(avg);

@@ -24,13 +24,13 @@ export default function Home() {
         <div className="pointer-events-none absolute -start-24 -top-24 size-80 rounded-full bg-brand-100 opacity-70 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 end-0 size-80 rounded-full bg-accent-100 opacity-70 blur-3xl" />
         <div className="relative max-w-2xl animate-rise">
-          <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-accent-50 px-3.5 py-1.5 text-sm font-bold text-accent-700"><Snowflake className="size-4" />زنجیره‌ی سرد، بدون واسطه</span>
+          <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-accent-50 px-3.5 py-1.5 text-sm font-bold text-accent-700"><Snowflake className="size-4" />مستقیم، شفاف، بیمه‌شده</span>
           <h1 className="text-4xl font-black leading-[1.35] sm:text-5xl">
             بار یخچالی؟<br />
             <span className="rounded-ui bg-brand-500 px-2">کامیونت</span> پیدایش می‌کند.
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-8 text-ink-2">
-            لبنیات، گوشت، دارو و بستنی را با نزدیک‌ترین کامیونت یخچال‌دار مطمئن در سراسر ایران جابه‌جا کنید؛ یا اگر راننده‌اید، بار مناسب دمای یخچالتان را روی نقشه ببینید.
+            لبنیات، گوشت، دارو و بستنی را با نزدیک‌ترین خودروی یخچال‌دار مطمئن در سراسر ایران جابه‌جا کنید؛ یا اگر راننده‌اید، بار مناسب دمای یخچالتان را روی نقشه ببینید.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href={me ? "/shipper/new/" : "/login/?as=shipper"}><Button size="lg">ثبت سفارش حمل <ArrowLeft className="size-5" /></Button></Link>

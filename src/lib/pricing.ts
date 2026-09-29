@@ -1,9 +1,11 @@
-import { roadKm, cityByName } from "./geo";
-import type { CargoType, Config, RateEntry } from "./types";
+import { VEHICLE_PRICE_FACTOR } from "./format";
+import type { CargoType, Config, RateEntry, VehicleType } from "./types";
 
 /**
  * Rate provider contract. The seeded table below is the v1 implementation;
  * swap `suggestRate` for an API-backed one without touching call sites.
+ * `km` is passed in (computed once from the real pickup/drop coordinates) so
+ * every screen quotes and displays the same distance.
  */
 export interface RateQuote {
   min: number;
@@ -20,32 +22,31 @@ const PER_KM: Record<CargoType, [number, number]> = {
   other: [34_000, 46_000],
 };
 
-const round = (n: number) => Math.round(n / 500_000) * 500_000 || 500_000;
+const round = (n: number) => Math.round(n / 100_000) * 100_000 || 100_000;
 
 export function suggestRate(
   rates: RateEntry[],
   from: string,
   to: string,
+  km: number,
   cargo: CargoType,
   frozen: boolean,
+  vehicle: VehicleType,
 ): RateQuote {
-  const a = cityByName(from);
-  const b = cityByName(to);
-  const km = roadKm(a, b);
   const hit = rates.find((r) => (r.from === from && r.to === to) || (r.from === to && r.to === from));
   const cargoFactor = cargo === "pharma" ? 1.2 : cargo === "meat" ? 1.08 : cargo === "icecream" ? 1.12 : 1;
-  const frozenFactor = frozen ? 1.1 : 1;
-  if (hit) {
-    return { min: round(hit.min * cargoFactor * frozenFactor), max: round(hit.max * cargoFactor * frozenFactor), source: "table", km };
-  }
+  const k = cargoFactor * (frozen ? 1.1 : 1) * VEHICLE_PRICE_FACTOR[vehicle];
+  if (hit) return { min: round(hit.min * k), max: round(hit.max * k), source: "table", km };
   const [lo, hi] = PER_KM[cargo];
-  const f = frozen ? 1.1 : 1;
-  return { min: round(km * lo * f), max: round(km * hi * f), source: "estimate", km };
+  return { min: round(km * lo * k), max: round(km * hi * k), source: "estimate", km };
 }
 
-export function insuranceFee(price: number, cfg: Config) {
-  return Math.round((price * cfg.insuranceRate) / 1000) * 1000;
+/** Premium is a share of the declared cargo value, not of the fare. */
+export function insuranceFee(declaredValue: number, cfg: Config) {
+  return Math.round((declaredValue * cfg.insuranceRate) / 1000) * 1000;
 }
+
+export const cancelFeeFor = (price: number, cfg: Config) => Math.round((price * cfg.cancelFeePct) / 1000) * 1000;
 
 export const driverNet = (price: number, cfg: Config) => Math.round(price * (1 - cfg.commission));
 export const platformFee = (price: number, cfg: Config) => Math.round(price * cfg.commission);

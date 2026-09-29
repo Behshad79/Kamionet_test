@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
 import { MapView } from "@/components/MapView";
-import { BackLink, Countdown, RouteLine, StatusBadge, TempChip, CargoLabel } from "@/components/molecules";
+import { BackLink, CargoLabel, Countdown, RatingPill, RouteLine, StatusBadge, TempChip } from "@/components/molecules";
 import { toast } from "@/components/Toaster";
 import { Button, Card, EmptyState, Skeleton } from "@/components/ui";
-import { CARGO, fa, jDateTime, toman } from "@/lib/format";
+import { fa, jDateTime, payLabel, toman, VEHICLES, weightLabel, windowLabel } from "@/lib/format";
 import { useApp, useQueryId } from "@/lib/hooks";
-import { canCarry } from "@/lib/matching";
+import { MATCH_FAIL_TEXT, matchVehicle } from "@/lib/matching";
 import { isFull, isPublic, viewOrder } from "@/lib/mask";
 import { driverNet, platformFee } from "@/lib/pricing";
 import { claimOrder, confirmAssign, releaseLock } from "@/lib/store";
@@ -55,9 +55,10 @@ export default function DriverOrder() {
   const gone = pub.status !== "OPEN" && !pub.lockedByMe;
   const net = driverNet(pub.price, s.config);
   const mine = pub.lockedByMe && pub.status === "LOCKED" && pub.lockedUntil;
-  const fits = !driver?.vehicle.plate || canCarry(driver.vehicle.minTemp, pub.tempMax);
+  const fit = driver?.vehicle.plate ? matchVehicle(driver.vehicle, pub) : ({ ok: true } as const);
   const verified = standing === "verified";
-  const disabledReason = !verified ? "پس از تأیید مدارک فعال می‌شود" : !fits ? "یخچال خودروی شما این دما را پشتیبانی نمی‌کند" : "";
+  const disabledReason = !verified ? "پس از تأیید مدارک فعال می‌شود" : !fit.ok ? MATCH_FAIL_TEXT[fit.why] : "";
+  const cancelled = pub.status === "CANCELLED" || pub.status === "EXPIRED";
 
   const claim = () => {
     const r = claimOrder(pub.id);
@@ -77,7 +78,7 @@ export default function DriverOrder() {
         {gone && (
           <Card className="animate-rise space-y-3 bg-danger-bg p-4 text-center shadow-none">
             <Ban className="mx-auto size-7 text-danger" />
-            <p className="font-bold text-danger">این سفارش هم‌اکنون به راننده دیگری اختصاص یافته است.</p>
+            <p className="font-bold text-danger">{cancelled ? "این سفارش دیگر در دسترس نیست." : "این سفارش هم‌اکنون به راننده دیگری اختصاص یافته است."}</p>
             <Link href="/driver/"><Button variant="secondary">دیدن بارهای دیگر</Button></Link>
           </Card>
         )}
@@ -86,15 +87,20 @@ export default function DriverOrder() {
           <RouteLine from={pub.originCity} to={pub.destCity} sub={["محدوده‌ی تقریبی بارگیری", `${fa(pub.distanceKm)} کیلومتر`]} />
           <dl className="grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm">
             <div><dt className="text-ink-3">نوع بار</dt><dd className="font-bold"><CargoLabel type={pub.cargo} /></dd></div>
-            <div><dt className="text-ink-3">دمای موردنیاز</dt><dd className="mt-0.5"><TempChip tempMax={pub.tempMax} /></dd></div>
-            <div className="col-span-2"><dt className="text-ink-3">زمان بارگیری</dt><dd className="font-bold">{jDateTime(pub.pickupAt)}</dd></div>
+            <div><dt className="text-ink-3">وزن</dt><dd className="font-bold">{weightLabel(pub.weightKg)}{pub.pallets ? ` · ${fa(pub.pallets)} پالت` : ""}{pub.volumeM3 ? ` · ${fa(pub.volumeM3)} م³` : ""}</dd></div>
+            <div className="col-span-2"><dt className="text-ink-3">دمای موردنیاز در تمام مسیر</dt><dd className="mt-0.5"><TempChip min={pub.tempMin} max={pub.tempMax} /></dd></div>
+            <div><dt className="text-ink-3">خودروی درخواستی</dt><dd className="font-bold">{VEHICLES[pub.vehicleType]}</dd></div>
+            <div><dt className="text-ink-3">پرداخت</dt><dd className="font-bold">{payLabel(pub.payment)}</dd></div>
+            <div><dt className="text-ink-3">بازه‌ی بارگیری</dt><dd className="font-bold">{windowLabel(pub.pickupAt, pub.pickupTo)}</dd></div>
+            <div><dt className="text-ink-3">مهلت تحویل</dt><dd className="font-bold">{jDateTime(pub.deliverBy)}</dd></div>
+            <div><dt className="text-ink-3">امتیاز صاحب بار</dt><dd className="mt-0.5"><RatingPill r={pub.shipperRating} /></dd></div>
             {pub.insurance && <div className="col-span-2"><dd className="inline-flex items-center gap-1.5 rounded-full bg-ok-bg px-3 py-1 text-xs font-bold text-ok"><ShieldCheck className="size-3.5" />بار بیمه‌شده است</dd></div>}
           </dl>
         </Card>
 
         <Card className="space-y-2 p-5">
           <div className="flex flex-wrap items-end justify-between gap-x-4"><span className="text-ink-3">سهم شما از این سفر</span><span className="text-2xl font-black tabular sm:text-3xl">{toman(net)}</span></div>
-          <div className="flex justify-between text-xs text-ink-3"><span>کرایه‌ی کل {toman(pub.price)}</span><span>کارمزد کامیونت {toman(platformFee(pub.price, s.config))}</span></div>
+          <div className="flex justify-between text-xs text-ink-3"><span>کرایه‌ی کل {toman(pub.price)}</span><span>کارمزد پلتفرم {toman(platformFee(pub.price, s.config))}</span></div>
         </Card>
 
         {mine ? (
@@ -112,7 +118,10 @@ export default function DriverOrder() {
           </Card>
         ) : !gone ? (
           <div className="space-y-2">
-            <Button block size="lg" disabled={!!disabledReason} onClick={claim}>انتخاب این سفارش</Button>
+            <Button block size="lg" disabled={!!disabledReason} onClick={claim}>رزرو فوری این بار</Button>
+            <p className="rounded-ui bg-accent-50 p-3 text-[13px] leading-7 text-accent-700">
+              با انتخاب این بار، <b>بلافاصله برای شما رزرو می‌شود</b>؛ نیازی به تأیید صاحب بار نیست و قیمت هم چانه‌زنی ندارد. اولین راننده‌ای که انتخاب کند برنده است و {fa(Math.round(s.config.lockSeconds / 60 * 10) / 10)} دقیقه فرصت دارد تأیید نهایی کند؛ وگرنه بار دوباره برای دیگران باز می‌شود.
+            </p>
             {disabledReason && <p className="text-center text-sm text-ink-3">{disabledReason}{!verified && <> · <Link href="/driver/kyc/" className="font-bold text-accent-600">تکمیل مدارک</Link></>}</p>}
           </div>
         ) : null}

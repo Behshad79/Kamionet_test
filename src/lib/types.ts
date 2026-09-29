@@ -11,10 +11,13 @@ export type OrderStatus =
   | "EXPIRED";
 
 export type CargoType = "dairy" | "meat" | "pharma" | "icecream" | "other";
-export type VehicleType = "truck" | "nissan" | "pride" | "trailer";
+export type VehicleType = "pickup" | "khavar" | "truck10" | "trailer";
+export type PayMethod = "prepaid" | "deposit" | "cod";
+export interface Payment { method: PayMethod; depositPct?: number }
 
 export interface Place {
   city: string;
+  province?: string;
   lat: number;
   lng: number;
   address: string;
@@ -53,6 +56,8 @@ export interface Vehicle {
   fridgeBrand: string;
   /** Lowest temperature (°C) the refrigeration unit can hold. */
   minTemp: number;
+  /** Payload in kg; matched against the order's cargo weight. */
+  capacityKg: number;
   lastServiceAt?: number;
 }
 
@@ -91,13 +96,28 @@ export interface Order {
   status: OrderStatus;
   origin: Place;
   dest: Place;
+  /** Start of the pickup window. */
   pickupAt: number;
+  pickupTo: number;
+  deliverBy: number;
   cargo: CargoType;
+  /** Required temperature band, °C. Both ends matter: freezing damages chilled cargo too. */
+  tempMin: number;
   tempMax: number;
+  vehicleType: VehicleType;
+  weightKg: number;
+  pallets?: number;
+  volumeM3?: number;
+  /** Declared cargo value (toman): the insurance basis. Never the fare. */
+  declaredValue: number;
+  /** Fare for this vehicle. */
   price: number;
+  payment: Payment;
   insurance: boolean;
   insuranceFee: number;
+  distanceKm: number;
   note?: string;
+  cancelFee?: number;
   createdAt: number;
   lockedBy?: string;
   lockedUntil?: number;
@@ -118,7 +138,10 @@ export interface Template {
   hour: number;
   active: boolean;
   nextRunAt: number;
-  draft: Omit<Order, "id" | "groupId" | "groupIndex" | "groupSize" | "status" | "media" | "createdAt" | "pickupAt">;
+  /** Pickup window length and delivery lead time, replayed on every spawn. */
+  windowMs: number;
+  deliverAfterMs: number;
+  draft: Omit<Order, "id" | "groupId" | "groupIndex" | "groupSize" | "status" | "media" | "createdAt" | "pickupAt" | "pickupTo" | "deliverBy">;
 }
 
 export interface Rating {
@@ -164,8 +187,10 @@ export interface RateEntry {
 
 export interface Config {
   insuranceMode: "optional" | "mandatory";
-  /** Fraction of the order price, e.g. 0.015 */
+  /** Fraction of the DECLARED CARGO VALUE, e.g. 0.003 */
   insuranceRate: number;
+  /** Fraction of the fare charged when the shipper cancels after assignment. */
+  cancelFeePct: number;
   /** Soft-lock length in seconds. */
   lockSeconds: number;
   /** Platform commission fraction. */
@@ -219,10 +244,19 @@ export interface PublicView {
   destArea: Area;
   distanceKm: number;
   pickupAt: number;
+  pickupTo: number;
+  deliverBy: number;
   cargo: CargoType;
+  tempMin: number;
   tempMax: number;
+  vehicleType: VehicleType;
+  weightKg: number;
+  pallets?: number;
+  volumeM3?: number;
   price: number;
+  payment: Payment;
   insurance: boolean;
+  shipperRating?: { avg: number; count: number };
   lockedUntil?: number;
   lockedByMe: boolean;
 }
@@ -240,6 +274,9 @@ export interface FullView extends Omit<PublicView, "level"> {
   deliveredAt?: number;
   assignedAt?: number;
   note?: string;
+  declaredValue: number;
+  cancelFee?: number;
+  groupId: string;
   groupSize: number;
   groupIndex: number;
 }

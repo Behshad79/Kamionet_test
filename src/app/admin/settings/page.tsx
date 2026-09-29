@@ -19,8 +19,8 @@ export default function AdminSettings() {
             { value: "optional", label: "اختیاری", sub: "کاربر تصمیم می‌گیرد" },
             { value: "mandatory", label: "اجباری", sub: "همیشه روشن و قفل" },
           ]} />
-          <Field label="نرخ بیمه (درصد از کرایه)">
-            {(id) => <Input id={id} dir="ltr" className="w-32 text-start tabular" defaultValue={c.insuranceRate * 100} onBlur={(e) => { const n = parseFloat(e.target.value); if (n > 0 && n < 20) { setConfig({ insuranceRate: n / 100 }); toast("ذخیره شد", "info"); } }} />}
+          <Field label="نرخ بیمه (درصد از ارزش اعلامی بار)" hint="مبنا ارزش بار است نه کرایه؛ پیشنهاد: ۰٫۲ تا ۰٫۵ درصد">
+            {(id) => <Input id={id} dir="ltr" className="w-32 text-start tabular" defaultValue={+(c.insuranceRate * 100).toFixed(3)} onBlur={(e) => { const n = parseFloat(e.target.value); if (n > 0 && n < 5) { setConfig({ insuranceRate: n / 100 }); toast("ذخیره شد", "info"); } }} />}
           </Field>
         </Card>
         <Card className="space-y-4 p-5">
@@ -28,6 +28,9 @@ export default function AdminSettings() {
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="کارمزد کامیونت (درصد)" hint={`سهم راننده ${fa(100 - c.commission * 100)}٪`}>
               {(id) => <Input id={id} dir="ltr" className="text-start tabular" defaultValue={c.commission * 100} onBlur={(e) => { const n = parseFloat(e.target.value); if (n >= 0 && n < 60) { setConfig({ commission: n / 100 }); toast("ذخیره شد", "info"); } }} />}
+            </Field>
+            <Field label="جریمه‌ی لغو پس از تعیین راننده (درصد کرایه)" hint="قبل از تعیین راننده لغو رایگان است">
+              {(id) => <Input id={id} dir="ltr" className="text-start tabular" defaultValue={+(c.cancelFeePct * 100).toFixed(1)} onBlur={(e) => { const n = parseFloat(e.target.value); if (n >= 0 && n <= 50) { setConfig({ cancelFeePct: n / 100 }); toast("ذخیره شد", "info"); } }} />}
             </Field>
             <Field label="مهلت تأیید نهایی راننده (ثانیه)" hint="پیشنهاد: ۱۲۰ تا ۱۸۰ ثانیه">
               {(id) => <Input id={id} dir="ltr" className="text-start tabular" defaultValue={c.lockSeconds} onBlur={(e) => { const n = parseInt(e.target.value); if (n >= 30 && n <= 600) { setConfig({ lockSeconds: n }); toast("ذخیره شد", "info"); } }} />}

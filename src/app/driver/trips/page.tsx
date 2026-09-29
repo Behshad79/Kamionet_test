@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { LiveTempBadge } from "@/components/TempPanel";
 import { OrderCard, OrderCardSkeleton } from "@/components/molecules";
-import { Button, EmptyState, Stat } from "@/components/ui";
+import { Button, EmptyState, Stat, ButtonLink } from "@/components/ui";
 import { fa, toman } from "@/lib/format";
 import { useApp } from "@/lib/hooks";
 import { fullView, publicView } from "@/lib/mask";
@@ -25,10 +25,10 @@ export default function Trips() {
         <Stat label="درآمد خالص" value={<span className="text-xl">{toman(earned)}</span>} tone="accent" />
       </div>
       {!ready ? <OrderCardSkeleton /> : mine.length === 0 ? (
-        <EmptyState icon={<Route className="size-7" />} title="هنوز سفری ندارید" body="از بازار بار، اولین سفارش مناسب خودتان را انتخاب کنید." action={<Link href="/driver/"><Button>رفتن به بازار بار</Button></Link>} />
+        <EmptyState icon={<Route className="size-7" />} title="هنوز سفری ندارید" body="از بازار بار، اولین سفارش مناسب خودتان را انتخاب کنید." action={<ButtonLink href="/driver/">رفتن به بازار بار</ButtonLink>} />
       ) : (
         <div className="space-y-6">
-          {active.length > 0 && <section className="space-y-3"><h2 className="font-bold">در جریان</h2>{active.map((o, i) => <OrderCard key={o.id} v={o.status === "LOCKED" ? publicView(o, me?.id) : fullView(o, s)} delay={i} net={driverNet(o.price, s.config)} href={o.status === "LOCKED" ? `/driver/order/?id=${o.id}` : `/driver/trip/?id=${o.id}`} />)}</section>}
+          {active.length > 0 && <section className="space-y-3"><h2 className="font-bold">در جریان</h2>{active.map((o, i) => <OrderCard key={o.id} v={o.status === "LOCKED" ? publicView(o, me?.id, s.ratings) : fullView(o, s)} delay={i} net={driverNet(o.price, s.config)} href={o.status === "LOCKED" ? `/driver/order/?id=${o.id}` : `/driver/trip/?id=${o.id}`} footer={o.status === "IN_TRANSIT" ? <LiveTempBadge o={fullView(o, s)} /> : undefined} />)}</section>}
           {done.length > 0 && <section className="space-y-3"><h2 className="font-bold">تکمیل‌شده</h2>{done.map((o, i) => <OrderCard key={o.id} v={fullView(o, s)} delay={i} net={driverNet(o.price, s.config)} href={`/driver/trip/?id=${o.id}`} />)}</section>}
         </div>
       )}

@@ -5,7 +5,7 @@ import { Play, Repeat, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { toast } from "@/components/Toaster";
-import { Badge, Button, Card, EmptyState, Toggle } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, Toggle, ButtonLink } from "@/components/ui";
 import { CARGO, fa, jDateTime, toman } from "@/lib/format";
 import { useApp } from "@/lib/hooks";
 import { deleteTemplate, runTemplateNow, toggleTemplate } from "@/lib/store";
@@ -20,10 +20,10 @@ export default function Recurring() {
           <h1 className="text-2xl font-black">سفارش‌های تکرارشونده</h1>
           <p className="mt-1 text-sm text-ink-3">الگو بسازید تا سفارش‌ها خودکار و به‌موقع ثبت شوند.</p>
         </div>
-        <Link href="/shipper/new/"><Button variant="secondary">ساخت الگو</Button></Link>
+        <ButtonLink href="/shipper/new/" variant="secondary">ساخت الگو</ButtonLink>
       </div>
       {list.length === 0 ? (
-        <EmptyState icon={<Repeat className="size-7" />} title="الگویی ندارید" body="هنگام ثبت سفارش، گزینه‌ی «سفارش تکرارشونده» را در مرحله‌ی زمان روشن کنید." action={<Link href="/shipper/new/"><Button>ثبت سفارش با الگو</Button></Link>} />
+        <EmptyState icon={<Repeat className="size-7" />} title="الگویی ندارید" body="هنگام ثبت سفارش، گزینه‌ی «سفارش تکرارشونده» را در مرحله‌ی زمان روشن کنید." action={<ButtonLink href="/shipper/new/">ثبت سفارش با الگو</ButtonLink>} />
       ) : (
         <div className="space-y-3">
           {list.map((t) => (

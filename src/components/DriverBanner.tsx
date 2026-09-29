@@ -2,7 +2,7 @@
 
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import { Button, Card, cx } from "@/components/ui";
+import { Button, Card, cx, ButtonLink } from "@/components/ui";
 import { fa } from "@/lib/format";
 import { useApp } from "@/lib/hooks";
 import { expiryStatus } from "@/lib/matching";
@@ -23,7 +23,7 @@ export function DriverBanner() {
     <Card className={cx("mb-4 flex animate-rise flex-wrap items-center gap-3 p-4 shadow-none", cfg.tone)}>
       {standing === "verified" ? <AlertTriangle className="size-5 shrink-0 text-warn" /> : <ShieldAlert className="size-5 shrink-0" />}
       <p className="min-w-0 flex-1 text-sm font-medium leading-7">{cfg.t}</p>
-      {cfg.cta && <Link href="/driver/kyc/"><Button size="sm">{cfg.cta}</Button></Link>}
+      {cfg.cta && <ButtonLink href="/driver/kyc/" size="sm">{cfg.cta}</ButtonLink>}
     </Card>
   );
 }

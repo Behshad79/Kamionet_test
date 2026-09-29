@@ -8,7 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import { MapView } from "@/components/MapView";
 import { BackLink, CargoLabel, Countdown, RatingPill, RouteLine, StatusBadge, TempChip } from "@/components/molecules";
 import { toast } from "@/components/Toaster";
-import { Button, Card, EmptyState, Skeleton } from "@/components/ui";
+import { Button, Card, EmptyState, Skeleton, ButtonLink } from "@/components/ui";
 import { fa, jDateTime, payLabel, toman, VEHICLES, weightLabel, windowLabel } from "@/lib/format";
 import { useApp, useQueryId } from "@/lib/hooks";
 import { MATCH_FAIL_TEXT, matchVehicle } from "@/lib/matching";
@@ -37,7 +37,7 @@ export default function DriverOrder() {
   if (!ready || id === null) return <AppShell area="driver"><Skeleton className="h-96" /></AppShell>;
   // Own orders are invisible in driver mode; the backend also rejects claiming them.
   if (!o || !v || o.shipperId === me?.id)
-    return <AppShell area="driver"><EmptyState icon={<PackageX className="size-7" />} title="این سفارش در دسترس نیست" body="سفارش وجود ندارد یا متعلق به حساب خودتان (در نقش صاحب بار) است." action={<Link href="/driver/"><Button>بازگشت به بازار</Button></Link>} /></AppShell>;
+    return <AppShell area="driver"><EmptyState icon={<PackageX className="size-7" />} title="این سفارش در دسترس نیست" body="سفارش وجود ندارد یا متعلق به حساب خودتان (در نقش صاحب بار) است." action={<ButtonLink href="/driver/">بازگشت به بازار</ButtonLink>} /></AppShell>;
 
   if (isFull(v))
     return (
@@ -46,7 +46,7 @@ export default function DriverOrder() {
           <ShieldCheck className="mx-auto size-10 text-ok" />
           <h1 className="text-xl font-black">این سفارش به شما تخصیص یافته است</h1>
           <p className="text-sm text-ink-3">جزئیات کامل، بارنامه و مراحل سفر را ببینید.</p>
-          <Link href={`/driver/trip/?id=${v.id}`}><Button size="lg">ادامه‌ی سفر</Button></Link>
+          <ButtonLink href={`/driver/trip/?id=${v.id}`} size="lg">ادامه‌ی سفر</ButtonLink>
         </Card>
       </AppShell>
     );
@@ -79,7 +79,7 @@ export default function DriverOrder() {
           <Card className="animate-rise space-y-3 bg-danger-bg p-4 text-center shadow-none">
             <Ban className="mx-auto size-7 text-danger" />
             <p className="font-bold text-danger">{cancelled ? "این سفارش دیگر در دسترس نیست." : "این سفارش هم‌اکنون به راننده دیگری اختصاص یافته است."}</p>
-            <Link href="/driver/"><Button variant="secondary">دیدن بارهای دیگر</Button></Link>
+            <ButtonLink href="/driver/" variant="secondary">دیدن بارهای دیگر</ButtonLink>
           </Card>
         )}
 

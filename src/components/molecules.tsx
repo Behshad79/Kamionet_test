@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { CARGO, STATUS, VEHICLE_SHORT, fa, jDateTime, jShort, mmss, payLabel, stars, tempClass, tempClassLabel, tempRange, toman, weightLabel, windowLabel } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
-import type { CargoType, KycStatus, OrderStatus, OrderView, Role } from "@/lib/types";
+import type { CargoType, FullView, KycStatus, OrderStatus, OrderView, Role } from "@/lib/types";
 import { switchRole } from "@/lib/store";
 import type { DriverStanding } from "@/lib/matching";
 import { Badge, Card, cx } from "./ui";
@@ -285,4 +285,42 @@ export function CargoIcon({ type, className = "size-4" }: { type: CargoType; cla
 }
 export function CargoLabel({ type }: { type: CargoType }) {
   return <span className="inline-flex items-center gap-1.5"><CargoIcon type={type} />{CARGO[type].label}</span>;
+}
+
+/** One multi-vehicle order: shared facts once, one row per vehicle underneath. */
+export function OrderGroupCard({ items, delay = 0 }: { items: FullView[]; delay?: number }) {
+  const v = items[0];
+  const byStatus = new Map<OrderStatus, number>();
+  items.forEach((i) => byStatus.set(i.status, (byStatus.get(i.status) ?? 0) + 1));
+  return (
+    <Card className="flex h-full animate-rise flex-col p-4" style={{ animationDelay: `${Math.min(delay, 8) * 40}ms` }}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <Badge tone="brand"><Truck className="size-3.5" aria-hidden />سفارش {fa(items.length)} خودرویی</Badge>
+        <span className="text-[13px] text-ink-3">{windowLabel(v.pickupAt, v.pickupTo)}</span>
+      </div>
+      <RouteLine from={v.originCity} to={v.destCity} sub={[v.origin.address, v.dest.address]} />
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <Chip2 icon={<CargoIcon type={v.cargo} />}>{CARGO[v.cargo].label}</Chip2>
+        <TempChip min={v.tempMin} max={v.tempMax} />
+        <Chip2 icon={<Weight className="size-3.5" aria-hidden />}>{weightLabel(v.weightKg)} در هر خودرو</Chip2>
+        <Chip2 icon={<Truck className="size-3.5" aria-hidden />}>{VEHICLE_SHORT[v.vehicleType]}</Chip2>
+      </div>
+      <ul className="mt-4 divide-y divide-line rounded-ui border border-line" aria-label="خودروهای این سفارش">
+        {items.map((i) => (
+          <li key={i.id}>
+            <Link href={`/shipper/order/?id=${i.id}`} className="flex min-h-12 items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-surface-2">
+              <span className="font-bold">خودروی {fa(i.groupIndex)}</span>
+              <StatusBadge status={i.status} />
+              <span className="min-w-0 flex-1 truncate text-ink-3">{i.driver ? i.driver.name : "راننده‌ای تعیین نشده"}</span>
+              <ArrowLeft className="size-4 shrink-0 text-ink-3" aria-hidden />
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-auto flex items-end justify-between gap-2 border-t border-line pt-3" style={{ marginTop: "1rem" }}>
+        <span className="text-xs text-ink-3">{[...byStatus].map(([s, n]) => `${fa(n)} ${STATUS[s].label}`).join(" · ")}</span>
+        <div className="text-end"><div className="text-[11px] text-ink-3">کرایه‌ی هر خودرو</div><div className="whitespace-nowrap font-black tabular">{toman(v.price)}</div></div>
+      </div>
+    </Card>
+  );
 }

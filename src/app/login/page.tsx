@@ -12,7 +12,7 @@ import type { Role } from "@/lib/types";
 
 function LoginForm() {
   const router = useRouter();
-  const { me, admin, ready } = useApp();
+  const { me, admin, ready, role: sessionRole } = useApp();
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -30,15 +30,24 @@ function LoginForm() {
   useEffect(() => {
     if (!ready) return;
     const next = new URLSearchParams(window.location.search).get("next");
+    // Already signed in: never show the form; go where their current role lives.
     if (admin) router.replace("/admin/");
-    else if (me) router.replace(next && next.startsWith("/") ? next : `/${role}/`);
-  }, [ready, me, admin, router, role]);
+    else if (me) router.replace(next && next.startsWith("/") ? next : `/${sessionRole}/`);
+  }, [ready, me, admin, router, sessionRole]);
 
   useEffect(() => {
     if (left <= 0) return;
     const id = setTimeout(() => setLeft((l) => l - 1), 1000);
     return () => clearTimeout(id);
   }, [left]);
+
+  if (ready && (me || admin)) {
+    return (
+      <div className="mx-auto max-w-md pt-4" role="status">
+        <Card className="space-y-3 p-6"><div className="skeleton h-7 w-40" /><div className="skeleton h-12 w-full" /><p className="text-sm text-ink-3">شما وارد شده‌اید؛ در حال انتقال به داشبورد…</p></Card>
+      </div>
+    );
+  }
 
   const sendCode = () => {
     if (!/^(09|۰۹)[\d۰-۹]{9}$/.test(phone.replace(/\s/g, ""))) return setErr("شماره موبایل معتبر نیست. مثال: ۰۹۱۲۱۲۳۴۵۶۷");

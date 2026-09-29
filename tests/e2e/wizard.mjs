@@ -1,0 +1,54 @@
+import { chromium } from "playwright";
+// Run: npm run build && npx serve out -l 4173 & then  npm run e2e   (BASE_URL, CHROMIUM_PATH optional)
+const B = process.env.BASE_URL || "http://localhost:4173";
+const SHOTS = process.env.SHOTS_DIR || "/tmp";
+const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
+const ctx = await browser.newContext({ viewport: { width: 420, height: 860 }, locale: "fa-IR" });
+const errors = [];
+const p = await ctx.newPage();
+p.on("pageerror", (e) => errors.push("PAGEERR " + e.message));
+p.on("console", (m) => m.type() === "error" && !/tile|openstreetmap|ERR_|404/.test(m.text()) && errors.push("CONSOLE " + m.text()));
+const ok = (c, m) => console.log((c ? "PASS " : "FAIL ") + m);
+await p.goto(`${B}/orders/`); await p.evaluate(() => { sessionStorage.clear(); localStorage.clear(); });
+await p.goto(`${B}/login/?as=shipper`); await p.fill('input[inputmode="tel"]', "09150000001"); await p.getByText("دریافت کد تأیید").click();
+await p.fill('input[inputmode="numeric"]', "12345"); await p.getByText("تأیید و ورود").click(); await p.waitForURL(/shipper/);
+await p.goto(`${B}/shipper/new/`);
+// step 0: empty + required
+ok((await p.locator('input[placeholder^="خیابان"]').first().inputValue()) === "", "address starts empty");
+await p.getByText("مرحله‌ی بعد").click();
+ok(await p.getByText("شهر مبدأ را انتخاب کنید").isVisible(), "origin city required");
+ok(await p.getByText("نشانی محل بارگیری را وارد کنید").isVisible(), "origin address required");
+// combobox search
+const combos = p.getByRole("combobox");
+await combos.nth(0).click(); await combos.nth(0).fill("شمس"); 
+ok(await p.getByRole("option", { name: /شهرک صنعتی شمس‌آباد/ }).isVisible(), "combobox finds industrial town");
+await p.getByRole("option", { name: /شهرک صنعتی شمس‌آباد/ }).click();
+await p.locator('input[placeholder^="خیابان"]').nth(0).fill("خیابان ۱۲ انبار ۳");
+await combos.nth(1).click(); await combos.nth(1).fill("كرمانشاه"); // Arabic kaf
+await p.getByRole("option", { name: /کرمانشاه/ }).first().click();
+await p.locator('input[placeholder^="خیابان"]').nth(1).fill("میدان بار");
+await p.getByText("مرحله‌ی بعد").click();
+await p.waitForTimeout(300);
+ok((await p.evaluate(() => window.scrollY)) === 0, "scrolled to top on step change");
+ok(await p.getByRole("heading", { name: "بار و دما" }).isVisible(), "step 2 heading visible");
+await p.getByText("مرحله‌ی بعد").click();
+ok(await p.getByText("وزن بار را وارد کنید").isVisible(), "weight required");
+await p.getByPlaceholder("مثلاً ۸٬۰۰۰").fill("8000");
+await p.getByPlaceholder(/۵٬۰۰۰٬۰۰۰٬۰۰۰/).fill("5000000000");
+ok(await p.getByText("۵ میلیارد تومان").isVisible(), "declared value shown in words");
+await p.getByText("انجمادی", { exact: true }).first().click();
+ok(await p.getByText("انجمادی").nth(1).isVisible(), "frozen class label");
+await p.screenshot({ path: `${SHOTS}/wiz-temp.png` });
+await p.getByText("مرحله‌ی بعد").click();
+ok(await p.getByText("کامیون ۱۰ تنی یخچال‌دار").first().isVisible(), "vehicle auto-suggested from weight");
+await p.getByText("مرحله‌ی بعد").click(); await p.waitForTimeout(200);
+ok(await p.getByText("نرخ پیشنهادی بازار").isVisible(), "price step");
+ok(!(await p.content()).includes("سهم راننده"), "shipper never sees driver's share");
+await p.screenshot({ path: `${SHOTS}/wiz-price.png` });
+await p.getByText("مرحله‌ی بعد").click(); await p.waitForTimeout(200);
+ok(await p.getByRole("heading", { name: "مرور نهایی" }).isVisible(), "review step before publish");
+await p.screenshot({ path: `${SHOTS}/wiz-review.png`, fullPage: true });
+await p.getByText("ثبت و انتشار سفارش").click(); await p.waitForURL(/shipper\/order/);
+ok(true, "published from review");
+console.log(errors.length ? "ERRORS:\n" + [...new Set(errors)].join("\n") : "no page errors");
+await browser.close();

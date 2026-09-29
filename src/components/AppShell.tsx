@@ -36,6 +36,19 @@ const NAV: Record<Role, { href: string; label: string; icon: ReactNode }[]> = {
   ],
 };
 
+const GUEST_NAV = [
+  { href: "/", label: "خانه", icon: <Truck className="size-5" /> },
+  { href: "/orders/", label: "بارهای باز", icon: <MapPinned className="size-5" /> },
+  { href: "/login/?as=shipper", label: "ثبت سفارش", icon: <PackagePlus className="size-5" /> },
+  { href: "/login/?as=driver", label: "راننده‌ام", icon: <Route className="size-5" /> },
+];
+
+const isOn = (path: string, href: string) => {
+  const h = href.split("?")[0];
+  if (h === "/" || h === "/shipper/" || h === "/driver/") return path === h;
+  return path.startsWith(h);
+};
+
 function Bell_() {
   const { s, me, unread } = useApp();
   const [open, setOpen] = useState(false);
@@ -84,7 +97,8 @@ export function AppShell({ children, area, wide }: { children: ReactNode; area?:
     else if (role !== area) switchRole(area);
   }, [ready, me, area, role, router, path]);
 
-  const nav = area ? NAV[area] : null;
+  // One header pattern everywhere: role links when signed in, discovery links for guests.
+  const nav = area ? NAV[area] : me ? NAV[role] : GUEST_NAV;
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="no-print sticky top-0 z-30 border-b border-line bg-white/90 backdrop-blur">
@@ -93,9 +107,9 @@ export function AppShell({ children, area, wide }: { children: ReactNode; area?:
           {nav && (
             <nav className="ms-6 hidden items-center gap-1 md:flex" aria-label="ناوبری اصلی">
               {nav.map((n) => {
-                const on = path === n.href || (n.href !== "/shipper/" && n.href !== "/driver/" && path.startsWith(n.href));
+                const on = isOn(path, n.href);
                 return (
-                  <Link key={n.href} href={n.href} className={cx("flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition", on ? "bg-brand-50 text-ink" : "text-ink-3 hover:bg-surface-3")}>
+                  <Link key={n.href} href={n.href} aria-current={on ? "page" : undefined} className={cx("flex min-h-11 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition", on ? "bg-brand-50 text-ink" : "text-ink-3 hover:bg-surface-3")}>
                     {n.label}
                   </Link>
                 );
@@ -115,15 +129,22 @@ export function AppShell({ children, area, wide }: { children: ReactNode; area?:
           </div>
         </div>
         {me && <div className="border-t border-line px-4 py-2 sm:hidden"><RoleSwitch role={role} /></div>}
+        {!me && (
+          <nav className="no-scrollbar flex gap-1 overflow-x-auto border-t border-line px-3 py-1.5 md:hidden" aria-label="ناوبری اصلی">
+            {GUEST_NAV.slice(0, 3).map((n) => (
+              <Link key={n.href} href={n.href} aria-current={isOn(path, n.href) ? "page" : undefined} className={cx("flex min-h-11 shrink-0 items-center rounded-full px-4 text-sm font-medium", isOn(path, n.href) ? "bg-brand-50 text-ink" : "text-ink-3")}>{n.label}</Link>
+            ))}
+          </nav>
+        )}
       </header>
 
-      <main className={cx("mx-auto w-full flex-1 px-4 py-5", wide ? "max-w-6xl" : "max-w-3xl", nav && "pb-28 md:pb-8")}>{children}</main>
+      <main className={cx("mx-auto w-full flex-1 px-4 py-5", wide ? "max-w-6xl" : "max-w-3xl", me && "pb-28 md:pb-8")}>{children}</main>
 
-      {nav && (
+      {nav && me && (
         <nav className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden" aria-label="ناوبری">
           <ul className="mx-auto grid max-w-md grid-cols-4">
             {nav.map((n) => {
-              const on = path === n.href || (n.href !== "/shipper/" && n.href !== "/driver/" && path.startsWith(n.href));
+              const on = isOn(path, n.href);
               return (
                 <li key={n.href}>
                   <Link href={n.href} className={cx("flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition", on ? "text-ink" : "text-ink-3")}>

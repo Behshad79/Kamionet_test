@@ -16,7 +16,7 @@ npm run build          # خروجی استاتیک در out/
 - **OTP:** همیشه `12345`. ادمین: شماره‌ی `09120000000`.
 - **ماسک اطلاعات:** UI فقط `OrderView` می‌گیرد (`src/lib/mask.ts`): مهمان ← فقط شهر و بازه قیمت، راننده ← محدوده‌ی تقریبی، طرفین پس از ASSIGNED ← جزئیات کامل.
 - **تطبیق دما:** `vehicle.minTemp <= order.tempMax` (`src/lib/matching.ts`).
-- **نقشه:** Leaflet + OpenStreetMap؛ منبع کاشی فقط در `src/components/KMap.tsx` است و برای نشان/بلد باید همان‌جا عوض شود.
+- **نقشه:** Leaflet؛ پیش‌فرض OpenStreetMap و محدود به مرزهای ایران. برای نقشه‌ی فارسی (نشان / Map.ir) هنگام بیلد `NEXT_PUBLIC_TILE_URL` و `NEXT_PUBLIC_TILE_ATTRIBUTION` را تنظیم کنید (نیازمند کلید API خودتان). خوشه‌بندی، حالت loading و خطای نقشه در `src/components/KMap.tsx` است.
 - **نرخ مرجع:** `src/lib/pricing.ts` (`suggestRate`) پشت یک تابع واحد است تا بعداً با نرخ محاسبه‌شده جایگزین شود.
 - مسیر به Postgres: `claimOrder` ← تابع SQL با `SELECT … FOR UPDATE SKIP LOCKED`؛ ماسک ← View/RPC؛ بازگشت قفل ← `pg_cron`.
 
@@ -36,3 +36,11 @@ Workflow آماده‌ی GitHub Pages در `.github/workflows/pages.yml` است 
 - تست: `bash supabase/tests/run.sh` (یک Postgres موقت می‌سازد؛ ۱۷ سناریو + تست رقابت همزمان).
 
 هنوز وصل نشده: جایگزینی `store.ts` با کلاینت Supabase، Realtime روی `orders`، Storage برای عکس‌ها، احراز OTP (کاوه‌نگار).
+
+## تست
+
+```bash
+npm run build && npx serve out -l 4173 &     # سپس:
+CHROMIUM_PATH=/path/to/chrome npm run e2e     # مرورگر واقعی: بازار، ویزارد، تله‌متری، ممیزی UX
+npm run test:db                               # Postgres: RLS، قفل، تطبیق خودرو، رقابت همزمان
+```

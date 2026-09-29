@@ -8,7 +8,7 @@ import { BackLink, FileDrop, RouteLine, StatusBadge, TempChip, type Captured, Ca
 import { TempPanel } from "@/components/TempPanel";
 import { MediaGallery, MismatchButton, OrderTimeline, PartyCard, RatingBox, TrackingMap, WaybillLink } from "@/components/order";
 import { toast } from "@/components/Toaster";
-import { Button, Card, EmptyState, Field, Input, Skeleton, cx } from "@/components/ui";
+import { Button, Card, EmptyState, Field, Input, Skeleton, cx, ButtonLink } from "@/components/ui";
 import { CARGO, fa, jDateTime, toman } from "@/lib/format";
 import { useApp, useQueryId } from "@/lib/hooks";
 import { fullView } from "@/lib/mask";
@@ -89,7 +89,7 @@ export default function Trip() {
   const { s, me, ready } = useApp();
   const o = s.orders.find((x) => x.id === id && x.driverId === me?.id);
   if (!ready || id === null) return <AppShell area="driver"><Skeleton className="h-96" /></AppShell>;
-  if (!o) return <AppShell area="driver"><EmptyState icon={<PackageX className="size-7" />} title="سفر پیدا نشد" body="این سفر به حساب شما تعلق ندارد یا لغو شده است." action={<Link href="/driver/trips/"><Button>سفرهای من</Button></Link>} /></AppShell>;
+  if (!o) return <AppShell area="driver"><EmptyState icon={<PackageX className="size-7" />} title="سفر پیدا نشد" body="این سفر به حساب شما تعلق ندارد یا لغو شده است." action={<ButtonLink href="/driver/trips/">سفرهای من</ButtonLink>} /></AppShell>;
   const v = fullView(o, s);
   const net = driverNet(v.price, s.config);
 

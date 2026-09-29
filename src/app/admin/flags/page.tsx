@@ -4,7 +4,7 @@ import { Flag } from "lucide-react";
 import Link from "next/link";
 import { AdminShell } from "@/components/AdminShell";
 import { toast } from "@/components/Toaster";
-import { Badge, Button, Card, EmptyState } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, ButtonLink } from "@/components/ui";
 import { fa, jDateTime } from "@/lib/format";
 import { useApp } from "@/lib/hooks";
 import { resolveFlag } from "@/lib/store";
@@ -30,7 +30,7 @@ export default function AdminFlags() {
                 </div>
                 <div className="text-xs text-ink-3">صاحب بار: {name(o.shipperId)} · راننده: {name(o.driverId)}</div>
                 <div className="flex gap-2">
-                  <Link href={`/waybill/?id=${o.id}`}><Button size="sm" variant="secondary">بارنامه</Button></Link>
+                  <ButtonLink href={`/waybill/?id=${o.id}`} size="sm" variant="secondary">بارنامه</ButtonLink>
                   {o.flag!.status === "open" && <Button size="sm" onClick={() => { resolveFlag(o.id); toast("مورد بسته شد"); }}>بستن مورد</Button>}
                 </div>
               </Card>

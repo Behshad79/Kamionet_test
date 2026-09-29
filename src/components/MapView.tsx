@@ -41,7 +41,7 @@ export function MapView({ className, ...props }: ComponentProps<typeof KMap>) {
   return (
     <div className={`relative ${className ?? ""}`}>
       <Boundary key={k} onRetry={() => setK((n) => n + 1)}>
-        <KMap {...props} className="absolute inset-0" />
+        <KMap {...props} className="size-full" />
       </Boundary>
     </div>
   );

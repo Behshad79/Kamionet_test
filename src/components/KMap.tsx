@@ -143,6 +143,12 @@ export default function KMap({ markers = [], circles = [], lines = [], onMarkerC
     };
   }, [fit]);
 
+  // Leaflet owns this element's class list, so toggle ours through classList, never through React's className.
+  useEffect(() => {
+    el.current?.classList.toggle("map-loading", status === "loading");
+    el.current?.setAttribute("aria-busy", String(status === "loading"));
+  }, [status]);
+
   const retry = () => {
     const tl = tiles.current;
     if (!tl) return;
@@ -212,9 +218,8 @@ export default function KMap({ markers = [], circles = [], lines = [], onMarkerC
   return (
     <div className={`relative ${className ?? ""}`}>
       <div ref={el} className="absolute inset-0" />
-      {status === "loading" && <div className="skeleton pointer-events-none absolute inset-0 z-[450] opacity-70" aria-hidden />}
       {status === "error" && (
-        <div role="alert" className="absolute inset-x-3 top-3 z-[600] flex flex-wrap items-center gap-3 rounded-ui bg-white p-3 text-sm shadow-lift">
+        <div role="alert" className="absolute left-16 right-3 top-3 z-[600] flex flex-wrap items-center gap-3 rounded-ui bg-white p-3 text-sm shadow-lift">
           <span className="min-w-0 flex-1 font-medium">نقشه بارگذاری نشد. اتصال اینترنت را بررسی کنید.</span>
           <button type="button" onClick={retry} className="h-10 rounded-full bg-brand-500 px-4 font-bold">تلاش دوباره</button>
         </div>

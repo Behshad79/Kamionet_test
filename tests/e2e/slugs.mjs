@@ -1,0 +1,1 @@
+export const ADMIN_SLUGS = ["", "live", "orders", "dispatch", "disputes", "drivers", "kyc", "shippers", "pro", "finance", "payments", "payouts", "refunds", "debts", "invoices", "recon", "promo", "claims", "support", "reviews", "washes", "risk", "broadcasts", "config", "rules", "master", "approvals", "team", "audit", "system"];

@@ -1,19 +1,30 @@
 "use client";
 
-import { Bell, ClipboardList, Gauge, Home, ListChecks, LogOut, Menu, PackagePlus, Repeat, ShieldCheck, Truck, User, Wallet, type LucideIcon } from "lucide-react";
+import { Bell, Eye, ClipboardList, Gauge, Home, ListChecks, LogOut, Menu, PackagePlus, Repeat, ShieldCheck, Truck, User, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { usePortal } from "@/lib/hooks";
 import { usePushBridge } from "@/lib/usePush";
-import { logout, PORTAL_LOGIN } from "@/lib/store";
+import { getViewAs, logout, PORTAL_LOGIN } from "@/lib/store";
 import type { PortalId } from "@/lib/types";
 import { Logo, PortalCue, ProBadge } from "../brand";
 import { Skeleton, cx } from "../ui";
 import { SupportWidget } from "../SupportWidget";
 import { DemoDrawer, openDemo } from "./DemoDrawer";
 import { DEMO_MODE } from "@/lib/store";
-import { FlaskConical } from "lucide-react";
+import { FlaskConical, Search } from "lucide-react";
+import { ADMIN_MODS, GROUPS, modAllowed, modHref } from "../admin/adminNav";
+import { CommandPalette, openPalette } from "../admin/CommandPalette";
+import { DemoDirector } from "../admin/DemoDirector";
+import { can, ROLE_LABELS } from "@/lib/engine/admin";
+
+function ViewAsBanner() {
+  const [v, setV] = useState<ReturnType<typeof getViewAs>>(null);
+  useEffect(() => setV(getViewAs()), []);
+  if (!v) return null;
+  return <div role="status" className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-2 bg-ink px-3 py-2 text-center text-xs font-bold text-white"><Eye className="size-4" aria-hidden />حالت مشاهده‌ی فقط‌خواندنی: شما به‌جای «{v.name}» می‌بینید (مدیر: {v.by}). هیچ تغییری ثبت نمی‌شود و این مشاهده در ممیزی ثبت شده است.</div>;
+}
 
 const DemoBtn = () => (DEMO_MODE ? <button onClick={openDemo} aria-label="حساب‌های دمو" className="grid size-11 place-items-center rounded-full hover:bg-ink/5 lg:hidden"><FlaskConical className="size-5" aria-hidden /></button> : null);
 
@@ -31,12 +42,6 @@ const DRIVER_NAV: Nav[] = [
   { href: "/driver/trips/", label: "سفرها", icon: ListChecks },
   { href: "/driver/wallet/", label: "درآمد", icon: Wallet },
   { href: "/driver/profile/", label: "پروفایل", icon: User },
-];
-export const ADMIN_NAV: Nav[] = [
-  { href: "/admin/", label: "داشبورد", icon: Gauge },
-  { href: "/admin/orders/", label: "سفارش‌ها", icon: ClipboardList },
-  { href: "/admin/drivers/", label: "رانندگان", icon: Truck },
-  { href: "/admin/audit/", label: "ممیزی", icon: ShieldCheck },
 ];
 
 const active = (path: string, href: string) => (href.split("/").filter(Boolean).length === 1 ? path === href : path.startsWith(href));
@@ -74,6 +79,7 @@ export function ShipperShell({ children }: { children: ReactNode }) {
   if (!g.ready || !g.signedIn) return <div data-portal="shipper" className="min-h-dvh bg-tint"><Loading /></div>;
   return (
     <div data-portal="shipper" className="min-h-dvh bg-tint lg:grid lg:grid-cols-[248px_1fr]">
+      <div className="lg:col-span-2 empty:hidden"><ViewAsBanner /></div>
       <aside className="sticky top-0 hidden h-dvh flex-col border-e border-line/60 bg-white/70 p-4 backdrop-blur-xl lg:flex">
         <Logo className="mb-2" />
         <PortalCue label="پنل صاحب بار" tone="shipper" />
@@ -110,6 +116,7 @@ export function DriverShell({ children }: { children: ReactNode }) {
   if (!g.ready || !g.signedIn) return <div data-portal="driver" className="min-h-dvh bg-tint"><Loading /></div>;
   return (
     <div data-portal="driver" className="min-h-dvh bg-tint pb-24">
+      <ViewAsBanner />
       <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-white/60 px-4">
         <div className="flex items-center gap-2"><Logo />{g.driver?.pro.status === "pro" && <ProBadge />}</div>
         <div className="flex items-center gap-1"><PortalCue label="اپ راننده" tone="driver" /><DemoBtn /><Bell2 n={g.unread} href="/driver/notifications/" /></div>
@@ -133,9 +140,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const side = (
     <>
       <div className="flex items-center justify-between"><Logo tone="white" /><PortalCue label="مدیریت" tone="admin" /></div>
-      <nav className="mt-6 grid gap-1" aria-label="ناوبری مدیریت">{ADMIN_NAV.map((n) => <NavLink key={n.href} n={n} path={g.path} dark onClick={() => setMenu(false)} />)}</nav>
-      <div className="mt-auto space-y-2 pt-6">
-        <div className="rounded-2xl bg-white/8 p-3 text-sm"><div className="font-bold text-white">{g.admin?.name}</div><div className="text-xs text-slate-400">{g.admin?.role}</div></div>
+      <button onClick={openPalette} className="mt-5 flex h-11 items-center justify-between rounded-2xl bg-white/8 px-3 text-sm text-slate-300 hover:bg-white/12"><span className="flex items-center gap-2"><Search className="size-4" aria-hidden />جستجوی سریع</span><kbd className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px]">Ctrl K</kbd></button>
+      <nav className="mt-3 min-h-0 flex-1 space-y-4 overflow-y-auto pe-1" aria-label="ناوبری مدیریت">{GROUPS.map((gr) => { const items = ADMIN_MODS.filter((m) => m.group === gr && modAllowed(m, (p) => can(g.admin?.role, p))); return items.length === 0 ? null : <div key={gr}><div className="mb-1 px-3 text-[11px] font-extrabold text-slate-500">{gr}</div><div className="grid gap-0.5">{items.map((m) => <NavLink key={m.slug} n={{ href: modHref(m.slug), label: m.title, icon: m.icon }} path={g.path} dark onClick={() => setMenu(false)} />)}</div></div>; })}</nav>
+      <div className="space-y-2 pt-4">
+        <div className="rounded-2xl bg-white/8 p-3 text-sm"><div className="font-bold text-white">{g.admin?.name}</div><div className="text-xs text-slate-400">{g.admin ? ROLE_LABELS[g.admin.role] : ""}</div></div>
         <SignOut portal="admin" dark />
       </div>
     </>
@@ -157,6 +165,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </div>
       )}
       <DemoDrawer />
+      <CommandPalette />
+      <DemoDirector />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { DocKey, DriverProfile, Plate, State, Vehicle } from "../types";
 import { DAY, HOUR, audit, driverOf, fail, now, ok, person, SYSTEM, uid, type Result } from "./core";
 import { ensureDriver } from "./profiles";
+import { normalizeDigits } from "../money";
 
 /** Wizard steps; `step` on the profile is the next unfinished one, so the flow is resumable. */
 export const KYC_STEPS = ["شماره موبایل", "هویت", "تطبیق شاهکار", "عکس چهره", "گواهینامه", "خودرو و مدارک", "قوانین", "ارسال"] as const;
@@ -111,8 +112,8 @@ export function saveIban(s: State, pid: string, sheba: string): Result {
   const d = driverOf(s, pid);
   const p = person(s, pid);
   if (!d || !p) return fail("حساب راننده پیدا نشد.");
-  const clean = sheba.replace(/\s/g, "").toUpperCase();
-  if (!/^IR\d{24}$/.test(clean)) return fail("شماره‌ی شبا باید با IR شروع شود و ۲۶ کاراکتر باشد.");
+  const clean = normalizeDigits(sheba).replace(/\s/g, "").toUpperCase();
+  if (!/^IR\d{20,24}$/.test(clean)) return fail("شماره‌ی شبا باید با IR شروع شود و بعد از آن ارقام باشد.");
   // Mock bank lookup: the holder name returned for a Sheba; a trailing 0 simulates a different owner.
   const matches = s.demo.ibanHolder !== "mismatch";
   d.iban = { sheba: clean, holder: matches ? p.name : "شخص دیگر", holderMatches: matches, addedAt: now(s) };

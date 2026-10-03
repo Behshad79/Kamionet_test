@@ -824,6 +824,7 @@ export interface State {
   invoices: Invoice[];
   recon: ReconFile[];
   periodLockedUntil: number;
+  closes: DayClose[];
   tickets: Ticket[];
   reviews: Review[];
   rules: RuleDoc[];
@@ -841,6 +842,22 @@ export interface State {
   rates: RateEntry[];
   demo: DemoState;
   session: Record<PortalId, SessionInfo>;
+}
+
+export interface DayClose {
+  id: string;
+  at: number;
+  /** Business day closed (start of that day). */
+  day: number;
+  by: string;
+  entries: number;
+  debit: Rial;
+  credit: Rial;
+  gateway: Rial;
+  bank: Rial;
+  suspense: Rial;
+  unmatched: number;
+  ok: boolean;
 }
 
 export interface SmsLog {

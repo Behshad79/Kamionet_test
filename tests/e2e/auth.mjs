@@ -14,6 +14,6 @@ ok(await p.getByText("اپ راننده").first().isVisible(), "driver session s
 const desk = await launch({ width: 1280, height: 800 });
 const a = await desk.mk();
 await demoLogin(a, "admin", "09130000001");
-ok(await a.getByText("ثبت‌های دفتر کل").first().isVisible(), "admin dashboard loads seeded ledger");
+ok(await a.getByRole("heading", { name: "داشبورد اجرایی" }).isVisible(), "admin dashboard loads");
 await desk.browser.close();
 await done(browser);

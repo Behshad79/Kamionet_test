@@ -72,3 +72,9 @@ export const Pill = ({ tone = "neutral", children }: { tone?: "ok" | "warn" | "d
   const c = { ok: "bg-ok-bg text-ok", warn: "bg-warn-bg text-warn", danger: "bg-danger-bg text-danger", info: "bg-accent-50 text-accent-700", neutral: "bg-surface-3 text-ink-2" }[tone];
   return <span className={cx("inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold", c)}>{children}</span>;
 };
+
+/** Persian status pill driven by a label map from `lib/labels`. */
+export function StatusPill({ map, v }: { map: Record<string, [string, "ok" | "warn" | "danger" | "info" | "neutral"]>; v: string }) {
+  const [l, tone] = map[v] ?? [v, "neutral" as const];
+  return <Pill tone={tone}>{l}</Pill>;
+}

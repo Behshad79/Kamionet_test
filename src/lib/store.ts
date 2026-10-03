@@ -89,7 +89,7 @@ function writeSession(p: PortalId, info: SessionInfo) {
   try {
     const raw = JSON.stringify(info);
     sessionStorage.setItem(sessKey(p), raw);
-    localStorage.setItem(sessKey(p), raw);
+    if (!getViewAs()) localStorage.setItem(sessKey(p), raw);
   } catch { /* ignore */ }
 }
 
@@ -119,8 +119,33 @@ export function hydrate() {
   });
 }
 
-/** Run one atomic action. The draft is a deep clone; throw-free actions return Result. */
+/* ───────────────────────── "view as user" (read-only impersonation by staff) ───────────────────────── */
+
+const VIEWAS = "kamionet:viewas";
+export interface ViewAs { by: string; adminId: string; portal: PortalId; personId: string; name: string }
+export function getViewAs(): ViewAs | null {
+  try { const raw = typeof sessionStorage === "undefined" ? null : sessionStorage.getItem(VIEWAS); return raw ? (JSON.parse(raw) as ViewAs) : null; } catch { return null; }
+}
+
+/** Opens the user's portal in a new tab as that user, strictly read-only; the start is written to the audit log. */
+export function startViewAs(adminId: string, portal: "shipper" | "driver", personId: string): Result {
+  const a = state.admins.find((x) => x.id === adminId);
+  const p = state.persons.find((x) => x.id === personId);
+  if (!a || !p) return fail("کاربر پیدا نشد.");
+  act((s) => audit(s, adminActor(s, adminId), "view_as.start", `${p.name} (${portal === "shipper" ? "صاحب بار" : "راننده"})`, personId));
+  const prev = { sess: sessionStorage.getItem(sessKey(portal)), flag: sessionStorage.getItem(VIEWAS) };
+  sessionStorage.setItem(sessKey(portal), JSON.stringify({ personId }));
+  sessionStorage.setItem(VIEWAS, JSON.stringify({ by: a.name, adminId, portal, personId, name: p.name } satisfies ViewAs));
+  const w = window.open(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${PORTAL_HOME[portal]}`, "_blank");
+  // the new tab received a copy of sessionStorage; restore this tab's own state
+  if (prev.sess === null) sessionStorage.removeItem(sessKey(portal)); else sessionStorage.setItem(sessKey(portal), prev.sess);
+  if (prev.flag === null) sessionStorage.removeItem(VIEWAS); else sessionStorage.setItem(VIEWAS, prev.flag);
+  return w ? ok() : fail("مرورگر باز شدن تب جدید را مسدود کرد.");
+}
+
+/** Run one atomic action. The draft is a deep clone; throw-free actions return Result. In "view as user" tabs every mutation is refused. */
 export function act<T>(fn: (s: State) => T): T {
+  if (getViewAs()) return { ok: false, error: "حالت مشاهده‌ی فقط‌خواندنی: تغییری ثبت نمی‌شود." } as T;
   const draft = structuredClone(state) as State;
   if (tickDue(draft)) engineTick(draft);
   const out = fn(draft);

@@ -32,7 +32,7 @@ export interface Sim {
 }
 
 const must = (sim: Sim, label: string, res: { ok: boolean; error?: string }) => {
-  if (!res.ok) sim.errors.push(`${label}: ${(res as { error: string }).error}`);
+  if (!res.ok && !(res as { error: string }).error.includes("معلق")) sim.errors.push(`${label}: ${(res as { error: string }).error}`); // suspensions from strikes are a legitimate outcome of the simulated history
   return res.ok;
 };
 
@@ -75,20 +75,21 @@ export function buildInput(sim: Sim, shipperId: string, driverId: string | null,
     insuranceProductId: r.chance(0.55) ? r.pick(["ip-basic", "ip-std", "ip-comp"]) : null, coveragePct: 1,
     terms: r.pick(["PREPAID", "DEPOSIT_BALANCE_BEFORE_LOADING", "DEPOSIT_BALANCE_AFTER_DELIVERY", "DEPOSIT_BALANCE_AFTER_DELIVERY"] as const), autoPayDeposit: false,
     consignee: { name: "گیرنده‌ی نمونه", phone: `0912${r.int(1000000, 9999999)}` },
+    couponCode: r.chance(0.07) ? "COLD5" : undefined,
     ...over,
   };
   return input;
 }
 
 /** Fund the shipper wallet generously, then pay whatever is outstanding for an order from it. */
-export function payOutstanding(sim: Sim, o: Order, purpose: "deposit" | "balance") {
+export function payOutstanding(sim: Sim, o: Order, purpose: "deposit" | "balance", method: "wallet" | "credit" = "wallet") {
   const due = outstanding(o);
   if (due <= 0) return;
   const need = purpose === "deposit" ? Math.min(due, o.depositRequired - (o.paid.insurance + o.paid.vat + o.paid.tip + o.paid.freight)) : due;
   const amt = Math.max(0, Math.min(due, need));
   if (amt <= 0) return;
-  topUp(sim, o.shipperId, amt);
-  must(sim, `pay:${purpose}`, pay(sim.s, { payerId: o.shipperId, orderId: o.id, purpose, amount: amt, method: "wallet" }));
+  if (method === "wallet") topUp(sim, o.shipperId, amt);
+  must(sim, `pay:${purpose}`, pay(sim.s, { payerId: o.shipperId, orderId: o.id, purpose, amount: amt, method }));
 }
 
 const advance = (sim: Sim, ms: number) => {
@@ -100,20 +101,21 @@ const tickAll = (sim: Sim) => { engineTick(sim.s); };
 export type Outcome = "completed" | "cancel_shipper" | "cancel_driver" | "in_transit" | "assigned" | "at_pickup" | "delivered";
 
 /** Drive one order through the real engine. `sim.t` moves forward between steps. */
-export function runOrder(sim: Sim, shipperId: string, driverId: string, outcome: Outcome, over: Partial<OrderInput> = {}): Order | undefined {
+export function runOrder(sim: Sim, shipperId: string, driverId: string, outcome: Outcome, over: Partial<OrderInput> = {}, payWith: "wallet" | "credit" = "wallet"): Order | undefined {
   const { s, r } = sim;
   s._now = sim.t;
   const input = buildInput(sim, shipperId, driverId, over);
-  const res = createOrders(s, shipperId, input);
+  let res = createOrders(s, shipperId, input);
+  if (!res.ok && input.couponCode) res = createOrders(s, shipperId, { ...input, couponCode: undefined }); // coupon not applicable to this shipper/order
   if (!res.ok) { sim.errors.push(`create: ${res.error}`); return undefined; }
   const id = res.ids[0];
   advance(sim, r.int(5, 40) * MIN);
   if (outcome === "cancel_shipper" && r.chance(0.5)) { must(sim, "cancelS0", cancelByShipper(s, shipperId, id, "تغییر برنامه")); return orderOf(s, id); }
-  if (!must(sim, "claim", claimOrder(s, driverId, id))) return orderOf(s, id);
+  if (!must(sim, `claim:${driverId}:${s.persons.find((p) => p.id === driverId)?.phone}`, claimOrder(s, driverId, id))) return orderOf(s, id);
   advance(sim, 60_000);
   if (!must(sim, "confirm", confirmAssign(s, driverId, id))) return orderOf(s, id);
   let o = orderOf(s, id)!;
-  if (o.status === "AWAITING_DEPOSIT") { payOutstanding(sim, o, "deposit"); advance(sim, 2 * MIN); }
+  if (o.status === "AWAITING_DEPOSIT") { payOutstanding(sim, o, "deposit", payWith); advance(sim, 2 * MIN); }
   o = orderOf(s, id)!;
   if (outcome === "assigned") return o;
   if (outcome === "cancel_shipper") { must(sim, "cancelS", cancelByShipper(s, shipperId, id, "صاحب بار آماده نبود")); return orderOf(s, id); }
@@ -125,7 +127,7 @@ export function runOrder(sim: Sim, shipperId: string, driverId: string, outcome:
   if (outcome === "at_pickup") return orderOf(s, id);
   advance(sim, r.int(10, 50) * MIN);
   o = orderOf(s, id)!;
-  if (outstanding(o) > 0 && o.terms !== "DEPOSIT_BALANCE_AFTER_DELIVERY") payOutstanding(sim, o, "balance");
+  if (outstanding(o) > 0 && o.terms !== "DEPOSIT_BALANCE_AFTER_DELIVERY") payOutstanding(sim, o, "balance", payWith);
   const items = r.int(20, 200);
   must(sim, "startTrip", startTrip(s, driverId, id, { cargo: media("cargo", sim.t), invoice: media("invoice_pickup", sim.t, items), items }));
   if (outcome === "in_transit") return orderOf(s, id);
@@ -136,7 +138,7 @@ export function runOrder(sim: Sim, shipperId: string, driverId: string, outcome:
   o = orderOf(s, id)!;
   must(sim, "deliver", deliver(s, driverId, id, { otp: o.consignee.otp, invoice: media("invoice_delivery", sim.t, items), items, cashReceived: o.cashAgreed > 0 ? o.cashAgreed : undefined }));
   o = orderOf(s, id)!;
-  if (outstanding(o) > 0) { payOutstanding(sim, o, "balance"); }
+  if (outstanding(o) > 0) { payOutstanding(sim, o, "balance", payWith); }
   if (outcome === "delivered") return orderOf(s, id);
   // reviews, then let the dispute window elapse so earnings become available
   advance(sim, r.int(1, 20) * HOUR);

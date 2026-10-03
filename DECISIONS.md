@@ -35,3 +35,11 @@ Each item: **decision** · why · what to confirm.
 24. **Persistence moved to IndexedDB** (+ BroadcastChannel across tabs): the deterministic seed is ~4.5 MB, over a comfortable localStorage budget. Per-portal sessions stay in sessionStorage/localStorage.
 25. **Demo personas** (drivers 09100000001–13, shippers 09120000001–08) are my interpretation of the persona list: new / in-review / rejected / verified / history-rich / clean badge / Pro-invited / Pro×2 / suspended+appeal / debt / dry truck / declared backhaul trip; shippers: empty / individual / verified company / credit-invoicing / cash-to-driver / overdue / wallet-rich / recurring. Adjust if your list differs.
 26. **Iran map on the landing is a stylised outline** (not a surveyed border); real tiles need a provider key.
+
+## M5
+27. **Test mode is lenient on identity**: any 10-digit national ID passes the checksum and any IBAN-shaped string is accepted; the match step is controlled by the Demo Director (`idMatch`, `ibanHolder`). Production must restore checksum + real Shahkar/IBAN inquiry.
+28. **Truck art** derives from Noto Emoji (Apache-2.0) with colour-role recolouring; keep the attribution if shipped. Bank names in the transaction sheet are fictional.
+29. **Deposit-miss policy**: while a driver's confirmation waits for the deposit he is frozen (cannot lock another load); after `deposit.maxMisses` drivers fail to see a deposit the order is auto-cancelled and the shipper is warned (push + SMS).
+30. **Admin permissions**: a module's `perm` may be any-of; finance sub-modules share `finance.view` for visibility while actions check their own permission and approval ceilings (`CEILINGS`). Refunds/adjustments/payouts/write-offs above the ceiling need a second approver and the requester can never approve their own request.
+31. **Demo Director** only calls the production engine (no ledger shortcuts) and is shown to super/ops/finance_mgr in demo mode.
+32. **Seed finance back-office** (invoices/aging, claims, reconciliation files with unmatched rows, closes, locked period, approvals, risk flags, SMS log) is synthetic; tickets are seeded as a believable mix of new / handled / overdue.

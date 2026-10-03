@@ -401,7 +401,7 @@ export function proInvite(s: State, adminId: string, driverId: string): Result {
   const d = driverOf(s, driverId);
   if (!d || d.kyc.status !== "verified") return fail("فقط رانندگان تأییدشده دعوت می‌شوند.");
   d.pro = { ...d.pro, status: "invited", invitedAt: now(s) };
-  notify(s, driverId, "driver", "pro", "تبریک! به برنامه‌ی «کامیونت پرو» دعوت شده‌اید.", "/driver/pro/");
+  notify(s, driverId, "driver", "pro", "تبریک! به برنامه‌ی «کامیونت پرو» دعوت شده‌اید.", "/driver/profile/");
   audit(s, g.actor, "pro.invite", person(s, driverId)?.name ?? "", driverId);
   return ok();
 }
@@ -422,7 +422,7 @@ export function proDecision(s: State, adminId: string, driverId: string, decisio
   if (decision === "pass" || decision === "grant") { d.pro = { ...d.pro, status: "pro", since: now(s), inspection: decision === "pass" ? "passed" : d.pro.inspection }; }
   if (decision === "fail") d.pro = { ...d.pro, inspection: "failed", status: "invited" };
   if (decision === "revoke") d.pro = { ...d.pro, status: "revoked" };
-  notify(s, driverId, "driver", "pro", decision === "revoke" ? "وضعیت پرو شما لغو شد." : decision === "fail" ? "بازدید خودرو تأیید نشد." : "به باشگاه «کامیونت پرو» خوش آمدید!", "/driver/pro/");
+  notify(s, driverId, "driver", "pro", decision === "revoke" ? "وضعیت پرو شما لغو شد." : decision === "fail" ? "بازدید خودرو تأیید نشد." : "به باشگاه «کامیونت پرو» خوش آمدید!", "/driver/profile/");
   audit(s, g.actor, `pro.${decision}`, note, driverId);
   return ok();
 }
@@ -456,3 +456,30 @@ export function washDecision(s: State, adminId: string, washId: string, approve:
 
 void applyScheduledConfig;
 void HOUR;
+
+/* ───────────────────────── document reviews ───────────────────────── */
+
+export function reviewShipperDoc(s: State, adminId: string, shipperId: string, approve: boolean, note = ""): Result {
+  const g = guard(s, adminId, "drivers.kyc");
+  if (!g.ok) return g;
+  const sh = shipperOf(s, shipperId);
+  if (!sh?.verifyDoc || sh.verifyDoc.status !== "pending") return fail("مدرکی در انتظار بازبینی نیست.");
+  sh.verifyDoc.status = approve ? "approved" : "rejected";
+  sh.verifyDoc.note = note || undefined;
+  if (approve) sh.businessVerified = true;
+  notify(s, shipperId, "shipper", "kyc", approve ? "کسب‌وکار شما تأیید شد و نشان تأیید روی پروفایل فعال است." : `مدرک کسب‌وکار پذیرفته نشد${note ? `: ${note}` : ""}.`, "/app/profile/");
+  audit(s, g.actor, approve ? "shipper.verify" : "shipper.verify.reject", note, shipperId);
+  return ok();
+}
+
+export function reviewDriverDoc(s: State, adminId: string, driverId: string, key: "insurance" | "inspection" | "regFront" | "selfie" | "license", approve: boolean): Result {
+  const g = guard(s, adminId, "drivers.kyc");
+  if (!g.ok) return g;
+  const d = driverOf(s, driverId);
+  const f = d?.docs[key];
+  if (!d || !f) return fail("مدرک پیدا نشد.");
+  if (approve) f.reviewed = true;
+  else { delete d.docs[key]; notify(s, driverId, "driver", "kyc", "مدرک بارگذاری‌شده پذیرفته نشد؛ لطفاً دوباره بارگذاری کنید.", "/driver/profile/"); }
+  audit(s, g.actor, approve ? "doc.approve" : "doc.reject", key, driverId);
+  return ok();
+}

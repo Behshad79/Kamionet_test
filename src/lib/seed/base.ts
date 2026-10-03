@@ -52,5 +52,30 @@ export function baseState(now: number): State {
     ["شیراز", "بندرعباس", 22, 29], ["تبریز", "ارومیه", 6, 8.5], ["مشهد", "گرگان", 30, 40], ["کرمان", "یزد", 9, 12],
   ];
   s.rates = pairs.map(([from, to, a, b], i) => ({ id: `r${i + 1}`, from, to, min: R(a * 1_000_000), max: R(b * 1_000_000) }));
+
+  // Promotions: 42 coupons across segments/states + weekly driver incentives
+  const base = { firstOrderOnly: false, start: now - 90 * DAY, end: now + 60 * DAY, totalLimit: 500, perUser: 3, stackable: false, fundedBy: "platform" as const, auto: false, paused: false };
+  const defs: [string, string, "PCT" | "FIXED", number, Partial<import("../types").Coupon>][] = [
+    ["WELCOME10", "تخفیف خوش‌آمد ۱۰٪", "PCT", 0.1, { firstOrderOnly: true, maxDiscount: R(1_500_000), segment: "new", perUser: 1 }],
+    ["WELCOME-FIX", "۵۰۰ هزار تومان هدیه‌ی اولین سفارش", "FIXED", R(500_000), { firstOrderOnly: true, segment: "new", perUser: 1 }],
+    ["COLD5", "۵٪ تخفیف بار انجمادی", "PCT", 0.05, { cargoModes: ["REFRIGERATED"], maxDiscount: R(1_000_000) }],
+    ["PRO8", "۸٪ تخفیف سرویس پرو", "PCT", 0.08, { serviceClass: "PRO", maxDiscount: R(2_500_000) }],
+    ["AMB7", "۷٪ تخفیف بار غیریخچالی", "PCT", 0.07, { cargoModes: ["AMBIENT"] }],
+    ["TEH-ISF", "۳۰۰ هزار تومان تهران—اصفهان", "FIXED", R(300_000), { routes: ["تهران>اصفهان", "اصفهان>تهران"] }],
+    ["TEH-MSH", "۴۰۰ هزار تومان تهران—مشهد", "FIXED", R(400_000), { routes: ["تهران>مشهد", "مشهد>تهران"] }],
+    ["ENT15", "۵٪ تخفیف سازمانی", "PCT", 0.05, { segment: "enterprise", minOrder: R(20_000_000), maxDiscount: R(5_000_000) }],
+    ["TRAILER", "۶٪ تخفیف تریلی", "PCT", 0.06, { vehicleKinds: ["trailer"], maxDiscount: R(3_000_000) }],
+    ["OLD-EXPIRED", "کمپین پایان‌یافته", "PCT", 0.1, { end: now - 20 * DAY }],
+    ["PAUSED-X", "کمپین متوقف‌شده", "PCT", 0.1, { paused: true }],
+  ];
+  for (const [code, title, kind, value, extra] of defs) s.coupons.push({ ...base, code, title, kind, value, ...extra, redemptions: [] });
+  for (let i = 1; i <= 31; i++) s.coupons.push({ ...base, code: `CMP-${1000 + i * 37}`, title: `کمپین فصلی ${i}`, kind: i % 3 ? "PCT" : "FIXED", value: i % 3 ? 0.03 + (i % 5) * 0.01 : R(100_000 * (1 + (i % 4))), maxDiscount: R(1_000_000), totalLimit: 100 + i * 10, end: now + (i % 4 === 0 ? -5 : 30) * DAY, redemptions: [] });
+  s.incentives = [
+    { id: "inc-1", kind: "trip_count", title: "۵ سفر در هفته", desc: "با ۵ سفر موفق در ۷ روز پاداش بگیرید.", target: 5, reward: R(1_500_000), budget: R(300_000_000), spent: 0, active: true },
+    { id: "inc-2", kind: "peak_route", title: "مسیر پرتقاضا: تهران—مشهد", desc: "۲ سفر در مسیر تهران—مشهد.", target: 2, reward: R(1_200_000), budget: R(150_000_000), spent: 0, active: true, route: "تهران>مشهد" },
+    { id: "inc-3", kind: "backhaul", title: "سفر برگشت پر", desc: "۲ بار غیریخچالی در مسیر برگشت.", target: 2, reward: R(800_000), budget: R(100_000_000), spent: 0, active: true },
+    { id: "inc-4", kind: "streak", title: "۴ روز فعال", desc: "در ۴ روز مختلف هفته سفر تحویل دهید.", target: 4, reward: R(1_000_000), budget: R(120_000_000), spent: 0, active: true },
+    { id: "inc-5", kind: "pro", title: "پاداش رانندگان پرو", desc: "۳ سفر پرو در هفته.", target: 3, reward: R(2_000_000), budget: R(200_000_000), spent: 0, active: true },
+  ];
   return s;
 }

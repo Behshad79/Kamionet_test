@@ -28,6 +28,7 @@ export const EMPTY_STATE: State = {
   invoices: [],
   recon: [],
   periodLockedUntil: 0,
+  closes: [],
   tickets: [],
   reviews: [],
   rules: [],

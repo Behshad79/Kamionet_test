@@ -19,7 +19,7 @@ export const MM_TYPES: Record<MismatchType, string> = {
   weight_up: "وزن بیشتر از اظهار", quantity_down: "وزن کمتر از اظهار", volume_up: "حجم بیشتر", pallets_up: "تعداد پالت بیشتر",
   cargo_type: "نوع بار متفاوت", temperature: "نیاز به دمای سردتر", packaging: "بسته‌بندی نیازمند جابه‌جایی اضافه", odor_hazard: "بوی شدید یا خطرناک",
 };
-const STATUS: Record<Mismatch["status"], { label: string; tone: "ok" | "warn" | "danger" | "info" | "neutral" }> = {
+export const MM_STATUS: Record<Mismatch["status"], { label: string; tone: "ok" | "warn" | "danger" | "info" | "neutral" }> = {
   PENDING_SHIPPER: { label: "در انتظار تصمیم صاحب بار", tone: "warn" }, COUNTERED: { label: "پیشنهاد متقابل", tone: "info" }, APPROVED: { label: "تأییدشده", tone: "ok" },
   REJECTED: { label: "ردشده", tone: "danger" }, ESCALATED: { label: "ارجاع به پشتیبانی", tone: "warn" }, RESOLVED_DRIVER: { label: "حکم به نفع راننده", tone: "neutral" },
   RESOLVED_SHIPPER: { label: "حکم به نفع صاحب بار", tone: "neutral" }, SPLIT: { label: "حکم میانه", tone: "neutral" },
@@ -87,7 +87,7 @@ export function MismatchPanel({ o, role, meId }: { o: Order; role: "shipper" | "
   const [rej, setRej] = useState(false);
   const [pay, setPay] = useState(false);
   if (!m) return null;
-  const st = STATUS[m.status];
+  const st = MM_STATUS[m.status];
   const need = Math.max(0, o.depositRequired - shipperPaid(o));
   const waitingPay = m.status === "APPROVED" && o.status === "MISMATCH_REVIEW";
   const exp = m.dueAt - now;

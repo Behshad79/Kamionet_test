@@ -1,7 +1,7 @@
 import { cityPlace } from "../geo";
 import { R } from "../money";
 import { A, driverWallet, post } from "../ledger";
-import { openTicket } from "../engine/trust";
+import { openTicket, replyTicket } from "../engine/trust";
 import { DAY, HOUR, MIN, driverOf, orderOf, uid } from "../engine/core";
 import { createOrders } from "../engine/orders";
 import { payoutAction, requestPayout } from "../engine/payout";
@@ -68,11 +68,11 @@ export function seedPersonas(sim: Sim, now: number) {
   ss(2, { company: false, displayName: "فروشگاه گل‌سرخ" });
   ss(3, { company: true, displayName: "لبنیات سحر", businessVerified: true });
   const s4 = ss(4, { company: true, displayName: "داروپخش البرز", businessVerified: true });
-  s4.controls = { ...s4.controls, creditLimit: R(400_000_000), creditTermsDays: 30, invoiceCycle: "monthly" };
+  s4.controls = { ...s4.controls, creditLimit: R(1_500_000_000), creditTermsDays: 30, invoiceCycle: "monthly" };
   const s5 = ss(5, { company: true, displayName: "پروتئین آریا", businessVerified: true });
   s5.controls.cashToDriver = true;
   const s6 = ss(6, { company: true, displayName: "افق‌کوروش", businessVerified: true });
-  s6.controls = { ...s6.controls, creditLimit: R(150_000_000), creditTermsDays: 15, invoiceCycle: "weekly" };
+  s6.controls = { ...s6.controls, creditLimit: R(900_000_000), creditTermsDays: 15, invoiceCycle: "weekly" };
   ss(7, { company: true, displayName: "بستنی ماهان", businessVerified: true });
   ss(8, { company: true, displayName: "میوه‌ی نسیم", businessVerified: false });
   for (const x of s.shippers) if (DEMO_SHIPPERS.some((q) => q.phone === s.persons.find((p) => p.id === x.personId)?.phone)) x.prefs.autoPayDeposit = false; // demos should show the manual deposit step
@@ -98,6 +98,7 @@ export function seedOpenBoard(sim: Sim, count: number, now: number) {
     const pro = i % 7 === 3;
     const ov = openOverrides[i % openOverrides.length] ?? {};
     const input = buildInput(sim, sh.personId, null, { ...ov, ...(pro ? { serviceClass: "PRO", assignMode: "PRO_POOL" as const, vehicleKind: "truck10" } : {}) });
+    if (input.cargoMode === "AMBIENT" || pro) input.couponCode = undefined;
     // keep a pickup window in the future so the board never shows expired loads
     const shift = Math.max(0, now + 2 * HOUR - input.pickupAt);
     input.pickupAt += shift; input.pickupTo += shift; input.deliverBy += shift;
@@ -176,11 +177,18 @@ export function seedDebtAndSupport(sim: Sim, now: number) {
     ["finance", "بازپرداخت", "درخواست بازپرداخت لغو", "سفارش لغو شد ولی مبلغ برنگشت."],
   ];
   for (let i = 0; i < 34; i++) {
-    sim.t = now - r.int(1, 240) * HOUR; s._now = sim.t;
+    sim.t = i % 3 === 0 ? now - r.int(4, 90) * MIN : now - r.int(2, 240) * HOUR; s._now = sim.t;
     const [channel, category, subject, text] = cats[i % cats.length];
     const sh = channel !== "trip" || i % 2 ? r.pick(s.shippers) : undefined;
     const pid = channel === "account" && i % 4 === 2 ? r.pick(s.drivers).personId : (sh?.personId ?? r.pick(s.drivers).personId);
     const isDriver = pid.startsWith("p-d");
-    openTicket(s, pid, isDriver ? "driver" : "shipper", { channel, category, subject, text });
+    const tk = openTicket(s, pid, isDriver ? "driver" : "shipper", { channel, category, subject, text });
+    // older tickets are mostly handled already, so the queue shows a believable mix (new, pending, resolved, a few overdue)
+    if (tk.ok && i % 3 !== 0 && i % 7 !== 1) {
+      sim.t += r.int(5, 40) * MIN; s._now = sim.t;
+      replyTicket(s, tk.id, "agent", "سلام، موضوع شما بررسی و اقدام لازم انجام شد.", "پشتیبان کامیونت");
+      const t2 = s.tickets.find((x) => x.id === tk.id);
+      if (t2 && i % 2 === 0) { t2.status = "RESOLVED"; if (i % 4 === 0) t2.csat = r.int(3, 5); }
+    }
   }
 }

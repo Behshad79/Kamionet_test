@@ -4,6 +4,7 @@ import type { State } from "../types";
 import { DAY } from "../engine/core";
 import { makeDriver, makeShipper } from "./people";
 import { runOrder, topUp, type Sim } from "./history";
+import { seedFinance } from "./finance";
 import { seedActive, seedDebtAndSupport, seedOpenBoard, seedPersonas } from "./scenarios";
 
 export interface PopulateOpts {
@@ -25,8 +26,9 @@ export function populate(s: State, now: number, o: PopulateOpts = FULL): string[
   // People
   const kinds = ["nissan", "kamionet", "khavar", "khavar", "truck10", "truck10", "dahcharkh", "trailer"] as const;
   for (let i = 1; i <= o.drivers; i++) {
-    const pro = i % 9 === 0 ? "pro" : "none";
-    makeDriver(s, r, i, now, { kind: r.pick(kinds), pro, minTemp: pro === "pro" ? -22 : undefined });
+    const kyc = i % 13 === 0 ? "pending" : i % 29 === 0 ? "rejected" : "verified";
+    const pro = kyc === "verified" && i % 9 === 0 ? "pro" : "none";
+    makeDriver(s, r, i, now, { kind: r.pick(kinds), pro, kyc, minTemp: pro === "pro" ? -22 : undefined });
   }
   for (let i = 1; i <= o.shippers; i++) makeShipper(s, r, i, now);
   seedPersonas(sim, now);
@@ -50,6 +52,7 @@ export function populate(s: State, now: number, o: PopulateOpts = FULL): string[
   seedActive(sim, now, o.inTransit);
   seedOpenBoard(sim, o.open, now);
   seedDebtAndSupport(sim, now);
+  seedFinance(sim, now);
   s._now = undefined;
   return sim.errors;
 }

@@ -13,11 +13,11 @@
 - **UI refresh** (soft-UI + bento + glass, pill tabs, floating tab bar), new vector trucks (5 silhouettes, live colour), admin shell desktop-first + responsive drawer.
 - **M4** mismatch flow (driver evidence sheet with formula preview, shipper approve/counter/reject/escalate, pay difference, waybill v2), consignee tracking `/track/?t=` + `/track/demo/` with delivery code, cold-chain certificate (print → PDF), cash confirmation + MONEY_MISMATCH, support widget (3 channels, contextual, thread, CSAT), e2e `m4`.
 
-## In progress
-- M5: admin console (modules, DataTable, command palette, RBAC/audit/approvals, finance) + Demo Director.
+- **User-fix batch (M5 preface)**: test-mode lenient national ID/IBAN, exact pin + address on order (driver sees both only after deposit), coupon apply/remove, flat buttons, full wallet transaction sheet (time, bank, terminal, RRN…), messenger-style profiles, real shipper completeness, mandatory document photos, Pro journey (levels, gamification, scheduled inspection slots, manual Pro by staff, crown ring), support phone call, deposit-wait freeze + auto-cancel with warnings, push + SMS, recurring-orders page, rebuilt waybill with Kamionet seal.
+- **M5** admin console (desktop-first, mobile drawer): 30 modules behind a catch-all route (`/admin/[[...m]]`) driven by `adminNav.ts` (sidebar, palette and route table share one list), RBAC per module + Denied page on direct URLs, `DataTable` (search, filters, sort, columns, bulk, saved views, CSV/Excel), dashboard + live ops, orders/dispatch/disputes, drivers 360 / KYC / shippers / Pro inspections, finance (overview + trial balance + invariants, receipts, payouts + batches, refunds, debts ladder, invoices aging, reconciliation + suspense + daily close + period lock, coupons/incentives, claims), support center with macros/SLA, config editor (scheduled changes + history), team matrix + ceilings, four-eyes approvals, audit, rules CMS, reviews, washes, risk, broadcasts + SMS log, master data, system health. Ctrl/⌘+K command palette and Demo Director (real engine actions). e2e `admin` (all modules, palette, config audit, director→ledger balanced, RBAC, mobile drawer).
 
-## Next
-- M2 shipper portal · M3 driver portal · M4 money/rules/mismatch/support/tracking/reviews/certificate · M5 admin console + Demo Director · M6 polish, QA, DEMO_GUIDE.md, deploy
+## In progress
+- M6: polish, QA at 375/768/1280, DEMO_GUIDE.md, deploy.
 
 ## Resume notes
 - Run: `npm run dev`; tests: `npm run test:ledger` (add `--small` for a quick run), `npm run e2e` (legacy, to be rewritten), `npm run test:db`.

@@ -33,3 +33,13 @@ export function PortalCue({ label, tone }: { label: string; tone: "shipper" | "d
   const c = { shipper: "bg-accent-600 text-white", driver: "bg-brand-500 text-ink", admin: "bg-slate-700 text-white" }[tone];
   return <span className={cx("rounded-full px-3 py-1 text-xs font-extrabold", c)}>{label}</span>;
 }
+
+/** Fictional insurer mark (placeholder; never a real brand). */
+export function InsurerLogo({ name, hue, className }: { name: string; hue: number; className?: string }) {
+  return (
+    <span className={cx("inline-flex items-center gap-2 font-extrabold", className)}>
+      <span className="grid size-8 place-items-center rounded-full text-sm text-white" style={{ background: `hsl(${hue} 55% 38%)` }} aria-hidden>{name.replace("بیمه‌ی ", "").slice(0, 1)}</span>
+      <span>{name}</span>
+    </span>
+  );
+}

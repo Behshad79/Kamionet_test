@@ -1,1 +1,5 @@
-export default function Page() { return <main className="p-10">landing</main>; }
+import { Landing } from "@/components/landing/Landing";
+
+export default function Page() {
+  return <Landing />;
+}

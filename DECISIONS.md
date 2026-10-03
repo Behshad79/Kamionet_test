@@ -32,3 +32,6 @@ Each item: **decision** · why · what to confirm.
 ## Demo
 22. All demo accounts use OTP `12345`, gated by `NEXT_PUBLIC_DEMO_MODE` (default on for the prototype).
 23. Seed is deterministic (seeded RNG); regenerate from the Demo Director or `localStorage` reset.
+24. **Persistence moved to IndexedDB** (+ BroadcastChannel across tabs): the deterministic seed is ~4.5 MB, over a comfortable localStorage budget. Per-portal sessions stay in sessionStorage/localStorage.
+25. **Demo personas** (drivers 09100000001–13, shippers 09120000001–08) are my interpretation of the persona list: new / in-review / rejected / verified / history-rich / clean badge / Pro-invited / Pro×2 / suspended+appeal / debt / dry truck / declared backhaul trip; shippers: empty / individual / verified company / credit-invoicing / cash-to-driver / overdue / wallet-rich / recurring. Adjust if your list differs.
+26. **Iran map on the landing is a stylised outline** (not a surveyed border); real tiles need a provider key.

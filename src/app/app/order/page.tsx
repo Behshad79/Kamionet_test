@@ -9,6 +9,7 @@ import { CargoLabel, Countdown, RouteLine, StatusBadge, TempChip } from "@/compo
 import { ModeChip, OdorChip, PriceBreakdown, StatusTimeline } from "@/components/order/parts";
 import { PaymentSheet } from "@/components/order/PaymentSheet";
 import { MismatchPanel } from "@/components/mismatch";
+import { Avatar } from "@/components/profile";
 import { ReviewForm } from "@/components/ReviewForm";
 import { TempPanel } from "@/components/TempPanel";
 import { toast } from "@/components/Toaster";
@@ -106,7 +107,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
               <div className="flex items-center justify-between"><h2 className="font-extrabold">راننده</h2>
                 <button onClick={() => act((st) => { const sh = shipperOf(st, meId); if (!sh || !o.driverId) return; sh.favorites = isFav ? sh.favorites.filter((x) => x !== o.driverId) : [...sh.favorites, o.driverId]; })} aria-pressed={isFav} aria-label={isFav ? "حذف از راننده‌های محبوب" : "افزودن به راننده‌های محبوب"} className="grid size-11 place-items-center rounded-full hover:bg-surface-3"><Heart className={isFav ? "size-5 fill-danger text-danger" : "size-5"} /></button></div>
               <TruckIllustration kind={dp.vehicle.kind} color={dp.vehicle.color} state={o.status === "IN_TRANSIT" ? "driving" : "idle"} className="h-20 w-full" label="خودروی راننده" />
-              <div className="flex flex-wrap items-center justify-between gap-2"><div><div className="font-black">{driver.name}</div><div className="text-sm text-ink-3">{VEHICLES[dp.vehicle.kind].short} · {fa(Math.round(driverStats(s, dp.personId).rating * 10) / 10)} از ۵</div></div>
+              <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-3"><Avatar name={driver.name} pro={dp.pro.status === "pro"} size={48} hue={(driver.id.length * 61) % 360} /><div><Link href={`/app/driver/?id=${driver.id}`} className="font-black text-accent-700 hover:underline">{driver.name}</Link><div className="text-sm text-ink-3">{VEHICLES[dp.vehicle.kind].short} · {fa(Math.round(driverStats(s, dp.personId).rating * 10) / 10)} از ۵</div></div></div>
                 <a href={`tel:${driver.phone}`} className="inline-flex h-11 items-center gap-2 rounded-ui bg-surface-3 px-4 font-bold"><Phone className="size-4" aria-hidden /><span dir="ltr">{driver.phone}</span></a></div>
               {dp.vehicle.plate && <div className="text-sm text-ink-3">پلاک: <span className="font-bold text-ink">{dp.vehicle.plate.two} {dp.vehicle.plate.letter} {dp.vehicle.plate.three} · ایران {dp.vehicle.plate.prov}</span></div>}
             </Card>
@@ -120,7 +121,13 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
             </dl>
             {o.tempMin !== undefined && o.tempMax !== undefined && <p className="text-xs text-ink-3">بازه‌ی مجاز دما: {tempRange(o.tempMin, o.tempMax)}</p>}
           </Card>
-          {o.waybills.length > 0 && <Accordion title={`بارنامه (نسخه‌ی ${fa(o.waybills.length)})`}><WaybillList o={o} /></Accordion>}
+          {o.waybills.length > 0 && (
+            <Card className="space-y-4 border-2 border-ink/80 p-5">
+              <div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-black">بارنامه‌ی حمل</h2><p className="text-sm text-ink-3">سند رسمی این سفر با مُهر الکترونیکی کامیونت · نسخه‌ی {fa(o.waybills.length)}</p></div><span className="rounded-full bg-ink px-3 py-1 text-xs font-black text-white">{o.waybills.length > 1 ? "اصلاح‌شده" : "اولیه"}</span></div>
+              <Link href={`/waybill/?id=${o.id}`} className="flex h-12 items-center justify-center rounded-ui bg-ink font-extrabold text-white">مشاهده و چاپ بارنامه</Link>
+              <Accordion title="تاریخچه‌ی نسخه‌ها و تغییرات"><WaybillList o={o} /></Accordion>
+            </Card>
+          )}
           {group.length > 0 && <Card className="p-5"><h2 className="mb-2 font-extrabold">سایر خودروهای این سفارش</h2><ul className="divide-y divide-line">{group.map((g) => <li key={g.id}><Link href={`/app/order/?id=${g.id}`} className="flex min-h-12 items-center justify-between"><span className="text-sm font-medium">خودروی {fa(g.groupIndex)}</span><StatusBadge status={g.status} /></Link></li>)}</ul></Card>}
         </div>
 
@@ -184,7 +191,7 @@ function DirectPanel({ o, now }: { o: Order; now: number }) {
       {exp && (
         <div className="space-y-2"><p className="text-sm text-ink-3">یکی از گزینه‌ها را انتخاب کنید:</p>
           {pros.map((p) => <Button key={p.personId} variant="secondary" block onClick={() => run("another", p.personId)}>درخواست از {person(s, p.personId)?.name}</Button>)}
-          <Button variant="secondary" block onClick={() => run("pro_pool")}>ارسال به استخر پرو</Button><Button variant="secondary" block onClick={() => run("open")}>انتشار در بازار باز (سرویس استاندارد)</Button></div>
+          <Button variant="secondary" block onClick={() => run("pro_pool")}>انتشار در بازار ویژه‌ی پرو</Button><Button variant="secondary" block onClick={() => run("open")}>انتشار در بازار باز (سرویس استاندارد)</Button></div>
       )}
     </Card>
   );

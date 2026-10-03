@@ -14,3 +14,9 @@ self.addEventListener("fetch", (e) => {
   }
   e.respondWith(fetch(req).then((res) => { if (res.ok && req.mode === "navigate") { const c = res.clone(); caches.open(CACHE).then((x) => x.put(req, c)); } return res; }).catch(() => caches.match(req).then((hit) => hit || caches.match("./driver/"))));
 });
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const href = (e.notification.data && e.notification.data.href) || "./";
+  e.waitUntil(self.clients.matchAll({ type: "window" }).then((cs) => { for (const c of cs) { if ("focus" in c) { c.navigate(href); return c.focus(); } } return self.clients.openWindow(href); }));
+});

@@ -350,12 +350,12 @@ export function broadcastToPro(s: State, adminId: string, orderId: string): Resu
   const g = guard(s, adminId, "dispatch");
   if (!g.ok) return g;
   const o = orderOf(s, orderId);
-  if (!o || !["OPEN", "DIRECT_REQUESTED"].includes(o.status)) return fail("این سفارش قابل ارسال به استخر پرو نیست.");
+  if (!o || !["OPEN", "DIRECT_REQUESTED"].includes(o.status)) return fail("این سفارش قابل انتشار در بازار ویژه‌ی پرو نیست.");
   o.pool = "PRO_POOL";
   o.assignMode = "PRO_POOL";
   o.directDriverId = undefined;
-  setStatus(s, o, "PRO_POOL", g.actor, "ارسال به استخر پرو توسط توزیع");
-  audit(s, g.actor, "order.pro", "ارسال به استخر پرو", orderId);
+  setStatus(s, o, "PRO_POOL", g.actor, "انتشار در بازار ویژه‌ی پرو توسط توزیع");
+  audit(s, g.actor, "order.pro", "انتشار در بازار ویژه‌ی پرو", orderId);
   return ok();
 }
 

@@ -8,11 +8,9 @@ export const MAX_ID_ATTEMPTS = 3;
 
 const bump = (d: DriverProfile, to: number) => { d.kyc.step = Math.max(d.kyc.step, to); if (d.kyc.status === "none") d.kyc.status = "draft"; };
 
+/** Test mode: any 10-digit national ID is accepted (checksum is not enforced) so flows can be demonstrated. */
 export function validNationalId(id: string) {
-  if (!/^\d{10}$/.test(id) || /^(\d)\1{9}$/.test(id)) return false;
-  const c = +id[9];
-  const sum = [...id.slice(0, 9)].reduce((n, ch, i) => n + +ch * (10 - i), 0) % 11;
-  return sum < 2 ? c === sum : c === 11 - sum;
+  return /^\d{10}$/.test(id);
 }
 
 export function saveIdentity(s: State, pid: string, nationalId: string, birthDate: string): Result {
@@ -28,7 +26,7 @@ export function saveIdentity(s: State, pid: string, nationalId: string, birthDat
 }
 
 /**
- * Shahkar-style national-ID ↔ SIM match (mock): an ID whose last digit is 0 never matches, everything else does.
+ * Shahkar-style national-ID ↔ SIM match (mock): matches by default; the Demo Director can force a mismatch to show the retry/lock flow.
  * After 3 mismatches the wizard locks and a fraud flag opens for the KYC team.
  */
 export function verifyShahkar(s: State, pid: string): Result<{ match: boolean; attemptsLeft: number }> {
@@ -36,7 +34,7 @@ export function verifyShahkar(s: State, pid: string): Result<{ match: boolean; a
   const p = person(s, pid);
   if (!p?.nationalId) return fail("ابتدا کد ملی را ثبت کنید.");
   if (d.kyc.idMatch.attempts >= MAX_ID_ATTEMPTS && d.kyc.idMatch.status === "mismatch") return fail("تعداد تلاش‌ها به سقف رسیده است؛ برای ادامه با پشتیبانی احراز هویت تماس بگیرید.");
-  const match = p.nationalId.endsWith("0") ? false : true;
+  const match = s.demo.idMatch !== "mismatch";
   d.kyc.idMatch.attempts++;
   d.kyc.idMatch.lastAt = now(s);
   if (match) {
@@ -56,7 +54,7 @@ export function verifyShahkar(s: State, pid: string): Result<{ match: boolean; a
 export function setDoc(s: State, pid: string, key: DocKey, dataUrl: string, expiresAt?: number): Result {
   const d = driverOf(s, pid);
   if (!d) return fail("حساب راننده پیدا نشد.");
-  d.docs[key] = { dataUrl, expiresAt };
+  d.docs[key] = { dataUrl, expiresAt: expiresAt ?? d.docs[key]?.expiresAt, reviewed: false };
   if (key === "selfie") bump(d, 4);
   if (key === "license" || key === "smartCard") bump(d, 4);
   return ok();
@@ -83,7 +81,8 @@ export function kycReady(s: State, pid: string) {
   if (!d.docs.selfie?.dataUrl) miss.push("عکس چهره");
   if (!d.docs.license?.dataUrl && !d.docs.smartCard?.dataUrl) miss.push("گواهینامه یا کارت هوشمند");
   if (!d.vehicle.plate) miss.push("پلاک");
-  if (!d.docs.insurance?.expiresAt || !d.docs.inspection?.expiresAt) miss.push("تاریخ انقضای بیمه و معاینه‌ی فنی");
+  if (!d.docs.insurance?.dataUrl || !d.docs.insurance.expiresAt) miss.push("عکس و تاریخ انقضای بیمه‌نامه");
+  if (!d.docs.inspection?.dataUrl || !d.docs.inspection.expiresAt) miss.push("عکس و تاریخ انقضای معاینه‌ی فنی");
   if (!d.docs.regFront?.dataUrl) miss.push("کارت خودرو");
   return miss;
 }
@@ -115,7 +114,7 @@ export function saveIban(s: State, pid: string, sheba: string): Result {
   const clean = sheba.replace(/\s/g, "").toUpperCase();
   if (!/^IR\d{24}$/.test(clean)) return fail("شماره‌ی شبا باید با IR شروع شود و ۲۶ کاراکتر باشد.");
   // Mock bank lookup: the holder name returned for a Sheba; a trailing 0 simulates a different owner.
-  const matches = !clean.endsWith("0");
+  const matches = s.demo.ibanHolder !== "mismatch";
   d.iban = { sheba: clean, holder: matches ? p.name : "شخص دیگر", holderMatches: matches, addedAt: now(s) };
   return matches ? ok() : fail("نام صاحب این شبا با نام شما یکی نیست؛ فقط شبای متعلق به خودتان پذیرفته می‌شود.");
 }
@@ -131,3 +130,15 @@ export function declareTrip(s: State, pid: string, t: { from: string; to: string
 
 export const expiryLeftDays = (at: number | undefined, t: number) => (at ? Math.ceil((at - t) / DAY) : undefined);
 void HOUR;
+
+/** Renewing insurance / inspection needs a photo of the new document, not just a date. */
+export function renewDoc(s: State, pid: string, key: "insurance" | "inspection", dataUrl: string, expiresAt: number): Result {
+  const d = driverOf(s, pid);
+  if (!d) return fail("حساب راننده پیدا نشد.");
+  if (!dataUrl) return fail("عکس مدرک جدید را بارگذاری کنید.");
+  if (expiresAt <= now(s) + DAY) return fail("تاریخ انقضا باید در آینده باشد.");
+  d.docs[key] = { dataUrl, expiresAt, reviewed: false };
+  if (d.suspension?.reason.includes("منقضی") && !d.suspension.reason.includes("بدهی")) d.suspension = undefined;
+  audit(s, SYSTEM, "doc.renew", `${key} · در انتظار بازبینی`, pid);
+  return ok();
+}

@@ -2,6 +2,7 @@
 
 import { ArrowDownLeft, ArrowUpRight, FileText, Plus, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
+import { TxSheet } from "@/components/TxSheet";
 import { PaymentSheet } from "@/components/order/PaymentSheet";
 import { toast } from "@/components/Toaster";
 import { Badge, Button, Card, EmptyState, Sheet, Stat, Tabs, NumInput, Field } from "@/components/ui";
@@ -12,6 +13,7 @@ import { usePortal } from "@/lib/hooks";
 import { A, bal, shipperWallet } from "@/lib/ledger";
 import { R } from "@/lib/money";
 import { act } from "@/lib/store";
+import type { LedgerEntry } from "@/lib/types";
 
 type Tab = "history" | "invoices" | "refunds";
 
@@ -21,6 +23,7 @@ export default function Page() {
   const [top, setTop] = useState(false);
   const [amt, setAmt] = useState<number | undefined>(5_000_000);
   const [pay, setPay] = useState(false);
+  const [tx, setTx] = useState<(LedgerEntry & { run: number }) | null>(null);
   const w = me ? shipperWallet(s, me.id) : undefined;
   const arrears = me ? bal(s, A.shipperAr(me.id)) : 0;
   const credit = me ? bal(s, A.shipperCredit(me.id)) : 0;
@@ -50,11 +53,11 @@ export default function Page() {
       {tab === "history" && (rows.length === 0 ? <EmptyState icon={<Wallet className="size-8" />} title="هنوز تراکنشی ندارید" body="با افزایش موجودی، پرداخت بیعانه یک‌ضرب انجام می‌شود." /> : (
         <Card className="divide-y divide-line">
           {rows.slice(0, 80).map((e) => (
-            <div key={e.id} className="flex items-center gap-3 p-4">
+            <button key={e.id} onClick={() => setTx(e)} className="flex w-full items-center gap-3 p-4 text-start transition hover:bg-surface-2">
               <span className={`grid size-10 shrink-0 place-items-center rounded-full ${e.amount < 0 ? "bg-ok-bg text-ok" : "bg-surface-3 text-ink-2"}`}>{e.amount < 0 ? <ArrowDownLeft className="size-5" aria-hidden /> : <ArrowUpRight className="size-5" aria-hidden />}</span>
               <div className="min-w-0 flex-1"><div className="truncate font-medium">{e.memo}</div><div className="text-xs text-ink-3">{jDateTime(e.at)}</div></div>
               <div className="text-end"><div className={`font-black tabular ${e.amount < 0 ? "text-ok" : ""}`}>{e.amount < 0 ? "+" : "−"}{toman(Math.abs(e.amount))}</div><div className="text-xs text-ink-3">مانده {toman(e.run)}</div></div>
-            </div>
+            </button>
           ))}
         </Card>
       ))}
@@ -69,6 +72,7 @@ export default function Page() {
         <Card className="divide-y divide-line">{refunds.map((r) => <div key={r.id} className="flex items-center justify-between gap-3 p-4"><div><div className="font-medium">{r.reason}</div><div className="text-xs text-ink-3">{jDateTime(r.at)} · به {r.to === "wallet" ? "کیف پول" : "کارت"}</div></div><div className="text-end"><div className="font-black tabular">{toman(r.amount)}</div><Badge tone={r.status === "PAID" ? "ok" : r.status === "REJECTED" ? "danger" : "warn"}>{{ PAID: "پرداخت‌شده", REJECTED: "رد شد", PENDING_APPROVAL: "در انتظار تأیید", APPROVED: "تأییدشده" }[r.status]}</Badge></div></div>)}</Card>
       ))}
 
+      <TxSheet e={tx} balanceAfter={tx?.run} onClose={() => setTx(null)} orderBase="/app/order/?id=" />
       <Sheet open={top} onClose={() => setTop(false)} title="افزایش موجودی" footer={<Button block disabled={!amt || amt < 100_000} onClick={() => { setTop(false); setPay(true); }}>ادامه به پرداخت</Button>}>
         <div className="space-y-4"><Field label="مبلغ (تومان)" hint={amt ? tomanWords(R(amt)) : undefined}>{(id) => <NumInput id={id} value={amt} onChange={setAmt} suffix="تومان" />}</Field>
           <div className="grid grid-cols-3 gap-2">{[1_000_000, 5_000_000, 20_000_000].map((x) => <button key={x} onClick={() => setAmt(x)} className="h-11 rounded-ui border border-line text-sm font-bold">{fa(x / 1_000_000)} میلیون</button>)}</div></div>

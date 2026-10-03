@@ -1,6 +1,8 @@
 "use client";
 
-import { ArrowRight, CircleCheck, Headset, LifeBuoy, Send, Star } from "lucide-react";
+import { ArrowRight, CircleCheck, Headset, LifeBuoy, Phone, Send, Star } from "lucide-react";
+import { cv } from "@/lib/config";
+import { person } from "@/lib/engine/core";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CATEGORIES, CHANNELS, openTicket, rateTicket, replyTicket } from "@/lib/engine/trust";
@@ -38,7 +40,7 @@ export function SupportWidget({ portal }: { portal: "shipper" | "driver" }) {
   const open_ = mine.filter((x) => !["RESOLVED", "CLOSED"].includes(x.status)).length;
   return (
     <>
-      <button onClick={() => setOpen(true)} aria-label={open_ ? `پشتیبانی، ${open_} گفتگوی باز` : "پشتیبانی"} className="fixed bottom-[92px] end-3 z-40 grid size-12 place-items-center rounded-full bg-gradient-to-b from-[#2a86cf] to-accent-600 text-white shadow-[var(--shadow-accent)] transition hover:scale-105 lg:bottom-6 lg:end-6">
+      <button onClick={() => setOpen(true)} aria-label={open_ ? `پشتیبانی، ${open_} گفتگوی باز` : "پشتیبانی"} className="fixed bottom-[92px] end-3 z-40 grid size-12 place-items-center rounded-full bg-accent-600 text-white shadow-lift transition hover:scale-105 lg:bottom-6 lg:end-6">
         <Headset className="size-5" aria-hidden />{open_ > 0 && <span className="absolute -end-0.5 -top-0.5 grid size-5 place-items-center rounded-full bg-danger text-[10px] font-black ring-2 ring-white">{fa(open_)}</span>}
       </button>
       <Sheet open={open} onClose={() => { setOpen(false); setSel(null); }} title={t ? t.subject : "پشتیبانی"} wide>
@@ -53,6 +55,11 @@ export function SupportWidget({ portal }: { portal: "shipper" | "driver" }) {
           </div>
         ) : (
           <div className="space-y-4">
+            <div className="space-y-2 rounded-2xl bg-gradient-to-br from-accent-50 to-white p-4 ring-1 ring-accent-600/10">
+              <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-accent-600 text-white"><Phone className="size-5" aria-hidden /></span><div><div className="font-extrabold">تماس مستقیم با پشتیبانی</div><div className="text-xs text-ink-3">ساعات پاسخ‌گویی: {cv<string>(s, "support.hours")} · هر روز</div></div></div>
+              <div className="grid grid-cols-2 gap-2"><a href={`tel:${cv<string>(s, "support.phone").replace(/[^0-9۰-۹]/g, "").replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))}`} className="flex h-12 items-center justify-center gap-2 rounded-ui bg-accent-600 font-black text-white"><Phone className="size-4" aria-hidden /><span dir="ltr" className="tabular">{cv<string>(s, "support.phone")}</span></a>
+                <Button variant="secondary" onClick={() => { const r = act((x) => openTicket(x, me.id, portal, { channel: "trip", category: "سایر", subject: "درخواست تماس تلفنی", text: `لطفاً با شماره‌ی ${person(x, me.id)?.phone} تماس بگیرید.` })); toast(r.ok ? "درخواست تماس ثبت شد؛ همکاران ما تماس می‌گیرند." : r.error, r.ok ? "ok" : "err"); }}>درخواست تماس از طرف ما</Button></div>
+            </div>
             <Tabs value={view} onChange={setView} tabs={[{ id: "new", label: "درخواست جدید" }, { id: "list", label: "گفتگوهای من", count: mine.length }]} />
             {view === "new" ? (
               <div className="space-y-4">

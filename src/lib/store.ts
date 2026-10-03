@@ -158,7 +158,7 @@ export function loginPerson(portal: "shipper" | "driver", phoneRaw: string, code
       p = { id: uid(s, "p"), phone, name: name?.trim() || "کاربر جدید", createdAt: Date.now() };
       s.persons.push(p);
     } else if (name?.trim() && p.name === "کاربر جدید") p.name = name.trim();
-    if (portal === "shipper") { const sh = ensureShipper(s, p.id); if (name?.trim() && sh.displayName === "کاربر جدید") { sh.displayName = name.trim(); sh.completeness.name = true; } }
+    if (portal === "shipper") { const sh = ensureShipper(s, p.id); if (name?.trim() && sh.displayName === "کاربر جدید") { sh.displayName = name.trim(); } }
     else ensureDriver(s, p.id);
     s.session = { ...s.session, [portal]: { personId: p.id } };
     writeSession(portal, { personId: p.id });

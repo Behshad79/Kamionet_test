@@ -65,6 +65,7 @@ export function KycWizard({ pid }: { pid: string }) {
     const r = act((st) => saveVehicle(st, pid, { kind, capacityKg: cap ?? meta.capacityKg, color, plate, fridgeBrand: meta.fridge ? fridge : "—", minTemp: meta.fridge ? minTemp : null, canRunAmbient: !meta.fridge || amb }, { insurance: ins, inspection: insp }));
     if (!r.ok) return setErr(r.error);
     if (!d.docs.regFront?.dataUrl) return setErr("عکس روی کارت خودرو را بارگذاری کنید.");
+    if (!d.docs.insurance?.dataUrl || !d.docs.inspection?.dataUrl) return setErr("عکس بیمه‌نامه و برگ معاینه‌ی فنی الزامی است.");
     go(6);
   };
   const missing = kycReady(s, pid);
@@ -142,6 +143,7 @@ export function KycWizard({ pid }: { pid: string }) {
             </div>
           )}
           <div className="grid gap-3 sm:grid-cols-2"><FileDrop label="کارت خودرو (رو)" value={d.docs.regFront?.dataUrl} onChange={doc("regFront")} /><FileDrop label="کارت خودرو (پشت)" value={d.docs.regBack?.dataUrl} onChange={doc("regBack")} /></div>
+          <div className="grid gap-3 sm:grid-cols-2"><FileDrop label="عکس بیمه‌نامه‌ی شخص ثالث" hint="الزامی" value={d.docs.insurance?.dataUrl} onChange={doc("insurance")} /><FileDrop label="عکس برگ معاینه‌ی فنی" hint="الزامی" value={d.docs.inspection?.dataUrl} onChange={doc("inspection")} /></div>
           <div className="grid gap-3 sm:grid-cols-2"><JalaliDatePicker label="انقضای بیمه‌ی شخص ثالث" value={ins} onChange={setIns} /><JalaliDatePicker label="انقضای معاینه‌ی فنی" value={insp} onChange={setInsp} /></div>
           <Nav back={() => go(4)} next={step5} />
         </Card>

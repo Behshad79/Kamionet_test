@@ -1,10 +1,11 @@
 "use client";
 
-import { Bell, ClipboardList, Gauge, Home, ListChecks, LogOut, Menu, PackagePlus, ShieldCheck, Truck, User, Wallet, type LucideIcon } from "lucide-react";
+import { Bell, ClipboardList, Gauge, Home, ListChecks, LogOut, Menu, PackagePlus, Repeat, ShieldCheck, Truck, User, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { usePortal } from "@/lib/hooks";
+import { usePushBridge } from "@/lib/usePush";
 import { logout, PORTAL_LOGIN } from "@/lib/store";
 import type { PortalId } from "@/lib/types";
 import { Logo, PortalCue, ProBadge } from "../brand";
@@ -21,6 +22,7 @@ interface Nav { href: string; label: string; icon: LucideIcon }
 const SHIPPER_NAV: Nav[] = [
   { href: "/app/", label: "داشبورد", icon: Home },
   { href: "/app/new/", label: "سفارش جدید", icon: PackagePlus },
+  { href: "/app/recurring/", label: "تکرارشونده", icon: Repeat },
   { href: "/app/wallet/", label: "کیف پول", icon: Wallet },
   { href: "/app/profile/", label: "پروفایل", icon: User },
 ];
@@ -67,6 +69,7 @@ function Bell2({ n, href }: { n: number; href: string }) {
 
 export function ShipperShell({ children }: { children: ReactNode }) {
   const g = useGate("shipper");
+  usePushBridge(g.s.notifications.filter((n) => n.personId === g.me?.id && n.portal === "shipper"), "shipper", g.ready);
   if (g.isLogin) return <div data-portal="shipper">{children}</div>;
   if (!g.ready || !g.signedIn) return <div data-portal="shipper" className="min-h-dvh bg-tint"><Loading /></div>;
   return (
@@ -99,6 +102,7 @@ export function ShipperShell({ children }: { children: ReactNode }) {
 
 export function DriverShell({ children }: { children: ReactNode }) {
   const g = useGate("driver");
+  usePushBridge(g.s.notifications.filter((n) => n.personId === g.me?.id && n.portal === "driver"), "driver", g.ready);
   useEffect(() => {
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") navigator.serviceWorker.register(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/sw.js`, { scope: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/driver/` }).catch(() => undefined);
   }, []);
@@ -177,7 +181,7 @@ function BottomBar({ items, path, large, className }: { items: Nav[]; path: stri
       {items.map((n) => {
         const on = active(path, n.href);
         return (
-          <Link key={n.href} href={n.href} aria-current={on ? "page" : undefined} className={cx("flex flex-col items-center justify-center gap-0.5 rounded-[20px] text-[11px] font-extrabold transition duration-200", large ? "min-h-[58px]" : "min-h-[54px]", on ? "bg-gradient-to-b from-act-soft to-white text-act-ink shadow-soft" : "text-ink-3")}>
+          <Link key={n.href} href={n.href} aria-current={on ? "page" : undefined} className={cx("flex flex-col items-center justify-center gap-0.5 rounded-[20px] text-[11px] font-extrabold transition duration-200", large ? "min-h-[58px]" : "min-h-[54px]", on ? "bg-act-soft text-act-ink" : "text-ink-3")}>
             <n.icon className={cx("size-[22px] transition", on && "scale-110")} aria-hidden />
             {n.label}
           </Link>

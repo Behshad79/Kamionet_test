@@ -10,7 +10,7 @@ export default function Page() {
   if (!me || from === undefined || !s.ready) return null;
   const o = from ? s.orders.find((x) => x.id === from && x.shipperId === me.id) : undefined;
   const initial = o ? {
-    from: { city: o.origin.city, lat: o.origin.lat, lng: o.origin.lng }, fromAddr: o.origin.address, to: { city: o.dest.city, lat: o.dest.lat, lng: o.dest.lng }, toAddr: o.dest.address,
+    from: { city: o.origin.city, lat: o.origin.lat, lng: o.origin.lng }, fromAddr: o.origin.address, fromPin: { lat: o.origin.lat, lng: o.origin.lng }, to: { city: o.dest.city, lat: o.dest.lat, lng: o.dest.lng }, toAddr: o.dest.address, toPin: { lat: o.dest.lat, lng: o.dest.lng },
     consName: o.consignee.name, consPhone: o.consignee.phone, mode: o.cargoMode, cargo: o.cargo, tMin: o.tempMin ?? 0, tMax: o.tempMax ?? 4, odor: o.odor, odorSensitive: o.odorSensitive,
     vehicle: o.vehicleKind, weightKg: o.weightKg, pallets: o.pallets, volume: o.volumeM3, packaging: o.packaging, itemized: o.itemizedInvoice, declaredT: T(o.declaredValue), cleanOnly: o.cleanOnly,
     service: o.serviceClass, assign: o.assignMode === "DIRECT" || o.assignMode === "SMART" ? o.assignMode : o.serviceClass === "PRO" ? ("PRO_POOL" as const) : ("OPEN" as const), directId: o.directDriverId,

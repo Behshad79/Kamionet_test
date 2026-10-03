@@ -18,8 +18,8 @@ type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & BtnStyle & { loading?:
 
 function btnClass({ variant = "primary", size = "md", block }: BtnStyle, extra?: string) {
   const v = {
-    primary: "bg-gradient-to-b from-[#ffc933] to-brand-500 text-ink shadow-[var(--shadow-brand)] hover:brightness-105 active:brightness-95 font-extrabold",
-    accent: "bg-gradient-to-b from-[#2a86cf] to-accent-600 text-white shadow-[var(--shadow-accent)] hover:brightness-110 font-extrabold",
+    primary: "bg-brand-500 text-ink shadow-[0_1px_0_rgb(0_0_0/0.06),0_4px_12px_-4px_rgb(255_176_0/0.5)] hover:bg-brand-400 active:bg-brand-600 font-extrabold",
+    accent: "bg-accent-600 text-white shadow-[0_4px_12px_-4px_rgb(20_110_180/0.5)] hover:bg-accent-700 font-extrabold",
     secondary: "bg-white text-ink shadow-soft hover:bg-surface-2 font-bold",
     ghost: "text-ink-2 hover:bg-ink/5 font-bold",
     danger: "bg-danger-bg text-danger ring-1 ring-danger/15 hover:bg-red-200 font-extrabold",

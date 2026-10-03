@@ -43,7 +43,6 @@ export interface ShipperProfile {
   displayName: string;
   company?: { name: string; economicCode?: string; sector?: string };
   businessVerified: boolean;
-  completeness: Record<"name" | "company" | "verify" | "address" | "logo", boolean>;
   memberSince: number;
   favorites: string[];
   cargoCategories: CargoKind[];
@@ -51,6 +50,10 @@ export interface ShipperProfile {
   honesty: number;
   prefs: { autoPayDeposit: boolean; refundTo: "wallet" | "card"; quietHours: boolean; notify: Record<string, boolean> };
   referralCode: string;
+  /** Saved warehouse address with an exact pin. */
+  address?: { text: string; lat: number; lng: number };
+  logo?: string;
+  verifyDoc?: { dataUrl: string; at: number; status: "pending" | "approved" | "rejected"; note?: string };
   loyaltyTier: "bronze" | "silver" | "gold";
   autoRecharge?: { threshold: Rial; amount: Rial };
   notes: Note[];
@@ -94,6 +97,8 @@ export type DocKey =
 export interface DocFile {
   dataUrl?: string;
   expiresAt?: number;
+  /** A staff member has looked at the uploaded image. */
+  reviewed?: boolean;
 }
 
 export type KycStatus = "none" | "draft" | "pending" | "rejected" | "verified";
@@ -127,6 +132,8 @@ export interface DriverControls {
   maxDebt: Rial;
   instantPayout: boolean;
   incentiveEligible: boolean;
+  /** Automatic Pro invitations (default on). */
+  autoPro?: boolean;
 }
 
 export interface DriverProfile {
@@ -143,7 +150,7 @@ export interface DriverProfile {
   vehicle: Vehicle;
   docs: Partial<Record<DocKey, DocFile>>;
   iban?: { sheba: string; holder: string; holderMatches: boolean; addedAt: number };
-  pro: { status: "none" | "invited" | "pro" | "revoked"; invitedAt?: number; since?: number; inspection: "none" | "scheduled" | "passed" | "failed"; inspectionAt?: number };
+  pro: { status: "none" | "invited" | "pro" | "revoked"; invitedAt?: number; since?: number; inspection: "none" | "scheduled" | "passed" | "failed"; inspectionAt?: number; inspectionCenter?: string; inspectionNote?: string; grantedBy?: string };
   suspension?: { reason: string; since: number; appeal: "none" | "open" | "rejected" | "accepted"; appealText?: string };
   strikes: Strike[];
   clean: { score: number; badgeUntil?: number; lastWashAt?: number };
@@ -301,6 +308,8 @@ export interface Order {
   lockedUntil?: number;
   depositDueAt?: number;
   redispatch?: boolean;
+  /** Drivers who confirmed but whose deposit never arrived (auto-cancel after the configured limit). */
+  depositMisses?: number;
 
   assignedAt?: number;
   departedAt?: number;
@@ -424,6 +433,25 @@ export interface Payment {
   /** Gateway said failed but the bank deducted the money (finance-ticket scenario). */
   deducted?: boolean;
   settleAt?: number;
+  /** Gateway / bank trail shown in the wallet statement (mock values, deterministic per payment). */
+  trail?: PaymentTrail;
+}
+
+export interface PaymentTrail {
+  channel: "wallet" | "gateway" | "card2card" | "paya" | "credit";
+  bank?: string;
+  cardMasked?: string;
+  holder?: string;
+  terminalId?: string;
+  merchantId?: string;
+  rrn?: string;
+  traceNo?: string;
+  authCode?: string;
+  ip?: string;
+  device?: string;
+  initiatedAt: number;
+  paidAt?: number;
+  callbackAt?: number;
 }
 
 export interface TransferReceipt {
@@ -756,6 +784,9 @@ export interface ConfigState {
 }
 
 export interface DemoState {
+  /** Test-mode switches (Demo Director): national-ID/SIM match and IBAN-holder match outcomes. */
+  idMatch: "ok" | "mismatch";
+  ibanHolder: "ok" | "mismatch";
   gateway: "success" | "fail" | "cancel" | "timeout" | "delayed" | "double";
 }
 
@@ -803,12 +834,22 @@ export interface State {
   risk: RiskFlag[];
   washes: Wash[];
   washPartners: WashPartner[];
+  sms: SmsLog[];
   insurers: Insurer[];
   products: InsuranceProduct[];
   claims: Claim[];
   rates: RateEntry[];
   demo: DemoState;
   session: Record<PortalId, SessionInfo>;
+}
+
+export interface SmsLog {
+  id: string;
+  at: number;
+  personId: string;
+  to: string;
+  kind: string;
+  text: string;
 }
 
 export interface RateEntry {

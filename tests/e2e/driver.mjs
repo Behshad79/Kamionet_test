@@ -1,4 +1,4 @@
-import { launch, ok, done, demoLogin, readState, img, B, SHOTS } from "./lib.mjs";
+import { launch, ok, done, demoLogin, readState, bringToPickup, img, B, SHOTS } from "./lib.mjs";
 const { browser, ctx, mk } = await launch({ width: 390, height: 844 });
 
 /* ───── A. brand-new driver completes the resumable KYC wizard ───── */
@@ -12,7 +12,7 @@ await a.fill('input[inputmode="numeric"]', "12345");
 await a.getByRole("button", { name: "ورود", exact: true }).click();
 await a.waitForURL(/\/driver\/$/);
 await a.waitForSelector("text=احراز هویت راننده");
-await a.getByLabel("کد ملی").fill("0499370899"); // valid checksum, last digit != 0
+await a.getByLabel("کد ملی").fill("1234567890"); // test mode: any 10-digit national ID is accepted
 await a.getByRole("button", { name: "ثبت و ادامه" }).click();
 await a.getByRole("button", { name: "استعلام تطبیق" }).click();
 await a.waitForSelector("text=عکس چهره");
@@ -30,7 +30,7 @@ await a.getByLabel("دو رقم اول پلاک").fill("۱۲");
 await a.getByLabel("حرف پلاک").selectOption("ب");
 await a.getByLabel("سه رقم پلاک").fill("۳۴۵");
 await a.getByLabel("کد استان پلاک").fill("۶۸");
-await a.locator('input[type=file]').first().setInputFiles(img); await a.waitForTimeout(500);
+for (const i of [0, 2, 3]) await a.locator('input[type=file]').nth(i).setInputFiles(img); await a.waitForTimeout(800);
 await a.screenshot({ path: `${SHOTS}/m3-kyc-vehicle.png`, fullPage: true });
 await a.getByRole("button", { name: "ادامه" }).click();
 await a.waitForSelector("text=قوانین و مقررات رانندگان");
@@ -42,41 +42,13 @@ await a.waitForSelector("text=مدارک شما در حال بررسی است");
 ok(true, "new driver submitted KYC → in review");
 await a.close();
 
-/* ───── B. full trip chain: shipper creates → driver claims → deposit → trip → OTP delivery ───── */
+/* ───── B. full trip chain: shipper creates (with pins) → driver claims → deposit → trip → OTP delivery ───── */
 const sh = await mk(); await demoLogin(sh, "shipper", "09120000007");
 const dr = await mk(); await demoLogin(dr, "driver", "09100000006");
-await sh.goto(`${B}/app/new/`);
-const pick = async (label, q) => { await sh.getByLabel(label, { exact: true }).first().fill(q); await sh.getByRole("option").first().click(); };
-await pick("مبدأ", "کرج"); await pick("مقصد", "قم");
-await sh.getByLabel("نشانی مبدأ").fill("مهرشهر"); await sh.getByLabel("نشانی مقصد").fill("شکوهیه");
-await sh.getByLabel("نام گیرنده").fill("گیرنده تست"); await sh.getByLabel("موبایل گیرنده").fill("09123334455");
-await sh.getByRole("button", { name: "ادامه" }).click();
-await sh.getByLabel("وزن (کیلوگرم)").fill("4000"); await sh.getByLabel("ارزش اعلامی بار (تومان)").fill("300000000");
-await sh.getByRole("button", { name: "ادامه" }).click(); await sh.getByRole("button", { name: "ادامه" }).click();
-await sh.getByRole("button", { name: /استفاده از میانه/ }).click(); await sh.getByRole("radio", { name: /بدون بیمه/ }).click();
-await sh.getByRole("radio", { name: /بیعانه و مابقی پس از تحویل/ }).click();
-await sh.getByRole("button", { name: "ادامه" }).click();
-await sh.getByRole("button", { name: /ثبت و انتشار/ }).click();
-await sh.waitForURL(/\/app\/order\/\?id=/);
-const orderId = new URL(sh.url()).searchParams.get("id");
-ok(!!orderId, "shipper order created " + orderId);
-await sh.waitForTimeout(600);
-
-await dr.goto(`${B}/driver/order/?id=${orderId}`);
-await dr.getByRole("button", { name: /انتخاب این بار/ }).click();
-ok(await dr.getByText("بار برای شما رزرو شد").first().isVisible(), "driver claim reserves the load immediately");
-await dr.getByRole("button", { name: "تأیید نهایی" }).click();
-await dr.waitForTimeout(800);
-await sh.reload(); await sh.waitForSelector("text=پرداخت بیعانه");
-await sh.getByRole("button", { name: /^پرداخت بیعانه/ }).click();
-await sh.getByRole("button", { name: /^پرداخت / }).last().click();
-await sh.waitForSelector("text=پرداخت موفق");
-ok(true, "shipper paid deposit from wallet");
-await sh.waitForTimeout(600);
-
-await dr.goto(`${B}/driver/trip/?id=${orderId}`);
-await dr.getByRole("button", { name: "شروع حرکت به مبدأ" }).click();
-await dr.getByRole("button", { name: "به مبدأ رسیدم" }).click();
+const orderId = await bringToPickup(sh, dr);
+ok(!!orderId, "shipper order created with address + map pins " + orderId);
+await dr.getByRole("img", { name: /مسیر تا مبدأ/ }).count();
+ok(await dr.getByText("مسیر تا مبدأ").first().isVisible(), "driver sees the exact map + navigation after the deposit");
 await dr.locator('input[type=file]').nth(0).setInputFiles(img);
 await dr.locator('input[type=file]').nth(1).setInputFiles(img);
 await dr.waitForFunction(() => document.querySelectorAll("img[alt]").length >= 2, null, { timeout: 8000 });

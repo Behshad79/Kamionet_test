@@ -21,7 +21,7 @@ await sh.screenshot({ path: `${SHOTS}/m4-mismatch.png`, fullPage: true });
 await sh.getByRole("button", { name: /تأیید و اصلاح بارنامه/ }).click();
 await sh.waitForSelector("text=پرداخت مابه‌التفاوت");
 await sh.getByRole("button", { name: "پرداخت مابه‌التفاوت" }).click();
-await sh.getByRole("button", { name: /^پرداخت / }).last().click();
+await sh.getByRole("dialog").getByRole("button", { name: /^پرداخت / }).last().click();
 await sh.waitForSelector("text=پرداخت موفق");
 await sh.waitForTimeout(800);
 let st = await readState(sh);

@@ -44,7 +44,8 @@ export async function bringToPickup(sh, dr, { weight = "4000" } = {}) {
   await sh.goto(`${B}/app/new/`);
   const pick = async (label, q) => { await sh.getByLabel(label, { exact: true }).first().fill(q); await sh.getByRole("option").first().click(); };
   await pick("مبدأ", "کرج"); await pick("مقصد", "قم");
-  await sh.getByLabel("نشانی مبدأ").fill("مهرشهر"); await sh.getByLabel("نشانی مقصد").fill("شکوهیه");
+  await sh.getByLabel("نشانی دقیق مبدأ").fill("مهرشهر، بلوار ارم"); await sh.getByLabel("نشانی دقیق مقصد").fill("شکوهیه، خیابان صنعت");
+  for (const i of [0, 1]) { const m = sh.locator(".leaflet-container").nth(i); await m.scrollIntoViewIfNeeded(); await sh.waitForTimeout(500); await m.click({ position: { x: 120, y: 175 } }); }
   await sh.getByLabel("نام گیرنده").fill("گیرنده تست"); await sh.getByLabel("موبایل گیرنده").fill("09123334455");
   await sh.getByRole("button", { name: "ادامه" }).click();
   await sh.getByLabel("وزن (کیلوگرم)").fill(weight); await sh.getByLabel("ارزش اعلامی بار (تومان)").fill("300000000");
@@ -62,7 +63,7 @@ export async function bringToPickup(sh, dr, { weight = "4000" } = {}) {
   await dr.waitForTimeout(800);
   await sh.reload(); await sh.waitForSelector("text=پرداخت بیعانه");
   await sh.getByRole("button", { name: /^پرداخت بیعانه/ }).click();
-  await sh.getByRole("button", { name: /^پرداخت / }).last().click();
+  await sh.getByRole("dialog").getByRole("button", { name: /^پرداخت / }).last().click();
   await sh.waitForSelector("text=پرداخت موفق");
   await sh.waitForTimeout(600);
   await dr.goto(`${B}/driver/trip/?id=${id}`);

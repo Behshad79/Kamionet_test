@@ -16,6 +16,7 @@ import {
   settleDelayed, settleOrder, shipperPaid, totalDue,
 } from "./pay";
 import { needsAcceptance } from "./trust";
+import { proAutoScan, proScanDue } from "./pro";
 
 /* ───────────────────────── pricing ───────────────────────── */
 
@@ -113,7 +114,7 @@ function validateInput(s: State, shipperId: string, i: OrderInput): string | nul
     if (i.weightKg > VEHICLES[i.vehicleKind].capacityKg * 1.0 && i.weightKg > VEHICLES[i.vehicleKind].capacityKg) return "وزن بار با ظرفیت خودروی انتخابی نمی‌خواند.";
   }
   if (i.pickupTo <= i.pickupAt || i.deliverBy <= i.pickupTo) return "بازه‌ی بارگیری و مهلت تحویل را بررسی کنید.";
-  if (i.serviceClass === "STANDARD" && i.assignMode !== "OPEN") return "برای انتخاب استخر پرو یا درخواست مستقیم، سرویس پرو را انتخاب کنید.";
+  if (i.serviceClass === "STANDARD" && i.assignMode !== "OPEN") return "برای انتخاب بازار ویژه‌ی پرو یا درخواست مستقیم، سرویس پرو را انتخاب کنید.";
   if (i.serviceClass === "PRO" && i.assignMode === "OPEN") return "سرویس پرو فقط برای رانندگان پرو نمایش داده می‌شود.";
   if (i.assignMode === "DIRECT") {
     const d = driverOf(s, i.directDriverId);
@@ -264,6 +265,7 @@ function startDepositStage(s: State, o: Order, driverId: string): OrderStatus {
     pay(s, { payerId: o.shipperId, orderId: o.id, purpose: "deposit", amount: due, method: "wallet" });
   } else {
     notify(s, o.shipperId, "shipper", "deposit_due", `راننده انتخاب شد. تا ${cv<number>(s, "deposit.dueMin")} دقیقه بیعانه را پرداخت کنید وگرنه راننده آزاد می‌شود.`, `/app/order/?id=${o.id}`);
+    notify(s, driverId, "driver", "deposit_wait", `منتظر پرداخت بیعانه‌ی صاحب بار هستیم؛ پس از پرداخت آدرس و نقشه‌ی دقیق را نشان می‌دهیم. تا آن زمان بار جدید نمی‌توانید بردارید.`, `/driver/order/?id=${o.id}`);
   }
   return o.status;
 }
@@ -299,13 +301,13 @@ function rotateSmart(s: State, o: Order) {
   if (next) {
     o.directDriverId = next.personId;
     o.directExpiresAt = now(s) + 5 * MIN;
-    notify(s, next.personId, "driver", "direct", `درخواست تخصیص هوشمند: ${o.origin.city} ← ${o.dest.city}. تا ۵ دقیقه فرصت پاسخ دارید.`, `/driver/order/?id=${o.id}`);
+    notify(s, next.personId, "driver", "direct", `درخواست انتخاب خودکار راننده: ${o.origin.city} ← ${o.dest.city}. تا ۵ دقیقه فرصت پاسخ دارید.`, `/driver/order/?id=${o.id}`);
   } else {
     o.directDriverId = undefined;
     o.directExpiresAt = undefined;
     o.pool = "PRO_POOL";
-    setStatus(s, o, "PRO_POOL", SYSTEM, "راننده‌ی هوشمند پیدا نشد؛ آزادسازی به استخر پرو");
-    notify(s, o.shipperId, "shipper", "smart_fallback", "راننده‌ی هوشمند پیدا نشد؛ سفارش به استخر پرو منتقل شد.", `/app/order/?id=${o.id}`);
+    setStatus(s, o, "PRO_POOL", SYSTEM, "راننده‌ی پیشنهادی خودکار پیدا نشد؛ انتشار در بازار ویژه‌ی پرو");
+    notify(s, o.shipperId, "shipper", "smart_fallback", "راننده‌ی پیشنهادی خودکار پیدا نشد؛ سفارش به بازار ویژه‌ی پرو منتقل شد.", `/app/order/?id=${o.id}`);
   }
 }
 
@@ -325,7 +327,7 @@ export function directFallback(s: State, shipperId: string, orderId: string, cho
   if (choice === "pro_pool") {
     o.assignMode = "PRO_POOL";
     o.pool = "PRO_POOL";
-    setStatus(s, o, "PRO_POOL", actorPerson(s, shipperId), "آزادسازی به استخر پرو");
+    setStatus(s, o, "PRO_POOL", actorPerson(s, shipperId), "انتشار در بازار ویژه‌ی پرو");
   } else {
     o.assignMode = "OPEN";
     o.pool = "OPEN";
@@ -344,8 +346,20 @@ function expireDeposit(s: State, o: Order) {
     post(s, { key: `depx:${o.id}:${s.seq}`, memo: "بازگشت پرداخت جزئی بیعانه", ref: { orderId: o.id }, lines: [[A.escrow(o.id), paid], [A.shipper(o.shipperId), -paid]] });
     o.paid = { insurance: 0, vat: 0, tip: 0, freight: 0, waiting: 0 };
   }
-  if (dp) notify(s, dp, "driver", "released", `بیعانه‌ی سفارش ${o.origin.city} ← ${o.dest.city} پرداخت نشد؛ رزرو شما آزاد شد.`, "/driver/");
-  notify(s, o.shipperId, "shipper", "deposit_expired", "مهلت پرداخت بیعانه تمام شد؛ سفارش دوباره برای رانندگان باز شد.", `/app/order/?id=${o.id}`);
+  if (dp) notify(s, dp, "driver", "released", `بیعانه‌ی سفارش ${o.origin.city} ← ${o.dest.city} پرداخت نشد؛ رزرو شما آزاد شد و می‌توانید بار جدید بردارید.`, "/driver/");
+  o.depositMisses = (o.depositMisses ?? 0) + 1;
+  const max = cv<number>(s, "deposit.maxMisses");
+  if (o.depositMisses >= max) {
+    // Several drivers confirmed and the shipper never paid: stop wasting drivers' time.
+    setStatus(s, o, "CANCELLED_BY_SYSTEM", SYSTEM, `بیعانه‌ی ${max} راننده پرداخت نشد`);
+    o.driverId = undefined; o.lockedBy = undefined; o.lockedUntil = undefined; o.depositDueAt = undefined;
+    o.cancel = { by: "system", at: now(s), reason: "عدم پرداخت بیعانه پس از تأیید راننده‌ها", fee: 0, driverComp: 0, platformFee: 0, refund: 0 };
+    const sh = shipperOf(s, o.shipperId);
+    if (sh) sh.honesty = Math.max(0, sh.honesty - 5);
+    notify(s, o.shipperId, "shipper", "deposit_cancel", `هشدار: سفارش ${o.origin.city} ← ${o.dest.city} لغو شد چون بیعانه‌ی ${max} راننده‌ی تأییدکننده پرداخت نشد. تکرار این رفتار روی اعتبار حساب شما اثر می‌گذارد.`, `/app/order/?id=${o.id}`);
+    return;
+  }
+  notify(s, o.shipperId, "shipper", "deposit_expired", "مهلت پرداخت بیعانه تمام شد؛ سفارش دوباره برای رانندگان باز شد. اگر دوباره پرداخت نکنید سفارش لغو می‌شود.", `/app/order/?id=${o.id}`);
   resubmitToBoard(s, o);
 }
 
@@ -810,6 +824,7 @@ export function tickDue(s: State): boolean {
   for (const p of s.payments) if (p.status === "PROCESSING" && p.settleAt && p.settleAt <= t) return true;
   for (const r of s.reviews) if (!r.revealed && r.at + revealMs <= t) return true;
   for (const tp of s.templates) if (tp.active && tp.nextRunAt - 12 * HOUR <= t) return true;
+  if (proScanDue(s)) return true;
   for (const d of s.debts) if (d.status === "OPEN" && ladderStage(s, d) > d.stage) return true;
   return false;
 }
@@ -851,6 +866,7 @@ export function engineTick(s: State): boolean {
     if ((m.status === "PENDING_SHIPPER" || m.status === "COUNTERED") && m.dueAt <= t) { escalateMismatch(s, m.id, "پاسخی در مهلت دریافت نشد"); changed = true; }
   }
   if (settleDelayed(s)) changed = true;
+  if (proScanDue(s)) { proAutoScan(s); changed = true; }
   const revealMs = cv<number>(s, "review.revealDays") * DAY;
   for (const r of s.reviews) if (!r.revealed && r.at + revealMs <= t) { r.revealed = true; changed = true; }
   for (const tp of s.templates) {

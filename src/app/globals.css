@@ -89,22 +89,36 @@
 [data-portal="driver"] { --tint: #fffbeb; --act: #ffb000; --act-soft: #ffefc2; --act-ink: #111827; }
 [data-portal="admin"] { --tint: #f8fafc; --act: #334155; --act-soft: #f1f5f9; --act-ink: #1e293b; }
 
-/* ───────── Pro tier ───────── */
+/* ───────── Pro tier: midnight navy + champagne gold ───────── */
 .pro-badge {
   position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 6px;
-  background: linear-gradient(120deg, var(--color-pro-navy), #16306b 60%, var(--color-pro-gold) 160%);
-  color: var(--color-pro-gold); border-radius: 9999px; padding: 4px 12px; font: 800 12px var(--font-sans);
+  background: linear-gradient(135deg, #0b1b3a, #17306a);
+  color: #f5c451; border-radius: 9999px; padding: 4px 12px; font: 800 12px var(--font-sans);
+  box-shadow: inset 0 0 0 1px rgb(245 196 81 / 0.55), 0 4px 12px -4px rgb(11 27 58 / 0.55);
 }
 .pro-badge::after {
   content: ""; position: absolute; inset: 0; transform: translateX(-120%);
-  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+  background: linear-gradient(100deg, transparent 30%, rgb(255 233 160 / 0.45) 50%, transparent 70%);
   animation: shine 4.5s ease-in-out infinite;
 }
 .pro-card {
-  background: linear-gradient(135deg, var(--color-pro-navy), #14295a);
-  color: #fff; border-radius: var(--radius-ui); border: 1px solid rgb(245 196 81 / 0.45);
-  box-shadow: var(--shadow-lift);
+  position: relative; overflow: hidden; color: #fff; border-radius: var(--radius-ui);
+  background:
+    radial-gradient(420px 220px at 90% -20%, rgb(245 196 81 / 0.35), transparent 70%),
+    radial-gradient(300px 200px at 0% 120%, rgb(80 120 255 / 0.28), transparent 70%),
+    linear-gradient(145deg, #0a1633, #14295a 60%, #0d1f45);
+  box-shadow: inset 0 0 0 1px rgb(245 196 81 / 0.45), var(--shadow-lift);
 }
+.pro-card::before {
+  content: ""; position: absolute; inset: 0; opacity: .5; pointer-events: none;
+  background-image: radial-gradient(rgb(255 255 255 / 0.35) 1px, transparent 1.2px); background-size: 26px 26px;
+  mask-image: linear-gradient(180deg, #000 0%, transparent 70%);
+}
+.pro-card > * { position: relative; }
+.pro-gold-text { background: linear-gradient(100deg, #fff1b8, #f5c451 45%, #d99a1b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* Avatar ring + crown for Pro drivers */
+.pro-ring { background: conic-gradient(from 210deg, #fff1b8, #f5c451, #c98a10, #f5c451, #fff1b8); padding: 3px; border-radius: 9999px; box-shadow: 0 6px 20px -6px rgb(201 138 16 / 0.7); }
+.crown-pop { filter: drop-shadow(0 2px 4px rgb(201 138 16 / 0.55)); animation: float-y 3.4s ease-in-out infinite; }
 @keyframes shine { 0%, 60% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
 
 /* ───────── Landing hero ───────── */
@@ -247,3 +261,4 @@ input::placeholder, textarea::placeholder { color: #6b7280; opacity: 1; }
 .blob { animation: blob 11s ease-in-out infinite; }
 @keyframes marquee { to { transform: translateX(50%); } }
 .marquee { animation: marquee 38s linear infinite; }
+@keyframes rumble { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.2px); } }

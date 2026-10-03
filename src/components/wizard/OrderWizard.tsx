@@ -15,11 +15,14 @@ import { act, useStore } from "@/lib/store";
 import { VEHICLES, VEHICLE_KINDS } from "@/lib/vehicles";
 import type { AssignMode, CargoKind, CargoMode, DriverProfile, OdorClass, OrderInput, PayTerms, ServiceClass, State, VehicleKind } from "@/lib/types";
 import { InsurerLogo, ProBadge } from "../brand";
+import { DriverPublicProfile } from "../driver/PublicProfile";
+import { Avatar } from "../profile";
 import { TruckIllustration } from "../graphics/TruckIllustration";
 import { PlaceCombobox, TempRangeSlider } from "../inputs";
 import { CleanBadge } from "../order/parts";
 import { RatingPill } from "../molecules";
 import { JalaliDateTimePicker } from "../pickers";
+import { PinPicker, type Pin } from "../PinPicker";
 import { toast } from "../Toaster";
 import { Button, Card, Field, Input, NumInput, Segmented, Select, Sheet, Stepper, Textarea, Toggle, cx } from "../ui";
 
@@ -28,14 +31,14 @@ const STEPS = ["مسیر", "بار", "سرویس", "قیمت و بیمه", "با
 const DRAFT = "kamionet:wizard-draft";
 
 interface Form {
-  from?: { city: string; province?: string; lat: number; lng: number }; fromAddr: string;
-  to?: { city: string; province?: string; lat: number; lng: number }; toAddr: string;
+  from?: { city: string; province?: string; lat: number; lng: number }; fromAddr: string; fromPin?: Pin;
+  to?: { city: string; province?: string; lat: number; lng: number }; toAddr: string; toPin?: Pin;
   pickupAt: number; windowH: number; deliverBy: number; count: number;
   consName: string; consPhone: string;
   mode: CargoMode; cargo: CargoKind; tMin: number; tMax: number; odor: OdorClass; odorSensitive: boolean;
   vehicle: VehicleKind; weightKg?: number; pallets?: number; volume?: number; packaging: string; itemized: boolean; declaredT?: number; note: string; cleanOnly: boolean;
   service: ServiceClass; assign: AssignMode; directId?: string;
-  freightT?: number; tipT: number; insurance: string | null; coverage: number; coupon: string; terms: PayTerms; autoPay: boolean; recurring: "none" | "daily" | "weekly";
+  freightT?: number; tipT: number; insurance: string | null; coverage: number; coupon: string; couponOn?: boolean; terms: PayTerms; autoPay: boolean; recurring: "none" | "daily" | "weekly";
 }
 
 const tomorrow8 = () => { const d = new Date(Date.now() + 24 * HOUR); d.setHours(8, 0, 0, 0); return d.getTime(); };
@@ -70,13 +73,13 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
   const input = (): OrderInput | undefined => {
     if (!f.from || !f.to) return undefined;
     return {
-      origin: { ...cityPlace(f.from.city, f.fromAddr), lat: f.from.lat, lng: f.from.lng, address: f.fromAddr },
-      dest: { ...cityPlace(f.to.city, f.toAddr), lat: f.to.lat, lng: f.to.lng, address: f.toAddr },
+      origin: { ...cityPlace(f.from.city, f.fromAddr), lat: f.fromPin?.lat ?? f.from.lat, lng: f.fromPin?.lng ?? f.from.lng, address: f.fromAddr },
+      dest: { ...cityPlace(f.to.city, f.toAddr), lat: f.toPin?.lat ?? f.to.lat, lng: f.toPin?.lng ?? f.to.lng, address: f.toAddr },
       pickupAt: f.pickupAt, pickupTo, deliverBy: f.deliverBy, count: f.count, cargoMode: f.mode, cargo: f.cargo, odor: f.odor, odorSensitive: f.odorSensitive,
       tempMin: fridge ? f.tMin : undefined, tempMax: fridge ? f.tMax : undefined, vehicleKind: f.vehicle, weightKg: f.weightKg ?? 0, volumeM3: f.volume, pallets: f.pallets,
       packaging: f.packaging, itemizedInvoice: f.itemized, declaredValue: R(f.declaredT ?? 0), note: f.note || undefined, cleanOnly: f.cleanOnly,
       serviceClass: f.service, assignMode: f.assign, directDriverId: f.assign === "DIRECT" ? f.directId : undefined,
-      freightBase: R(f.freightT ?? 0), tipPre: R(f.tipT), insuranceProductId: f.insurance, coveragePct: f.coverage, couponCode: f.coupon.trim() || undefined,
+      freightBase: R(f.freightT ?? 0), tipPre: R(f.tipT), insuranceProductId: f.insurance, coveragePct: f.coverage, couponCode: f.couponOn ? f.coupon.trim() || undefined : undefined,
       terms: f.terms, autoPayDeposit: f.autoPay, consignee: { name: f.consName.trim(), phone: normalizeDigits(f.consPhone).replace(/\D/g, "") },
     };
   };
@@ -87,6 +90,10 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
     if (n === 0) {
       if (!f.from) e.from = "مبدأ را انتخاب کنید.";
       if (!f.to) e.to = "مقصد را انتخاب کنید.";
+      if (f.from && f.fromAddr.trim().length < 6) e.fromAddr = "نشانی دقیق مبدأ را بنویسید.";
+      if (f.to && f.toAddr.trim().length < 6) e.toAddr = "نشانی دقیق مقصد را بنویسید.";
+      if (f.from && !f.fromPin) e.fromPin = "محل دقیق مبدأ را روی نقشه پین کنید.";
+      if (f.to && !f.toPin) e.toPin = "محل دقیق مقصد را روی نقشه پین کنید.";
       if (f.from && f.to && f.from.city === f.to.city && f.fromAddr.trim() === f.toAddr.trim()) e.to = "مبدأ و مقصد نمی‌توانند یکسان باشند.";
       if (f.pickupAt < Date.now()) e.pickup = "زمان بارگیری گذشته است.";
       if (f.deliverBy <= pickupTo) e.deliver = "مهلت تحویل باید بعد از پایان بازه‌ی بارگیری باشد.";
@@ -101,7 +108,7 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
     if (n === 2 && f.assign === "DIRECT" && !f.directId) e.direct = "یک راننده‌ی پرو انتخاب کنید.";
     if (n === 3) {
       if (!(f.freightT && f.freightT >= 500_000)) e.freight = "کرایه‌ی پیشنهادی را وارد کنید.";
-      if (quote?.couponError) e.coupon = quote.couponError;
+      if (f.couponOn && quote?.couponError) e.coupon = quote.couponError;
     }
     setErr(e);
     return Object.keys(e).length === 0;
@@ -133,8 +140,8 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
 
       {step === 0 && (
         <Card className="space-y-5 p-5">
-          <PlaceBlock title="مبدأ" value={f.from?.city} onPlace={(p) => set({ from: p ? { city: p.name, province: p.province, lat: p.lat, lng: p.lng } : undefined })} addr={f.fromAddr} onAddr={(v) => set({ fromAddr: v })} error={err.from} />
-          <PlaceBlock title="مقصد" value={f.to?.city} onPlace={(p) => set({ to: p ? { city: p.name, province: p.province, lat: p.lat, lng: p.lng } : undefined })} addr={f.toAddr} onAddr={(v) => set({ toAddr: v })} error={err.to} />
+          <PlaceBlock title="مبدأ" tone="origin" value={f.from?.city} center={f.from} pin={f.fromPin} onPin={(p) => set({ fromPin: p })} onPlace={(p) => set({ from: p ? { city: p.name, province: p.province, lat: p.lat, lng: p.lng } : undefined, fromPin: undefined })} addr={f.fromAddr} onAddr={(v) => set({ fromAddr: v })} error={err.from} addrError={err.fromAddr} pinError={err.fromPin} />
+          <PlaceBlock title="مقصد" tone="dest" value={f.to?.city} center={f.to} pin={f.toPin} onPin={(p) => set({ toPin: p })} onPlace={(p) => set({ to: p ? { city: p.name, province: p.province, lat: p.lat, lng: p.lng } : undefined, toPin: undefined })} addr={f.toAddr} onAddr={(v) => set({ toAddr: v })} error={err.to} addrError={err.toAddr} pinError={err.toPin} />
           {km > 0 && <p className="rounded-ui bg-accent-50 p-3 text-sm font-medium text-accent-700">فاصله‌ی تقریبی جاده‌ای: {fa(km)} کیلومتر</p>}
           <div className="grid gap-4 sm:grid-cols-2">
             <JalaliDateTimePicker label="شروع بازه‌ی بارگیری" value={f.pickupAt} onChange={(v) => set({ pickupAt: v, deliverBy: Math.max(f.deliverBy, v + (f.windowH + 4) * HOUR) })} min={Date.now()} error={err.pickup} />
@@ -202,16 +209,16 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
             <Card className="space-y-4 p-5">
               <h2 className="font-extrabold">روش تخصیص</h2>
               <Segmented<AssignMode> value={f.assign} onChange={(a) => set({ assign: a })} options={[
-                { value: "PRO_POOL", label: "استخر پرو", sub: "اولین راننده‌ی پذیرنده" },
+                { value: "PRO_POOL", label: "بازار ویژه‌ی پرو", sub: "اولین راننده‌ی پذیرنده" },
                 { value: "DIRECT", label: "انتخاب مستقیم", sub: "درخواست از یک راننده" },
-                { value: "SMART", label: "هوشمند", sub: "تخصیص خودکار" },
+                { value: "SMART", label: "خودکار", sub: "بهترین راننده" },
               ]} />
               <p className="flex gap-2 text-sm leading-7 text-ink-3"><Info className="mt-1 size-4 shrink-0" aria-hidden />
-                {f.assign === "PRO_POOL" ? "بار برای همه‌ی رانندگان پرو مناسب نمایش داده می‌شود." : f.assign === "DIRECT" ? "راننده ۱۰ دقیقه فرصت پاسخ دارد؛ اگر نپذیرد، می‌توانید راننده‌ی دیگری انتخاب کنید یا بار را به استخر پرو بفرستید." : "سیستم از بین رانندگان پروی مناسب، با شانس بیشتر برای امتیاز و وقت‌شناسی بالاتر، یکی را پیشنهاد می‌دهد؛ اگر نپذیرد نفر بعدی."}</p>
+                {f.assign === "PRO_POOL" ? "بار برای همه‌ی رانندگان پرو مناسب نمایش داده می‌شود." : f.assign === "DIRECT" ? "راننده ۱۰ دقیقه فرصت پاسخ دارد؛ اگر نپذیرد، می‌توانید راننده‌ی دیگری انتخاب کنید یا بار را به بازار ویژه‌ی پرو بفرستید." : "سیستم از بین رانندگان پروی مناسب، با شانس بیشتر برای امتیاز و وقت‌شناسی بالاتر، یکی را پیشنهاد می‌دهد؛ اگر نپذیرد نفر بعدی."}</p>
               {f.assign === "DIRECT" && (
                 <div>
                   {err.direct && <p className="mb-2 text-sm text-danger">{err.direct}</p>}
-                  {proDrivers.length === 0 ? <p className="rounded-ui bg-surface-2 p-4 text-sm text-ink-3">راننده‌ی پروی مناسب این خودرو و دما پیدا نشد. روش «استخر پرو» را انتخاب کنید.</p> : (
+                  {proDrivers.length === 0 ? <p className="rounded-ui bg-surface-2 p-4 text-sm text-ink-3">راننده‌ی پروی مناسب این خودرو و دما پیدا نشد. روش «بازار ویژه‌ی پرو» را انتخاب کنید.</p> : (
                     <div className="no-scrollbar -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2">
                       {proDrivers.map((d) => <ProDriverCard key={d.personId} d={d} s={s} selected={f.directId === d.personId} onSelect={() => set({ directId: d.personId })} onProfile={() => setProfile(d)} />)}
                     </div>
@@ -231,7 +238,7 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
               <button type="button" onClick={() => set({ freightT: T(Math.round((rate.min + rate.max) / 2 / 100_000) * 100_000) })} className="mt-2 inline-flex h-11 items-center gap-1 font-bold text-accent-600"><Wand2 className="size-4" aria-hidden />استفاده از میانه‌ی بازه</button></div>}
             <Field label="کرایه‌ی پیشنهادی برای هر خودرو (تومان)" error={err.freight} hint={f.freightT ? tomanWords(R(f.freightT)) : undefined}>{(id) => <NumInput id={id} value={f.freightT} onChange={(v) => set({ freightT: v })} suffix="تومان" />}</Field>
             <Field label="انعام / جذب سریع (اختیاری)" hint="مبلغی که تخصیص سریع‌تر را تشویق می‌کند و ۱۰۰٪ به راننده می‌رسد.">{(id) => <NumInput id={id} value={f.tipT || undefined} onChange={(v) => set({ tipT: v ?? 0 })} suffix="تومان" />}</Field>
-            <Field label="کد تخفیف" error={err.coupon}>{(id) => <Input id={id} dir="ltr" className="text-left uppercase" value={f.coupon} onChange={(e) => set({ coupon: e.target.value })} />}</Field>
+            <CouponBox value={f.coupon} applied={f.couponOn} error={quote?.couponError} discount={quote?.discount ?? 0} onApply={(c) => set({ coupon: c, couponOn: true })} onRemove={() => set({ coupon: "", couponOn: false })} />
           </Card>
 
           <Card className="space-y-3 p-5">
@@ -274,7 +281,7 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
                 ["بار", `${CARGO[f.cargo].label} · ${weightLabel(f.weightKg ?? 0)} · ${f.packaging}`],
                 ["دما", fridge ? `${tempRange(f.tMin, f.tMax)} (${{ frozen: "انجمادی", chilled: "سردخانه‌ای", cool: "خنک" }[tempClass(f.tMin, f.tMax)]})` : "بدون کنترل دما"],
                 ["خودرو", `${fa(f.count)} × ${VEHICLES[f.vehicle].short}`],
-                ["سرویس", f.service === "PRO" ? `پرو · ${{ PRO_POOL: "استخر پرو", DIRECT: "انتخاب مستقیم", SMART: "تخصیص هوشمند", OPEN: "" }[f.assign]}` : "استاندارد"],
+                ["سرویس", f.service === "PRO" ? `پرو · ${{ PRO_POOL: "بازار ویژه‌ی پرو", DIRECT: "انتخاب مستقیم", SMART: "انتخاب خودکار راننده", OPEN: "" }[f.assign]}` : "استاندارد"],
                 ["گیرنده", `${f.consName} · ${f.consPhone}`],
               ].map(([k, v]) => <div key={k}><dt className="text-ink-3">{k}</dt><dd className="font-bold">{v}</dd></div>)}
             </dl>
@@ -313,13 +320,30 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
   );
 }
 
+function CouponBox({ value, applied, error, discount, onApply, onRemove }: { value: string; applied?: boolean; error?: string; discount: number; onApply: (c: string) => void; onRemove: () => void }) {
+  const [v, setV] = useState(value);
+  const ok = applied && !error && discount > 0;
+  return (
+    <div className="space-y-2">
+      <label htmlFor="coupon" className="block text-sm font-medium text-ink-2">کد تخفیف</label>
+      <div className="flex gap-2">
+        <Input id="coupon" dir="ltr" className="text-left uppercase" value={applied ? value : v} disabled={applied} onChange={(e) => setV(e.target.value)} placeholder="مثلاً WELCOME10" />
+        {applied ? <Button type="button" variant="danger" onClick={() => { setV(""); onRemove(); }}>لغو کد</Button> : <Button type="button" variant="secondary" disabled={v.trim().length < 3} onClick={() => onApply(v.trim())}>ثبت کد</Button>}
+      </div>
+      {applied && error && <p role="alert" className="text-sm text-danger">{error}</p>}
+      {ok && <p className="flex items-center gap-1.5 text-sm font-bold text-ok"><Check className="size-4" aria-hidden />کد اعمال شد؛ {toman(discount)} تخفیف.</p>}
+    </div>
+  );
+}
+
 const Row = ({ k, v, good }: { k: string; v: string; good?: boolean }) => <div className="flex justify-between gap-3"><dt className="text-ink-3">{k}</dt><dd className={cx("font-bold tabular", good && "text-ok")}>{v}</dd></div>;
 
-function PlaceBlock({ title, value, onPlace, addr, onAddr, error }: { title: string; value?: string; onPlace: (p: Parameters<NonNullable<React.ComponentProps<typeof PlaceCombobox>["onSelect"]>>[0]) => void; addr: string; onAddr: (v: string) => void; error?: string }) {
+function PlaceBlock({ title, tone, value, center, pin, onPin, onPlace, addr, onAddr, error, addrError, pinError }: { title: string; tone: "origin" | "dest"; value?: string; center?: Pin; pin?: Pin; onPin: (p: Pin) => void; onPlace: (p: Parameters<NonNullable<React.ComponentProps<typeof PlaceCombobox>["onSelect"]>>[0]) => void; addr: string; onAddr: (v: string) => void; error?: string; addrError?: string; pinError?: string }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 rounded-ui bg-surface-2/60 p-4">
       <PlaceCombobox label={title} value={value} onSelect={onPlace} error={error} allowClear />
-      <Field label={`نشانی ${title}`} hint="تا پیش از پرداخت بیعانه فقط محدوده‌ی تقریبی به راننده نمایش داده می‌شود.">{(id) => <Input id={id} value={addr} onChange={(e) => onAddr(e.target.value)} placeholder="خیابان، پلاک، انبار…" />}</Field>
+      <Field label={`نشانی دقیق ${title}`} error={addrError} hint="خیابان، پلاک، انبار… این نشانی و پین نقشه تا پرداخت بیعانه برای راننده پنهان است و بعد از آن به او نمایش داده می‌شود.">{(id) => <Input id={id} value={addr} onChange={(e) => onAddr(e.target.value)} placeholder="خیابان، پلاک، انبار…" />}</Field>
+      <PinPicker label={`پین دقیق ${title} روی نقشه`} tone={tone} center={center} value={pin} onChange={onPin} error={pinError} />
     </div>
   );
 }
@@ -329,8 +353,7 @@ function ProDriverCard({ d, s, selected, onSelect, onProfile }: { d: DriverProfi
   const clean = !!d.clean.badgeUntil && d.clean.badgeUntil > Date.now();
   return (
     <div className={cx("w-64 shrink-0 snap-start space-y-2 rounded-ui border-2 p-3", selected ? "border-pro-gold bg-pro-navy text-white" : "border-line bg-white")}>
-      <TruckIllustration kind={d.vehicle.kind} color={d.vehicle.color} state="cooling" className="h-16 w-full" />
-      <div className="flex items-center justify-between gap-2"><span className="truncate font-black">{person(s, d.personId)?.name}</span><ProBadge /></div>
+      <div className="flex items-center gap-3"><Avatar name={person(s, d.personId)?.name ?? "راننده"} pro size={46} hue={(d.personId.length * 61) % 360} /><div className="min-w-0"><div className="truncate font-black">{person(s, d.personId)?.name}</div><TruckIllustration kind={d.vehicle.kind} color={d.vehicle.color} state="cooling" className="mt-1 h-10 w-16" /></div></div>
       <div className="flex flex-wrap items-center gap-2 text-xs">{<RatingPill r={{ avg: st.rating, count: st.ratingCount }} />}<span className={selected ? "text-white/70" : "text-ink-3"}>{fa(st.trips)} سفر</span>{clean && <CleanBadge />}</div>
       <div className="grid grid-cols-2 gap-2"><Button size="sm" variant={selected ? "secondary" : "primary"} onClick={onSelect}>{selected ? "انتخاب شد" : "انتخاب"}</Button><Button size="sm" variant="secondary" onClick={onProfile}>پروفایل</Button></div>
     </div>
@@ -338,22 +361,7 @@ function ProDriverCard({ d, s, selected, onSelect, onProfile }: { d: DriverProfi
 }
 
 export function DriverProfileBody({ d, s }: { d: DriverProfile; s: State }) {
-  const st = driverStats(s, d.personId);
-  return (
-    <div className="space-y-4">
-      <TruckIllustration kind={d.vehicle.kind} color={d.vehicle.color} state="cooling" className="h-24 w-full" label="خودروی راننده" />
-      <div className="flex items-center justify-between"><h3 className="text-lg font-black">{person(s, d.personId)?.name}</h3><ProBadge /></div>
-      <dl className="grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-ui bg-surface-2 p-3"><dt className="text-ink-3">امتیاز</dt><dd className="font-black">{fa(Math.round(st.rating * 10) / 10)} از ۵</dd></div>
-        <div className="rounded-ui bg-surface-2 p-3"><dt className="text-ink-3">سفر</dt><dd className="font-black">{fa(st.trips)}</dd></div>
-        <div className="rounded-ui bg-surface-2 p-3"><dt className="text-ink-3">وقت‌شناسی</dt><dd className="font-black">{fa(Math.round(st.onTime * 100))}٪</dd></div>
-        <div className="rounded-ui bg-surface-2 p-3"><dt className="text-ink-3">لغو</dt><dd className="font-black">{fa(Math.round(st.cancelRate * 100))}٪</dd></div>
-      </dl>
-      <div className="space-y-2"><div className="text-sm font-bold">ریز امتیازها</div>{Object.entries(st.breakdown).map(([k, v]) => <div key={k} className="flex items-center gap-3 text-sm"><span className="w-28 text-ink-3">{({ punctuality: "وقت‌شناسی", cleanliness: "نظافت و بو", coldchain: "زنجیره‌ی سرد", behavior: "رفتار", communication: "ارتباط" } as Record<string, string>)[k] ?? k}</span><div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-3"><div className="h-full rounded-full bg-brand-500" style={{ width: `${(v / 5) * 100}%` }} /></div><span className="w-8 text-end font-bold tabular">{fa(Math.round(v * 10) / 10)}</span></div>)}</div>
-      <p className="flex items-center gap-2 text-xs text-ink-3"><Crown className="size-4" aria-hidden />دارای بازرسی خودرو و تأیید مدارک · <Snowflake className="size-4" aria-hidden />دمای خودرو تا {d.vehicle.minTemp === null ? "—" : `${d.vehicle.minTemp}°`}</p>
-      <p className="flex items-center gap-2 text-xs text-ink-3"><Users className="size-4" aria-hidden />پلاک و شماره‌ی راننده پس از پرداخت بیعانه نمایش داده می‌شود.</p>
-    </div>
-  );
+  return <DriverPublicProfile d={d} s={s} />;
 }
 
 function InsurancePicker({ s, ambient, value, onChange, declared, coverage }: { s: State; ambient: boolean; value: string | null; onChange: (v: string | null) => void; declared: number; coverage: number }) {

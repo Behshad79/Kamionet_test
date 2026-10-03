@@ -27,6 +27,7 @@ const G = {
   trust: "اعتماد و کیفیت",
   pro: "کامیونت پرو",
   match: "تطبیق و تخصیص",
+  support: "پشتیبانی",
 } as const;
 
 export const CONFIG_DEFS: CfgDef[] = [
@@ -46,6 +47,7 @@ export const CONFIG_DEFS: CfgDef[] = [
   { key: "direct.windowMin", group: G.deposit, label: "مهلت پاسخ راننده به درخواست مستقیم", kind: "min", default: 10 },
   { key: "mismatch.slaMin", group: G.deposit, label: "مهلت پاسخ صاحب بار به مغایرت", kind: "min", default: 15 },
   { key: "mismatch.adjustPct", group: G.deposit, label: "حد تعدیل قیمت پیشنهادی مغایرت (±)", kind: "pct", default: 0.15 },
+  { key: "deposit.maxMisses", group: G.deposit, label: "حداکثر راننده‌ای که بیعانه‌شان پرداخت نشود (سپس لغو سفارش)", kind: "int", default: 2 },
   { key: "tip.postWindowH", group: G.deposit, label: "مهلت انعام پس از سفر", kind: "hour", default: 72 },
 
   { key: "cancel.windowMin", group: G.cancel, label: "بازه‌ی بازگشت کامل بیعانه", kind: "min", default: 5 },
@@ -83,9 +85,13 @@ export const CONFIG_DEFS: CfgDef[] = [
   { key: "pro.minRating", group: G.pro, label: "حداقل امتیاز", kind: "num", default: 4.6 },
   { key: "pro.minOnTime", group: G.pro, label: "حداقل وقت‌شناسی", kind: "pct", default: 0.92 },
   { key: "pro.minClean", group: G.pro, label: "حداقل امتیاز نظافت", kind: "int", default: 80 },
+  { key: "pro.autoInvite", group: G.pro, label: "دعوت خودکار رانندگانی که معیارها را دارند", kind: "bool", default: true },
+  { key: "pro.inspectDays", group: G.pro, label: "تعداد روزِ قابل رزرو برای بازرسی", kind: "int", default: 7 },
   { key: "pro.uplift", group: G.pro, label: "افزایش کرایه‌ی سرویس پرو", kind: "pct", default: 0.15 },
 
-  { key: "match.directFallbackAuto", group: G.match, label: "پس از انقضای درخواست مستقیم، آزادسازی خودکار به استخر پرو", kind: "bool", default: false },
+  { key: "support.phone", group: G.support, label: "شماره‌ی تماس پشتیبانی", kind: "enum", default: "۰۲۱-۹۱۰۰۱۲۳۴", options: [{ id: "۰۲۱-۹۱۰۰۱۲۳۴", label: "۰۲۱-۹۱۰۰۱۲۳۴" }] },
+  { key: "support.hours", group: G.support, label: "ساعات پاسخ‌گویی تلفنی", kind: "enum", default: "۸ تا ۲۲", options: [{ id: "۸ تا ۲۲", label: "۸ تا ۲۲" }] },
+  { key: "match.directFallbackAuto", group: G.match, label: "پس از انقضای درخواست مستقیم، انتشار خودکار در بازار ویژه‌ی پرو", kind: "bool", default: false },
 ];
 
 const BY_KEY = new Map(CONFIG_DEFS.map((d) => [d.key, d]));

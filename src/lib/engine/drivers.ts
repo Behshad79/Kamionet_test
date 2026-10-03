@@ -62,6 +62,8 @@ export function claimBlock(s: State, d: DriverProfile | undefined): string | nul
   if (st === "in_review") return "مدارک شما در حال بررسی است؛ پس از تأیید می‌توانید بار انتخاب کنید.";
   if (st === "rejected") return "مدارک شما نیاز به اصلاح دارد.";
   if (st === "suspended") return "حساب شما معلق است.";
+  const waiting = s.orders.find((o) => o.driverId === d.personId && o.status === "AWAITING_DEPOSIT");
+  if (waiting) return `منتظر پرداخت بیعانه‌ی سفارش ${waiting.origin.city} ← ${waiting.dest.city} هستیم؛ تا نتیجه (حداکثر چند دقیقه) بار جدید نمی‌توانید بردارید.`;
   const debt = openDebt(s, d.personId);
   if (debt >= cv<number>(s, "debt.restrictAt")) return "برای پذیرش بار جدید، ابتدا بدهی کارمزد را تسویه کنید.";
   const rd = s.debts.find((x) => x.driverId === d.personId && x.status === "OPEN" && x.stage >= 2);

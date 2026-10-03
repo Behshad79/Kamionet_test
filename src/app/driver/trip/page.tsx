@@ -81,6 +81,12 @@ export default function Page() {
         {o.note && <p className="rounded-ui bg-surface-2 p-3 text-sm">{o.note}</p>}
       </Card>
 
+      {["ASSIGNED", "EN_ROUTE_TO_PICKUP", "AT_PICKUP", "MISMATCH_REVIEW"].includes(o.status) && (
+        <Card className="overflow-hidden">
+          <MapView className="h-52" fitKey={o.id} markers={[{ id: "o", lat: o.origin.lat, lng: o.origin.lng, kind: "origin" }, { id: "d", lat: o.dest.lat, lng: o.dest.lng, kind: "dest" }]} lines={[{ id: "l", points: [[o.origin.lat, o.origin.lng], [o.dest.lat, o.dest.lng]], dashed: true, tone: "accent" }]} />
+          <div className="grid grid-cols-2 gap-px bg-line text-sm"><a href={nav(o.origin)} target="_blank" rel="noreferrer" className="flex h-12 items-center justify-center gap-1.5 bg-white font-bold"><MapPinned className="size-4" aria-hidden />مسیر تا مبدأ</a><a href={nav(o.dest)} target="_blank" rel="noreferrer" className="flex h-12 items-center justify-center gap-1.5 bg-white font-bold"><MapPinned className="size-4" aria-hidden />مسیر تا مقصد</a></div>
+        </Card>
+      )}
       {(o.status === "MISMATCH_REVIEW" || o.mismatchId) && <MismatchPanel o={o} role="driver" meId={me.id} />}
       {/* ───── stage panels ───── */}
       {o.status === "ASSIGNED" && (
@@ -129,6 +135,7 @@ export default function Page() {
           {!myReview(s, me.id, o.id) ? <ReviewForm personId={me.id} orderId={o.id} role="driver" /> : <p className="text-sm text-ok">نظر شما ثبت شده است.</p>}</Card>
       )}
 
+      {o.waybills.length > 0 && <Link href={`/waybill/?id=${o.id}`} className="flex h-12 items-center justify-center rounded-ui border-2 border-ink font-extrabold">بارنامه‌ی سفر (نسخه‌ی {fa(o.waybills.length)})</Link>}
       <Accordion title="درآمد این سفر"><dl className="space-y-1.5 text-sm"><div className="flex justify-between"><dt className="text-ink-3">کرایه</dt><dd className="font-bold tabular">{toman(o.freight)}</dd></div><div className="flex justify-between"><dt className="text-ink-3">کارمزد ({fa(Math.round(commissionRate(s, o) * 100))}٪)</dt><dd className="font-bold tabular text-danger">−{toman(net.commission)}</dd></div><div className="flex justify-between border-t border-line pt-2 font-black"><dt>خالص</dt><dd className="tabular text-ok">{toman(net.net)}</dd></div></dl></Accordion>
       <Accordion title="روند سفر"><StatusTimeline o={o} /></Accordion>
       <PriceBreakdownHidden />

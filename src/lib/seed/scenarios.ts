@@ -58,6 +58,7 @@ export function seedPersonas(sim: Sim, now: number) {
   dd(11, { kind: "truck10", minTemp: -18 });
   dd(12, { kind: "dry", minTemp: null, canRunAmbient: true });
   const d13 = dd(13, { kind: "kamionet", minTemp: 0 });
+  for (const i of [4, 5, 6, 7]) { const dp = s.drivers.find((x) => x.personId === `p-d${1000 + i}`); if (dp) dp.controls.autoPro = false; }
   d10.suspension = { reason: "گزارش‌های مکرر خروج از بازه‌ی دما", since: now - 4 * DAY, appeal: "open", appealText: "یخچال خودرو تعمیر شده و فاکتور تعمیرگاه پیوست است." };
   d13.declaredTrips.push({ id: uid(s, "tr"), from: "تهران", to: "قزوین", departAt: now + 1 * DAY, backTo: "تهران", backAt: now + 1 * DAY + 8 * HOUR, active: true });
   for (const p of s.drivers) if (DEMO_DRIVERS.some((x) => x.phone === s.persons.find((q) => q.id === p.personId)?.phone) && p.kyc.status === "verified") p.controls.cashToDriver = true;
@@ -74,6 +75,7 @@ export function seedPersonas(sim: Sim, now: number) {
   s6.controls = { ...s6.controls, creditLimit: R(150_000_000), creditTermsDays: 15, invoiceCycle: "weekly" };
   ss(7, { company: true, displayName: "بستنی ماهان", businessVerified: true });
   ss(8, { company: true, displayName: "میوه‌ی نسیم", businessVerified: false });
+  for (const x of s.shippers) if (DEMO_SHIPPERS.some((q) => q.phone === s.persons.find((p) => p.id === x.personId)?.phone)) x.prefs.autoPayDeposit = false; // demos should show the manual deposit step
 }
 
 const openOverrides: Partial<OrderInput>[] = [

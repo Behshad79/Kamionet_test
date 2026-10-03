@@ -15,8 +15,11 @@ ok(await p.getByText("مبدأ را انتخاب کنید.").isVisible(), "step 
 const pick = async (label, q) => { await p.getByLabel(label, { exact: true }).first().fill(q); await p.getByRole("option").first().click(); };
 await pick("مبدأ", "تهران");
 await pick("مقصد", "اصفهان");
-await p.getByLabel("نشانی مبدأ").fill("شهرک صنعتی شمس‌آباد");
-await p.getByLabel("نشانی مقصد").fill("میدان جهاد");
+await p.getByLabel("نشانی دقیق مبدأ").fill("شهرک صنعتی شمس‌آباد");
+await p.getByLabel("نشانی دقیق مقصد").fill("میدان جهاد، انبار مرکزی");
+await p.getByRole("button", { name: "ادامه" }).click();
+ok(await p.getByText("محل دقیق مبدأ را روی نقشه پین کنید.").isVisible(), "pin required for origin");
+for (const i of [0, 1]) { const m = p.locator(".leaflet-container").nth(i); await m.scrollIntoViewIfNeeded(); await p.waitForTimeout(500); await m.click({ position: { x: 120, y: 175 } }); }
 await p.getByLabel("نام گیرنده").fill("علی احمدی");
 await p.getByLabel("موبایل گیرنده").fill("۰۹۱۲۳۴۵۶۷۸۹");
 await p.getByRole("button", { name: "ادامه" }).click();
@@ -45,7 +48,7 @@ await p.goto(`${B}/app/wallet/`);
 await p.waitForSelector("text=کیف پول و صورت‌حساب");
 await p.getByRole("button", { name: /افزایش موجودی/ }).click();
 await p.getByRole("button", { name: "ادامه به پرداخت" }).click();
-await p.getByRole("button", { name: /^پرداخت / }).click();
+await p.getByRole("dialog").getByRole("button", { name: /^پرداخت / }).click();
 await p.waitForSelector("text=پرداخت موفق");
 ok(true, "wallet top-up through gateway succeeds");
 await p.screenshot({ path: `${SHOTS}/m2-wallet.png` });

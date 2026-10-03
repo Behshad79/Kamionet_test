@@ -1,5 +1,5 @@
 import { A, bal, post, shipperWallet } from "../ledger";
-import type { Buckets, Coupon, Order, Payment, PaymentMethod, PaymentPurpose, Rial, State, WaybillVersion } from "../types";
+import type { PaymentTrail, Buckets, Coupon, Order, Payment, PaymentMethod, PaymentPurpose, Rial, State, WaybillVersion } from "../types";
 import { actorPerson, audit, cv, DAY, driverOf, fail, HOUR, MIN, notify, now, ok, orderOf, paidTotal, person, setStatus, shipperOf, SYSTEM, uid, type Result } from "./core";
 
 /* ───────────────────────── required / outstanding ───────────────────────── */
@@ -103,9 +103,28 @@ export function applyDebtPayment(s: State, driverId: string, amount: Rial) {
   if (dp?.suspension?.reason === "بدهی کارمزد تسویه‌نشده" && !s.debts.some((x) => x.driverId === driverId && x.status === "OPEN")) dp.suspension = undefined;
 }
 
+const BANKS = ["بانک آریان", "بانک پارسیان‌نو", "بانک سپهر", "بانک کیمیا", "بانک زاگرس", "بانک نگین"];
+const hh = (str: string) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+const digits = (seed: string, n: number) => { let out = ""; let h = hh(seed); while (out.length < n) { h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0; out += String(h).padStart(10, "0"); } return out.slice(0, n); };
+
+/** Deterministic mock gateway/bank trail so every payment shows terminal, bank, RRN and so on. */
+export function trailFor(s: State, p: { id: string; method: PaymentMethod; payerId: string }, at: number): PaymentTrail {
+  const holder = s.persons.find((x) => x.id === p.payerId)?.name;
+  const bank = BANKS[hh(p.payerId) % BANKS.length];
+  if (p.method === "wallet") return { channel: "wallet", initiatedAt: at };
+  if (p.method === "credit") return { channel: "credit", initiatedAt: at };
+  const channel = p.method === "card2card" ? "card2card" : p.method === "paya" ? "paya" : "gateway";
+  return {
+    channel, bank, holder, cardMasked: channel === "paya" ? undefined : `${digits(p.payerId + "bin", 4)}-••••-••••-${digits(p.payerId + "last", 4)}`,
+    terminalId: digits("term" + bank, 8), merchantId: "KM-" + digits("merch", 5), rrn: digits(p.id + "rrn", 12), traceNo: digits(p.id + "tr", 6), authCode: digits(p.id + "au", 6),
+    ip: `185.${hh(p.payerId) % 200}.${hh(p.id) % 250}.${(hh(p.payerId + p.id) % 240) + 10}`, device: hh(p.payerId) % 2 ? "Chrome · Android" : "Safari · iOS", initiatedAt: at,
+  };
+}
+
 export function newPayment(s: State, p: Omit<Payment, "id" | "at" | "refunded" | "idemKey" | "status"> & { status?: Payment["status"]; idemKey?: string }): Payment {
   const id = uid(s, "pay");
   const pay: Payment = { id, at: now(s), refunded: 0, idemKey: p.idemKey ?? `pay:${id}`, status: p.status ?? "PENDING", ...p };
+  pay.trail = trailFor(s, { id, method: p.method, payerId: p.payerId }, now(s));
   s.payments.unshift(pay);
   return pay;
 }
@@ -137,6 +156,7 @@ export function completePayment(s: State, pay: Payment): void {
     advanceAfterPayment(s, o);
   }
   pay.status = "SUCCEEDED";
+  if (pay.trail) { pay.trail.paidAt = now(s); pay.trail.callbackAt = now(s); }
   s.txKeys[`pay:${pay.id}:done`] = "1";
 }
 

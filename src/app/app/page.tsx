@@ -8,6 +8,7 @@ import { OrderCard, OrderGroupCard } from "@/components/order/parts";
 import { AcceptSheet } from "@/components/rules";
 import { fa, mmss, toman } from "@/lib/format";
 import { usePortal, useNow } from "@/lib/hooks";
+import { shipperCompleteness } from "@/lib/engine/profiles";
 import { needsAcceptance } from "@/lib/engine/trust";
 import { shipperWallet } from "@/lib/ledger";
 import type { Order } from "@/lib/types";
@@ -36,7 +37,7 @@ export default function Page() {
     if (o.status === "DELIVERED" && !s.reviews.some((x) => x.orderId === o.id && x.fromId === me?.id)) out.push({ id: o.id + "r", text: `به راننده امتیاز دهید · ${r}`, href: `/app/order/?id=${o.id}` });
     return out;
   });
-  const comp = shipper ? Object.values(shipper.completeness).filter(Boolean).length : 0;
+  const comp = shipper ? Object.values(shipperCompleteness(shipper)).filter(Boolean).length : 0;
 
   return (
     <div className="space-y-6">

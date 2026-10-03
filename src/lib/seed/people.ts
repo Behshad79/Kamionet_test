@@ -22,7 +22,7 @@ function plate(r: Rng) {
 
 const defaultNotify = { orders: true, payments: true, chat: true, marketing: false };
 
-export function makeShipper(s: State, r: Rng, i: number, now: number, o: Partial<ShipperProfile> & { name?: string; phone?: string; company?: boolean } = {}): ShipperProfile {
+export function makeShipper(s: State, r: Rng, i: number, now: number, o: Omit<Partial<ShipperProfile>, "company"> & { name?: string; phone?: string; company?: boolean } = {}): ShipperProfile {
   const pid = `p-s${i}`;
   const company = o.company ?? r.chance(0.7);
   const name = o.name ?? `${r.pick(FIRST)} ${r.pick(LAST)}`;
@@ -44,9 +44,10 @@ export function makeShipper(s: State, r: Rng, i: number, now: number, o: Partial
     loyaltyTier: "bronze",
     notes: [],
     hue: r.int(0, 359),
-    ...o,
   };
-  delete (sh as Partial<{ company2: unknown }>).company2;
+  const { company: _c, name: _n, phone: _p, ...rest } = o;
+  void _c; void _n; void _p;
+  Object.assign(sh, rest);
   s.shippers.push(sh);
   return sh;
 }

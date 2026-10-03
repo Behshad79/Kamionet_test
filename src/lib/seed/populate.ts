@@ -4,6 +4,7 @@ import type { State } from "../types";
 import { DAY } from "../engine/core";
 import { makeDriver, makeShipper } from "./people";
 import { runOrder, topUp, type Sim } from "./history";
+import { seedActive, seedDebtAndSupport, seedOpenBoard, seedPersonas } from "./scenarios";
 
 export interface PopulateOpts {
   drivers: number;
@@ -28,13 +29,14 @@ export function populate(s: State, now: number, o: PopulateOpts = FULL): string[
     makeDriver(s, r, i, now, { kind: r.pick(kinds), pro, minTemp: pro === "pro" ? -22 : undefined });
   }
   for (let i = 1; i <= o.shippers; i++) makeShipper(s, r, i, now);
+  seedPersonas(sim, now);
   for (const p of s.persons) {
     const aud = p.id.startsWith("p-d") ? "driver" : "shipper";
     acceptRules(s, p.id, aud, "seed");
   }
 
   // History
-  const verified = s.drivers.filter((d) => d.kyc.status === "verified");
+  const verified = s.drivers.filter((d) => d.kyc.status === "verified" && !d.suspension && d.vehicle.minTemp !== null);
   const step = (170 * DAY) / o.orders;
   for (let i = 0; i < o.orders; i++) {
     sim.t = now - 180 * DAY + Math.round(i * step);
@@ -45,6 +47,9 @@ export function populate(s: State, now: number, o: PopulateOpts = FULL): string[
     const outcome = roll < 0.88 ? "completed" : roll < 0.94 ? "cancel_shipper" : "cancel_driver";
     runOrder(sim, sh.personId, d.personId, outcome);
   }
+  seedActive(sim, now, o.inTransit);
+  seedOpenBoard(sim, o.open, now);
+  seedDebtAndSupport(sim, now);
   s._now = undefined;
   return sim.errors;
 }

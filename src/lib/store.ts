@@ -17,7 +17,7 @@ import type { PortalId, SessionInfo, State } from "./types";
  * tabs behave like two clients on one database. Sessions are per portal and per tab.
  */
 
-const DATA_KEY = "kamionet:v3";
+const DATA_KEY = "state-v3";
 const sessKey = (p: PortalId) => `kamionet:sess:${p}`;
 export const OTP_CODE = "12345";
 export const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "0";
@@ -29,24 +29,40 @@ let persistFailed = false;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
-function readBlob(): State | null {
-  try {
-    const raw = localStorage.getItem(DATA_KEY);
-    return raw ? (JSON.parse(raw) as State) : null;
-  } catch {
-    return null;
-  }
+/* Persistence: IndexedDB (the seed is several MB, too big for localStorage) + BroadcastChannel for other tabs. */
+const DB = "kamionet";
+let channel: BroadcastChannel | null = null;
+let writeTimer: ReturnType<typeof setTimeout> | undefined;
+
+function idb<T>(mode: IDBTransactionMode, fn: (st: IDBObjectStore) => IDBRequest<T>): Promise<T | undefined> {
+  return new Promise((resolve) => {
+    try {
+      const open = indexedDB.open(DB, 1);
+      open.onupgradeneeded = () => open.result.createObjectStore("kv");
+      open.onerror = () => resolve(undefined);
+      open.onsuccess = () => {
+        const tx = open.result.transaction("kv", mode);
+        const req = fn(tx.objectStore("kv"));
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(undefined);
+      };
+    } catch { resolve(undefined); }
+  });
 }
 
-function writeBlob(s: State) {
-  try {
-    const { session: _s, _now, ready: _r, ...rest } = s;
-    void _s; void _now; void _r;
-    localStorage.setItem(DATA_KEY, JSON.stringify(rest));
-    persistFailed = false;
-  } catch {
-    persistFailed = true; // storage full: keep working in memory
-  }
+const stripped = (s: State) => {
+  const { session: _s, _now, ready: _r, ...rest } = s;
+  void _s; void _now; void _r;
+  return rest;
+};
+
+function persist(s: State) {
+  clearTimeout(writeTimer);
+  writeTimer = setTimeout(() => {
+    const data = stripped(s);
+    idb("readwrite", (st) => st.put(data, DATA_KEY)).then((r) => { persistFailed = r === undefined; });
+    try { channel?.postMessage(data); } catch { /* ignore */ }
+  }, 120);
 }
 
 function readSessions(): Record<PortalId, SessionInfo> {
@@ -75,32 +91,32 @@ function clearSession(p: PortalId) {
   } catch { /* ignore */ }
 }
 
+let hydrating = false;
 export function hydrate() {
-  if (state.ready || typeof window === "undefined") return;
-  const blob = readBlob();
-  const fresh = blob && blob.version === EMPTY_STATE.version ? blob : buildSeed();
-  state = { ...fresh, ready: true, session: readSessions() };
-  writeBlob(state);
-  emit();
-  window.addEventListener("storage", (e) => {
-    if (e.key !== DATA_KEY) return;
-    const b = readBlob();
-    if (b) {
-      state = { ...b, ready: true, session: state.session };
-      emit();
-    }
+  if (state.ready || hydrating || typeof window === "undefined") return;
+  hydrating = true;
+  idb<State>("readonly", (st) => st.get(DATA_KEY)).then((blob) => {
+    const fresh = blob && blob.version === EMPTY_STATE.version ? blob : buildSeed();
+    state = { ...fresh, ready: true, session: readSessions() };
+    persist(state);
+    emit();
+    try {
+      channel = new BroadcastChannel(DATA_KEY);
+      channel.onmessage = (e) => {
+        state = { ...(e.data as State), ready: true, session: state.session };
+        emit();
+      };
+    } catch { /* single-tab fallback */ }
   });
 }
 
 /** Run one atomic action. The draft is a deep clone; throw-free actions return Result. */
 export function act<T>(fn: (s: State) => T): T {
-  const fresh = readBlob();
-  const base = fresh ? { ...fresh, ready: true, session: state.session } : state;
-  const draft = structuredClone(base) as State;
+  const draft = structuredClone(state) as State;
   if (tickDue(draft)) engineTick(draft);
   const out = fn(draft);
   state = draft;
-  writeBlob(draft);
+  persist(draft);
   emit();
   return out;
 }
@@ -170,7 +186,7 @@ export function demoSignIn(portal: PortalId, phone: string): Result {
 export function resetDemo() {
   const sessions = state.session;
   state = { ...buildSeed(), ready: true, session: sessions };
-  writeBlob(state);
+  persist(state);
   emit();
 }
 

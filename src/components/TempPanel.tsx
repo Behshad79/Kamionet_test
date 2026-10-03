@@ -39,7 +39,7 @@ export function LiveTempBadge({ o }: { o: TelemetryOrder }) {
  * and every excursion. State is never colour-only: each excursion also carries an
  * icon, a label and a row in the log.
  */
-export function TempPanel({ o, contact }: { o: TelemetryOrder & { status: string }; contact?: { name: string; phone: string } }) {
+export function TempPanel({ o, contact }: { o: TelemetryOrder & { tempMin: number; tempMax: number; status: string }; contact?: { name: string; phone: string } }) {
   const now = useNow(1000);
   const rs = useMemo(() => readings(o, now), [o, now]);
   const [hover, setHover] = useState<number | null>(null);

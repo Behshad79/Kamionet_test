@@ -7,6 +7,7 @@ import { TruckIllustration } from "@/components/graphics/TruckIllustration";
 import { MapView } from "@/components/MapView";
 import { CargoLabel, FileDrop, RouteLine, StatusBadge, TempChip, type Captured } from "@/components/molecules";
 import { PriceBreakdown, StatusTimeline } from "@/components/order/parts";
+import { MismatchPanel, MismatchSheet } from "@/components/mismatch";
 import { ReviewForm } from "@/components/ReviewForm";
 import { TempPanel } from "@/components/TempPanel";
 import { toast } from "@/components/Toaster";
@@ -40,6 +41,7 @@ export default function Page() {
   const [cash, setCash] = useState<number | undefined>();
   const [sos, setSos] = useState(false);
   const [cancel, setCancel] = useState(false);
+  const [mm, setMm] = useState(false);
   const [busy, setBusy] = useState(false);
   const o = s.orders.find((x) => x.id === id);
   const v = o && me ? viewOrder(o, s, me.id) : undefined;
@@ -79,6 +81,7 @@ export default function Page() {
         {o.note && <p className="rounded-ui bg-surface-2 p-3 text-sm">{o.note}</p>}
       </Card>
 
+      {(o.status === "MISMATCH_REVIEW" || o.mismatchId) && <MismatchPanel o={o} role="driver" meId={me.id} />}
       {/* ───── stage panels ───── */}
       {o.status === "ASSIGNED" && (
         <Card className="space-y-3 p-4"><h2 className="font-extrabold">آماده‌ی حرکت به مبدأ</h2><p className="text-sm text-ink-3">بارگیری از {jDateTime(o.pickupAt)} تا {jDateTime(o.pickupTo)}.</p>
@@ -97,7 +100,7 @@ export default function Page() {
           <div className="grid grid-cols-2 gap-3"><FileDrop label="عکس بار" hint="با زمان و موقعیت" stamp capture value={cargo?.dataUrl} onChange={setCargo} /><FileDrop label="فاکتور بارگیری" stamp capture value={inv?.dataUrl} onChange={setInv} /></div>
           <Field label="تعداد اقلام روی فاکتور" hint="برای تطبیق با فاکتور تحویل">{(id) => <NumInput id={id} value={items} onChange={setItems} />}</Field>
           <Button block size="lg" className="h-14" loading={busy} disabled={!cargo || !inv} onClick={() => submit({ kind: "startTrip", driverId: me.id, orderId: o.id, cargo: asMedia(cargo!, "cargo"), invoice: asMedia(inv!, "invoice_pickup", items), items }, "بارگیری ثبت شد؛ سفر آغاز شد.")}>بارگیری شد؛ شروع سفر</Button>
-          <div className="grid grid-cols-2 gap-2"><Button variant="secondary" onClick={() => toast("گزارش مغایرت در مرحله‌ی بعد فعال می‌شود.", "info")}>گزارش مغایرت بار</Button><Button variant="danger" onClick={() => run(() => act((st) => reportShipperNotReady(st, me.id, o.id)), "گزارش ثبت شد.")}>صاحب بار آماده نیست</Button></div>
+          <div className="grid grid-cols-2 gap-2"><Button variant="secondary" onClick={() => setMm(true)}>گزارش مغایرت بار</Button><Button variant="danger" onClick={() => run(() => act((st) => reportShipperNotReady(st, me.id, o.id)), "گزارش ثبت شد.")}>صاحب بار آماده نیست</Button></div>
         </Card>
       )}
       {(o.status === "IN_TRANSIT" || o.status === "AT_DELIVERY") && tel && pos && (
@@ -134,6 +137,7 @@ export default function Page() {
       <Sheet open={cancel} onClose={() => setCancel(false)} title="انصراف از سفر" footer={<div className="grid grid-cols-2 gap-2"><Button variant="secondary" onClick={() => setCancel(false)}>ادامه‌ی سفر</Button><Button variant="danger" onClick={() => { const r = run(() => act((st) => cancelByDriver(st, me.id, o.id, "انصراف راننده")), "سفر لغو شد."); if (r.ok) setCancel(false); }}>تأیید انصراف</Button></div>}>
         <p className="text-sm leading-7">با انصراف، مبلغ پرداختی به صاحب بار کامل برمی‌گردد و برای شما <b>امتیاز منفی</b> ثبت می‌شود. تکرار آن می‌تواند به تعلیق حساب منجر شود. اگر مشکل واقعی (خرابی، تصادف) دارید، ابتدا از SOS گزارش دهید.</p>
       </Sheet>
+      <MismatchSheet open={mm} onClose={() => setMm(false)} o={o} driverId={me.id} />
       <SosSheet open={sos} onClose={() => setSos(false)} pid={me.id} orderId={o.id} />
     </div>
   );

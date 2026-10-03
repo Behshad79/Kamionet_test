@@ -135,6 +135,7 @@ export function seedActive(sim: Sim, now: number, inTransit: number) {
       real.loadedAt = now - r.int(1, 7) * MIN; // so the demo clock shows trucks mid-route
       real.distanceKm = Math.max(real.distanceKm, 150);
       d.lastLoc = { lat: real.origin.lat, lng: real.origin.lng, at: now };
+      if (!s.orders.some((x) => x.consignee.token === "demo")) real.consignee.token = "demo"; // sample consignee link: /track/?t=demo
     }
   }
 }

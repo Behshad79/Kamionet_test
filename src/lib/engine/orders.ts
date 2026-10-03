@@ -626,7 +626,7 @@ export function reportMismatch(s: State, driverId: string, orderId: string, i: M
   s.mismatches.unshift(m);
   o.mismatchId = m.id;
   setStatus(s, o, "MISMATCH_REVIEW", actorPerson(s, driverId), "گزارش مغایرت بار");
-  notify(s, o.shipperId, "shipper", "mismatch", `⚠ مغایرت بار گزارش شد. تا ${cv<number>(s, "mismatch.slaMin")} دقیقه برای تصمیم فرصت دارید.`, `/app/order/?id=${o.id}`);
+  notify(s, o.shipperId, "shipper", "mismatch", `مغایرت بار گزارش شد. تا ${cv<number>(s, "mismatch.slaMin")} دقیقه برای تصمیم فرصت دارید.`, `/app/order/?id=${o.id}`);
   return ok({ id: m.id });
 }
 

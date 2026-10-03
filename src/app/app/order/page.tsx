@@ -8,11 +8,12 @@ import { MapView } from "@/components/MapView";
 import { CargoLabel, Countdown, RouteLine, StatusBadge, TempChip } from "@/components/molecules";
 import { ModeChip, OdorChip, PriceBreakdown, StatusTimeline } from "@/components/order/parts";
 import { PaymentSheet } from "@/components/order/PaymentSheet";
+import { MismatchPanel } from "@/components/mismatch";
 import { ReviewForm } from "@/components/ReviewForm";
 import { TempPanel } from "@/components/TempPanel";
 import { toast } from "@/components/Toaster";
 import { Accordion, Button, Card, EmptyState, Field, Input, Sheet, Skeleton } from "@/components/ui";
-import { addBoost, cancelByShipper, directFallback, payPostTip } from "@/lib/engine/orders";
+import { addBoost, cancelByShipper, confirmCash, directFallback, payPostTip } from "@/lib/engine/orders";
 import { cancelQuote, outstanding, shipperPaid } from "@/lib/engine/pay";
 import { driverStats } from "@/lib/engine/stats";
 import { myReview } from "@/lib/engine/trust";
@@ -85,7 +86,9 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
       {bal > 0 && ["DELIVERED"].includes(o.status) && (
         <Card className="space-y-3 border-2 border-warn p-5"><h2 className="font-extrabold">مابقی کرایه</h2><p className="text-sm text-ink-3">بار تحویل شد. پرداخت مابقی، تسویه را کامل می‌کند.</p><Button block onClick={() => setPayOpen("balance")}>پرداخت {toman(bal)}</Button></Card>
       )}
-      {o.status === "MISMATCH_REVIEW" && <Card className="space-y-2 border-2 border-warn p-5"><h2 className="font-extrabold">مغایرت بار گزارش شد</h2><p className="text-sm text-ink-3">راننده مغایرتی میان بار واقعی و اظهار شما ثبت کرده است. بررسی و پاسخ در بخش مغایرت (به‌زودی در این صفحه).</p></Card>}
+      {o.cash?.status === "pending" && o.cash.driverDeclared !== undefined && o.cash.shipperConfirmed === undefined && <CashConfirm o={o} meId={meId} />}
+      {o.cash?.status === "mismatch" && <Card className="space-y-1 border-2 border-danger/40 p-5"><h2 className="font-extrabold text-danger">اختلاف در مبلغ نقدی</h2><p className="text-sm leading-7 text-ink-3">مبلغ اعلامی شما با راننده یکی نیست؛ پرونده‌ی مالی باز شد و وجه راننده تا بررسی نگه داشته شده است. وضعیت را در «پشتیبانی» دنبال کنید.</p></Card>}
+      {o.mismatchId && <MismatchPanel o={o} role="shipper" meId={meId} />}
 
       {/* ───── live tracking ───── */}
       {transit && (
@@ -129,6 +132,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
           {["DELIVERED", "COMPLETED"].includes(o.status) && o.driverId && (
             <Card className="space-y-3 p-5">
               <h2 className="font-extrabold">نظر شما</h2>
+              {transit && o.tempMin !== undefined && <Link href={`/certificate/?id=${o.id}`} className="flex h-11 items-center justify-center rounded-ui border border-line font-bold">گواهی زنجیره‌ی سرد (PDF)</Link>}
               {reviewed ? <p className="flex items-center gap-2 text-sm text-ok"><CheckCircle2 className="size-4" aria-hidden />نظر شما ثبت شده است.</p> : <ReviewForm personId={meId} orderId={o.id} role="shipper" />}
               <Button variant="secondary" block onClick={() => setPayOpen("tip")}>انعام به راننده</Button>
             </Card>
@@ -152,6 +156,18 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
       <BoostSheet open={boostOpen} onClose={() => setBoostOpen(false)} meId={meId} o={o} />
       <CancelSheet open={cancelOpen} onClose={() => setCancelOpen(false)} o={o} meId={meId} />
     </div>
+  );
+}
+
+function CashConfirm({ o, meId }: { o: Order; meId: string }) {
+  const [v, setV] = useState<number | undefined>(o.cashAgreed ? o.cashAgreed / 10 : undefined);
+  return (
+    <Card className="space-y-3 border-2 border-warn p-5">
+      <h2 className="font-extrabold">تأیید پرداخت نقدی به راننده</h2>
+      <p className="text-sm leading-7 text-ink-3">طبق توافق، {toman(o.cashAgreed)} را نقد به راننده داده‌اید. مبلغ واقعی را وارد کنید؛ اگر با اعلام راننده فرق کند، پرونده‌ی مالی باز می‌شود.</p>
+      <Field label="مبلغ پرداخت‌شده (تومان)">{(id) => <Input id={id} dir="ltr" inputMode="numeric" value={v ?? ""} onChange={(e) => setV(Number(e.target.value.replace(/\D/g, "")) || undefined)} />}</Field>
+      <Button block disabled={!v} onClick={() => { const r = act((st) => confirmCash(st, meId, o.id, R(v ?? 0))); toast(r.ok ? "ثبت شد." : r.error, r.ok ? "ok" : "err"); }}>تأیید مبلغ</Button>
+    </Card>
   );
 }
 

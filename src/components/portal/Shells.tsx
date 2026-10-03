@@ -9,6 +9,7 @@ import { logout, PORTAL_LOGIN } from "@/lib/store";
 import type { PortalId } from "@/lib/types";
 import { Logo, PortalCue, ProBadge } from "../brand";
 import { Skeleton, cx } from "../ui";
+import { SupportWidget } from "../SupportWidget";
 import { DemoDrawer, openDemo } from "./DemoDrawer";
 import { DEMO_MODE } from "@/lib/store";
 import { FlaskConical } from "lucide-react";
@@ -88,6 +89,7 @@ export function ShipperShell({ children }: { children: ReactNode }) {
         <div className="mx-auto max-w-5xl p-4 lg:p-8">{children}</div>
       </div>
       <BottomBar items={SHIPPER_NAV} path={g.path} className="lg:hidden" />
+      <SupportWidget portal="shipper" />
       <DemoDrawer />
     </div>
   );
@@ -110,6 +112,7 @@ export function DriverShell({ children }: { children: ReactNode }) {
       </header>
       <div className="mx-auto max-w-2xl p-4">{children}</div>
       <BottomBar items={DRIVER_NAV} path={g.path} large />
+      <SupportWidget portal="driver" />
       <DemoDrawer />
     </div>
   );

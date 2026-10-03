@@ -31,3 +31,10 @@ export async function demoLogin(p, portal, phone) {
   await p.getByRole("button", { name: "ورود", exact: true }).click();
   await p.waitForURL(new RegExp(`/${path}/$`));
 }
+
+export const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+export const img = { name: "x.png", mimeType: "image/png", buffer: PNG };
+/** Read the whole mock database straight from IndexedDB (what the app persists). */
+export async function readState(p) {
+  return p.evaluate(() => new Promise((res) => { const o = indexedDB.open("kamionet", 1); o.onsuccess = () => { const r = o.result.transaction("kv").objectStore("kv").get("state-v3"); r.onsuccess = () => res(r.result); }; }));
+}

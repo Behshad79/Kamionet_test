@@ -59,7 +59,7 @@ export function seedPersonas(sim: Sim, now: number) {
   dd(12, { kind: "dry", minTemp: null, canRunAmbient: true });
   const d13 = dd(13, { kind: "kamionet", minTemp: 0 });
   d10.suspension = { reason: "گزارش‌های مکرر خروج از بازه‌ی دما", since: now - 4 * DAY, appeal: "open", appealText: "یخچال خودرو تعمیر شده و فاکتور تعمیرگاه پیوست است." };
-  d13.declaredTrips.push({ id: uid(s, "tr"), from: "تهران", to: "قزوین", departAt: now + 1 * DAY, returnFrom: "قزوین", returnTo: "تهران", returnAt: now + 1 * DAY + 8 * HOUR } as never);
+  d13.declaredTrips.push({ id: uid(s, "tr"), from: "تهران", to: "قزوین", departAt: now + 1 * DAY, backTo: "تهران", backAt: now + 1 * DAY + 8 * HOUR, active: true });
   for (const p of s.drivers) if (DEMO_DRIVERS.some((x) => x.phone === s.persons.find((q) => q.id === p.personId)?.phone) && p.kyc.status === "verified") p.controls.cashToDriver = true;
 
   const ss = (i: number, o: Parameters<typeof makeShipper>[4] = {}) => makeShipper(s, r, 1000 + i, now, { ...o, phone: DEMO_SHIPPERS[i - 1].phone, name: DEMO_SHIPPERS[i - 1].name });

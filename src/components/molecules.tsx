@@ -100,11 +100,13 @@ export const BackLink = ({ href, children }: { href: string; children: React.Rea
 export interface Captured { dataUrl: string; takenAt: number; lat: number; lng: number }
 
 async function getPos(fallback: { lat: number; lng: number }): Promise<{ lat: number; lng: number }> {
+  // The browser's own `timeout` only starts after the permission prompt is answered, so race it with ours.
   return new Promise((res) => {
-    if (!navigator.geolocation) return res(fallback);
+    const t = setTimeout(() => res(fallback), 2500);
+    if (!navigator.geolocation) { clearTimeout(t); return res(fallback); }
     navigator.geolocation.getCurrentPosition(
-      (p) => res({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => res(fallback),
+      (p) => { clearTimeout(t); res({ lat: p.coords.latitude, lng: p.coords.longitude }); },
+      () => { clearTimeout(t); res(fallback); },
       { timeout: 2500, maximumAge: 60_000 },
     );
   });

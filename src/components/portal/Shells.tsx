@@ -49,12 +49,12 @@ function Loading() {
   return <div className="mx-auto max-w-3xl space-y-4 p-6" aria-busy="true" aria-label="در حال بارگذاری"><Skeleton className="h-10 w-1/3" /><Skeleton className="h-40" /><Skeleton className="h-40" /></div>;
 }
 
-function Bell2({ n }: { n: number }) {
+function Bell2({ n, href }: { n: number; href: string }) {
   return (
-    <button aria-label={n ? `اعلان‌ها، ${n} خوانده‌نشده` : "اعلان‌ها"} className="relative grid size-11 place-items-center rounded-full hover:bg-surface-3">
+    <Link href={href} aria-label={n ? `اعلان‌ها، ${n} خوانده‌نشده` : "اعلان‌ها"} className="relative grid size-11 place-items-center rounded-full hover:bg-surface-3">
       <Bell className="size-5" aria-hidden />
       {n > 0 && <span className="absolute end-2 top-2 size-2.5 rounded-full bg-danger ring-2 ring-white" />}
-    </button>
+    </Link>
   );
 }
 
@@ -79,7 +79,7 @@ export function ShipperShell({ children }: { children: ReactNode }) {
       </aside>
       <div className="min-w-0 pb-24 lg:pb-8">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-line bg-white/90 px-4 backdrop-blur lg:hidden">
-          <Logo /><div className="flex items-center gap-1"><PortalCue label="پنل صاحب بار" tone="shipper" /><Bell2 n={g.unread} /></div>
+          <Logo /><div className="flex items-center gap-1"><PortalCue label="پنل صاحب بار" tone="shipper" /><Bell2 n={g.unread} href="/app/notifications/" /></div>
         </header>
         <div className="mx-auto max-w-5xl p-4 lg:p-8">{children}</div>
       </div>
@@ -93,13 +93,16 @@ export function ShipperShell({ children }: { children: ReactNode }) {
 
 export function DriverShell({ children }: { children: ReactNode }) {
   const g = useGate("driver");
+  useEffect(() => {
+    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") navigator.serviceWorker.register(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/sw.js`, { scope: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/driver/` }).catch(() => undefined);
+  }, []);
   if (g.isLogin) return <div data-portal="driver">{children}</div>;
   if (!g.ready || !g.signedIn) return <div data-portal="driver" className="min-h-dvh bg-tint"><Loading /></div>;
   return (
     <div data-portal="driver" className="min-h-dvh bg-tint pb-24">
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-line bg-white/95 px-4 backdrop-blur">
         <div className="flex items-center gap-2"><Logo />{g.driver?.pro.status === "pro" && <ProBadge />}</div>
-        <div className="flex items-center gap-1"><PortalCue label="اپ راننده" tone="driver" /><Bell2 n={g.unread} /></div>
+        <div className="flex items-center gap-1"><PortalCue label="اپ راننده" tone="driver" /><Bell2 n={g.unread} href="/driver/notifications/" /></div>
       </header>
       <div className="mx-auto max-w-2xl p-4">{children}</div>
       <BottomBar items={DRIVER_NAV} path={g.path} large />

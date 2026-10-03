@@ -56,13 +56,22 @@ const stripped = (s: State) => {
   return rest;
 };
 
+let dirty: State | null = null;
+function flush() {
+  if (!dirty) return;
+  const data = stripped(dirty);
+  dirty = null;
+  idb("readwrite", (st) => st.put(data, DATA_KEY)).then((r) => { persistFailed = r === undefined; });
+  try { channel?.postMessage(data); } catch { /* ignore */ }
+}
 function persist(s: State) {
+  dirty = s;
   clearTimeout(writeTimer);
-  writeTimer = setTimeout(() => {
-    const data = stripped(s);
-    idb("readwrite", (st) => st.put(data, DATA_KEY)).then((r) => { persistFailed = r === undefined; });
-    try { channel?.postMessage(data); } catch { /* ignore */ }
-  }, 120);
+  writeTimer = setTimeout(flush, 120);
+}
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", flush);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flush(); });
 }
 
 function readSessions(): Record<PortalId, SessionInfo> {

@@ -109,11 +109,13 @@ export interface Strike {
 
 export interface DeclaredTrip {
   id: string;
+  /** Outbound leg the driver is already doing (or plans). */
   from: string;
   to: string;
   departAt: number;
-  returnFrom: number;
-  returnTo: number;
+  /** Where the driver wants to end up after unloading (backhaul target). */
+  backTo: string;
+  backAt?: number;
   active: boolean;
 }
 

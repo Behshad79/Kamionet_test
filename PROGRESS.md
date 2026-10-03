@@ -8,8 +8,10 @@
 
 - **M2** shipper portal: dashboard (grouped multi-vehicle, to-do, tabs), 5-step wizard (Jalali pickers, temp slider, odor, vehicle illustrations, Pro + driver carousel/profile, insurance picker, terms, recurring, draft persistence), order detail (live map + telemetry, timeline, waybill versions, deposit/balance payment, tip, boost, cancel with exact fee, review, tracking link, rebook), wallet/invoices/refunds/arrears, profile (public profile, completeness, prefs, recurring, favorites, rules), payment sheet, e2e `shipper`.
 
+- **M3** driver portal: resumable KYC (identity + checksum, Shahkar mock with 3-attempt lock + fraud flag, selfie, license, vehicle with colour/`PlateInput`/fridge specs/ambient flag, docs expiry, rules), stage screens (in review / rejected / suspended + appeal), list-first marketplace with filters/sort/map/backhaul/declared trips, explicit reserve copy, lock → confirm, direct requests, trip execution per stage (waiting timer, photos with GPS stamp, offline upload queue, OTP delivery, cash declaration, SOS + incident ticket), trips list, wallet (payouts, IBAN holder check, debt, incentives), profile (stats, breakdown, expiry tracker, clean/wash flow, Pro screen, rules), notifications, shipper public profile, PWA manifest + service worker, e2e `driver` (KYC + full trip chain + offline queue, ledger still balanced).
+
 ## In progress
-- M3: driver portal.
+- M4: mismatch flow UI, support widget (3 channels), consignee tracking `/track`, certificate PDF, money edge cases.
 
 ## Next
 - M2 shipper portal · M3 driver portal · M4 money/rules/mismatch/support/tracking/reviews/certificate · M5 admin console + Demo Director · M6 polish, QA, DEMO_GUIDE.md, deploy

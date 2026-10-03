@@ -288,3 +288,71 @@ export function ScrollRow({ children, className }: { children: ReactNode; classN
     </div>
   );
 }
+
+/* ───────── Sheet (bottom sheet on mobile, dialog on desktop) with focus trap ───────── */
+
+export function Sheet({ open, onClose, title, children, footer, wide }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; wide?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.activeElement as HTMLElement | null;
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return onClose();
+      if (e.key !== "Tab" || !ref.current) return;
+      const f = ref.current.querySelectorAll<HTMLElement>('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    window.addEventListener("keydown", h);
+    const t = setTimeout(() => ref.current?.querySelector<HTMLElement>("button,input,select,textarea,[href]")?.focus(), 30);
+    const ov = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", h); clearTimeout(t); document.body.style.overflow = ov; prev?.focus?.(); };
+  }, [open, onClose]);
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-ink/40 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={onClose}>
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}
+        className={cx("flex max-h-[92dvh] w-full animate-rise flex-col rounded-t-3xl bg-white shadow-lift sm:rounded-ui", wide ? "max-w-2xl" : "max-w-md")}>
+        <div className="flex items-center justify-between border-b border-line px-5 py-3">
+          <h2 className="text-lg font-bold">{title}</h2>
+          <button onClick={onClose} aria-label="بستن" className="grid size-11 place-items-center rounded-full hover:bg-surface-3"><X className="size-5" /></button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
+        {footer && <div className="pb-safe border-t border-line bg-white p-4">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ───────── Tabs ───────── */
+
+export function Tabs<T extends string>({ value, onChange, tabs, className }: { value: T; onChange: (v: T) => void; tabs: { id: T; label: ReactNode; count?: number }[]; className?: string }) {
+  return (
+    <div role="tablist" className={cx("no-scrollbar flex gap-1 overflow-x-auto border-b border-line", className)}>
+      {tabs.map((t) => {
+        const on = t.id === value;
+        return (
+          <button key={t.id} role="tab" aria-selected={on} onClick={() => onChange(t.id)}
+            className={cx("flex h-12 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-bold transition", on ? "border-act text-act-ink" : "border-transparent text-ink-3 hover:text-ink")}>
+            {t.label}
+            {t.count !== undefined && <span className="rounded-full bg-surface-3 px-2 py-0.5 text-xs">{faGroup.format(t.count)}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function Accordion({ title, children, defaultOpen }: { title: ReactNode; children: ReactNode; defaultOpen?: boolean }) {
+  return (
+    <details open={defaultOpen} className="group rounded-ui border border-line bg-white">
+      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 font-bold [&::-webkit-details-marker]:hidden">
+        {title}<ChevronLeft className="size-4 text-ink-3 transition group-open:-rotate-90" aria-hidden />
+      </summary>
+      <div className="border-t border-line p-4">{children}</div>
+    </details>
+  );
+}

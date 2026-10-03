@@ -51,7 +51,7 @@ export function DemoDrawer() {
   if (!DEMO_MODE) return null;
   return (
     <>
-      <button onClick={() => setOpen(true)} aria-label="حساب‌های دمو" className="fixed bottom-24 left-3 z-40 grid size-12 place-items-center rounded-full bg-ink text-white shadow-lift lg:bottom-5"><FlaskConical className="size-5" aria-hidden /></button>
+      <button onClick={() => setOpen(true)} aria-label="حساب‌های دمو" className="fixed bottom-28 left-0 z-40 grid h-11 w-8 place-items-center rounded-r-full bg-ink/80 text-white shadow-lift lg:bottom-5"><FlaskConical className="size-5" aria-hidden /></button>
       {open && (
         <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label="حساب‌های دمو">
           <button className="flex-1 bg-ink/40" aria-label="بستن" onClick={() => setOpen(false)} />

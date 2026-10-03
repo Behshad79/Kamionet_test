@@ -112,3 +112,8 @@ export function stats(rs: Reading[]) {
   const cs = rs.map((r) => r.c);
   return { min: Math.min(...cs), max: Math.max(...cs), avg: cs.reduce((a, b) => a + b, 0) / cs.length };
 }
+
+/** Adapter: order → what the sensor simulation needs. */
+export function telemetryOf(o: { id: string; tempMin?: number; tempMax?: number; loadedAt?: number; deliveredAt?: number; distanceKm: number; forceExcursionAt?: number }): TelemetryOrder {
+  return { id: o.id, tempMin: o.tempMin, tempMax: o.tempMax, startedAt: o.loadedAt, deliveredAt: o.deliveredAt, distanceKm: o.distanceKm, forceExcursionAt: o.forceExcursionAt };
+}

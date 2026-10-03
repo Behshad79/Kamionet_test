@@ -442,3 +442,18 @@ export function cancelPostings(s: State, o: Order, q: CancelQuote, refundTo: "wa
   void actorPerson;
   void person;
 }
+
+/** Shipper settles unpaid arrears (waiting fees, shortfalls) from the wallet or by card. */
+export function payArrears(s: State, shipperId: string, method: "wallet" | "card"): Result<{ amount: Rial }> {
+  const due = bal(s, A.shipperAr(shipperId));
+  if (due <= 0) return fail("بدهی بازی ندارید.");
+  if (method === "wallet") {
+    if (shipperWallet(s, shipperId).available < due) return fail("موجودی کیف پول کافی نیست.");
+    post(s, { key: `arr:${shipperId}:${s.seq}`, memo: "تسویه‌ی بدهی از کیف پول", ref: { personId: shipperId }, lines: [[A.shipper(shipperId), due], [A.shipperAr(shipperId), -due]] });
+  } else {
+    if (["fail", "cancel", "timeout"].includes(s.demo.gateway)) return fail("پرداخت ناموفق بود. دوباره تلاش کنید.");
+    post(s, { key: `arr:${shipperId}:${s.seq}`, memo: "تسویه‌ی بدهی (درگاه)", ref: { personId: shipperId }, lines: [[A.GATEWAY, due], [A.shipperAr(shipperId), -due]] });
+  }
+  s.seq++;
+  return ok({ amount: due });
+}

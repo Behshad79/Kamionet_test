@@ -15,6 +15,7 @@ import {
   advanceAfterPayment, cancelPostings, cancelQuote, commissionRate, completePayment, couponDiscount, issueWaybill, outstanding, pay, releaseSettlement,
   settleDelayed, settleOrder, shipperPaid, totalDue,
 } from "./pay";
+import { needsAcceptance } from "./trust";
 
 /* ───────────────────────── pricing ───────────────────────── */
 
@@ -100,6 +101,7 @@ function validateInput(s: State, shipperId: string, i: OrderInput): string | nul
   const sh = shipperOf(s, shipperId);
   if (!sh) return "ابتدا از ورودی صاحب بار وارد شوید.";
   if (sh.controls.blocked) return "حساب شما مسدود است؛ با پشتیبانی تماس بگیرید.";
+  if (needsAcceptance(s, shipperId, "shipper")) return "ابتدا نسخه‌ی جاری قوانین را بپذیرید.";
   if (bal(s, A.shipperAr(shipperId)) > 0) return "بدهی تسویه‌نشده دارید؛ ابتدا از بخش کیف پول آن را پرداخت کنید.";
   if (!i.origin.city || !i.dest.city) return "مبدأ و مقصد را کامل کنید.";
   if (i.origin.city === i.dest.city && i.origin.address.trim() === i.dest.address.trim()) return "مبدأ و مقصد نمی‌توانند یکسان باشند.";
@@ -882,3 +884,12 @@ export type { OdorClass };
 export const ACTIVE = ACTIVE_TRIP;
 void cashEligibleDriver;
 void matchVehicle;
+
+/* ───────────────────────── recurring templates ───────────────────────── */
+
+export function saveTemplate(s: State, shipperId: string, input: OrderInput, cadence: "daily" | "weekly"): Result<{ id: string }> {
+  const { pickupAt, pickupTo, deliverBy, ...draft } = input;
+  const id = uid(s, "tp");
+  s.templates.push({ id, shipperId, cadence, hour: new Date(pickupAt).getHours(), active: true, nextRunAt: pickupAt + (cadence === "daily" ? DAY : 7 * DAY), windowMs: pickupTo - pickupAt, deliverAfterMs: deliverBy - pickupAt, draft });
+  return ok({ id });
+}

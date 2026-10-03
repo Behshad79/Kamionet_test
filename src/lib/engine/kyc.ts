@@ -1,5 +1,6 @@
 import type { DocKey, DriverProfile, Plate, State, Vehicle } from "../types";
-import { DAY, HOUR, audit, driverOf, fail, now, ok, person, SYSTEM, uid, type Result } from "./core";
+import { DAY, HOUR, audit, driverOf, fail, notify, now, ok, person, SYSTEM, uid, type Result } from "./core";
+import { openTicket } from "./trust";
 import { ensureDriver } from "./profiles";
 import { normalizeDigits } from "../money";
 
@@ -80,11 +81,15 @@ export function kycReady(s: State, pid: string) {
   if (!p.nationalId) miss.push("هویت");
   if (d.kyc.idMatch.status !== "ok") miss.push("تطبیق شاهکار");
   if (!d.docs.selfie?.dataUrl) miss.push("عکس چهره");
-  if (!d.docs.license?.dataUrl && !d.docs.smartCard?.dataUrl) miss.push("گواهینامه یا کارت هوشمند");
   if (!d.vehicle.plate) miss.push("پلاک");
   if (!d.docs.insurance?.dataUrl || !d.docs.insurance.expiresAt) miss.push("عکس و تاریخ انقضای بیمه‌نامه");
   if (!d.docs.inspection?.dataUrl || !d.docs.inspection.expiresAt) miss.push("عکس و تاریخ انقضای معاینه‌ی فنی");
   if (!d.docs.regFront?.dataUrl) miss.push("کارت خودرو");
+  if (!d.docs.smartCard?.dataUrl) miss.push("کارت هوشمند راننده");
+  if (!d.docs.license?.dataUrl) miss.push("گواهینامه");
+  if (!d.vehicle.modelName?.trim()) miss.push("مدل دقیق خودرو");
+  if (!d.vehicle.year) miss.push("سال ساخت");
+  if (d.vehicle.minTemp !== null && !d.vehicle.thermo) miss.push("نوع دماسنج یخچال");
   return miss;
 }
 
@@ -142,4 +147,26 @@ export function renewDoc(s: State, pid: string, key: "insurance" | "inspection",
   if (d.suspension?.reason.includes("منقضی") && !d.suspension.reason.includes("بدهی")) d.suspension = undefined;
   audit(s, SYSTEM, "doc.renew", `${key} · در انتظار بازبینی`, pid);
   return ok();
+}
+
+/* ───────────────────────── cargo-box thermometer ───────────────────────── */
+
+export const SENSOR_BONUS_XP = 150;
+
+/** Simulated pairing of the driver's own thermometer with Kamionet's data feed. In production this is a device-pairing handshake. */
+export function connectSensor(s: State, pid: string): Result {
+  const d = driverOf(s, pid);
+  if (!d) return fail("حساب راننده پیدا نشد.");
+  if (!d.vehicle.thermo || d.vehicle.thermo.kind === "none") return fail("ابتدا نوع دماسنج خودرو را مشخص کنید.");
+  d.vehicle.thermo = { ...d.vehicle.thermo, connected: true, connectedAt: now(s), helpRequested: false };
+  notify(s, pid, "driver", "sensor", `دماسنج شما به سامانه‌ی کامیونت وصل شد؛ ${SENSOR_BONUS_XP} امتیاز و نشان «سنسور متصل» گرفتید و در فهرست صاحبان بار بالاتر دیده می‌شوید.`, "/driver/profile/");
+  return ok();
+}
+
+/** Drivers who don't know how to link their thermometer ask for help; it lands in the account-support queue. */
+export function requestSensorHelp(s: State, pid: string): Result {
+  const d = driverOf(s, pid);
+  if (!d) return fail("حساب راننده پیدا نشد.");
+  d.vehicle.thermo = { ...(d.vehicle.thermo ?? { kind: "none", connected: false }), helpRequested: true };
+  return openTicket(s, pid, "driver", { channel: "account", category: "مشکل برنامه", subject: "راهنمای اتصال دماسنج به سنسور کامیونت", text: `نوع دماسنج: ${d.vehicle.thermo.kind}. لطفاً نحوه‌ی اتصال را راهنمایی کنید.` });
 }

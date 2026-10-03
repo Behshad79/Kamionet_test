@@ -16,6 +16,8 @@ export interface Person {
   nationalId?: string;
   birthDate?: string;
   createdAt: number;
+  /** The first-run driver walkthrough has been seen. */
+  tourDone?: boolean;
 }
 
 export interface Note {
@@ -87,7 +89,26 @@ export interface Vehicle {
   lastServiceAt?: number;
   lastCargoOdor: OdorClass;
   lastWashAt?: number;
+  /** Year of manufacture (Jalali). */
   year?: number;
+  /** Maker, e.g. «ایسوزو». */
+  make?: string;
+  /** Exact model typed by the driver, e.g. «NPR ۷۵ سقف بلند». It is shown to shippers when a driver is assigned. */
+  modelName?: string;
+  /** Cargo-box length in metres. */
+  bodyLengthM?: number;
+  fridgeModel?: string;
+  fridgeYear?: number;
+  /** Cargo-box thermometer and whether it is linked to Kamionet's data feed (earns the sensor badge + ranking boost). */
+  thermo?: Thermo;
+}
+
+export interface Thermo {
+  kind: "none" | "analog" | "digital" | "logger";
+  brand?: string;
+  connected: boolean;
+  connectedAt?: number;
+  helpRequested?: boolean;
 }
 
 export type DocKey =
@@ -99,6 +120,8 @@ export interface DocFile {
   expiresAt?: number;
   /** A staff member has looked at the uploaded image. */
   reviewed?: boolean;
+  /** Messages from the review team about this document (the driver is notified and sees them next to it). */
+  notes?: { text: string; by: string; at: number }[];
 }
 
 export type KycStatus = "none" | "draft" | "pending" | "rejected" | "verified";
@@ -376,6 +399,11 @@ export interface Template {
   shipperId: string;
   cadence: "daily" | "weekly";
   hour: number;
+  minute?: number;
+  /** Persian week index for weekly runs: 0 = Saturday … 6 = Friday. */
+  weekday?: number;
+  /** Remaining runs after the first order; undefined = until stopped. */
+  runsLeft?: number;
   active: boolean;
   nextRunAt: number;
   windowMs: number;

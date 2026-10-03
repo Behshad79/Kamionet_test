@@ -3,16 +3,18 @@
 import { ArrowRight, Check, Crown, Info, Repeat, ShieldCheck, Snowflake, Users, Wand2, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { cashEligibleShipper, createOrders, insurancePremium, priceOrder, saveTemplate } from "@/lib/engine/orders";
+import { cashEligibleShipper, createOrders, insurancePremium, nextOccurrence, priceOrder, saveTemplate, WEEKDAYS } from "@/lib/engine/orders";
+import { cv } from "@/lib/config";
 import { driverStats } from "@/lib/engine/stats";
 import { person } from "@/lib/engine/core";
-import { CARGO, fa, tempClass, tempRange, toman, tomanWords, PAY_TERMS, weightLabel, jShort, hhmm } from "@/lib/format";
+import { CARGO, fa, faText, tempClass, tempRange, toman, tomanWords, PAY_TERMS, weightLabel, jShort, hhmm } from "@/lib/format";
 import { cityPlace, roadKm } from "@/lib/geo";
 import { matchVehicle } from "@/lib/matching";
 import { R, T, normalizeDigits } from "@/lib/money";
 import { suggestRate } from "@/lib/pricing";
 import { act, useStore } from "@/lib/store";
-import { VEHICLES, VEHICLE_KINDS } from "@/lib/vehicles";
+import { vehicleTitle, VEHICLES, VEHICLE_KINDS } from "@/lib/vehicles";
+import { SensorBadge } from "../driver/vehicleUi";
 import type { AssignMode, CargoKind, CargoMode, DriverProfile, OdorClass, OrderInput, PayTerms, ServiceClass, State, VehicleKind } from "@/lib/types";
 import { InsurerLogo, ProBadge } from "../brand";
 import { DriverPublicProfile } from "../driver/PublicProfile";
@@ -27,7 +29,7 @@ import { toast } from "../Toaster";
 import { Button, Card, Field, Input, NumInput, Segmented, Select, Sheet, Stepper, Textarea, Toggle, cx } from "../ui";
 
 const HOUR = 3_600_000;
-const STEPS = ["مسیر", "بار", "سرویس", "قیمت و بیمه", "بازبینی"];
+const STEPS = ["مسیر", "بار", "سرویس", "قیمت و پرداخت", "بازبینی"];
 const DRAFT = "kamionet:wizard-draft";
 
 interface Form {
@@ -39,6 +41,7 @@ interface Form {
   vehicle: VehicleKind; weightKg?: number; pallets?: number; volume?: number; packaging: string; itemized: boolean; declaredT?: number; note: string; cleanOnly: boolean;
   service: ServiceClass; assign: AssignMode; directId?: string;
   freightT?: number; tipT: number; insurance: string | null; coverage: number; coupon: string; couponOn?: boolean; terms: PayTerms; autoPay: boolean; recurring: "none" | "daily" | "weekly";
+  recTime?: string; recDay?: number; recRuns?: number;
 }
 
 const tomorrow8 = () => { const d = new Date(Date.now() + 24 * HOUR); d.setHours(8, 0, 0, 0); return d.getTime(); };
@@ -121,7 +124,7 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
     if (!i) return;
     setBusy(true);
     await new Promise((r) => setTimeout(r, 500));
-    const r = act((st) => { const res = createOrders(st, shipperId, i); if (res.ok && f.recurring !== "none") saveTemplate(st, shipperId, i, f.recurring); return res; });
+    const r = act((st) => { const res = createOrders(st, shipperId, i); if (res.ok && f.recurring !== "none") { const pd = new Date(f.pickupAt); const [hh, mm] = (f.recTime ?? `${pd.getHours()}:${pd.getMinutes()}`).split(":").map(Number); saveTemplate(st, shipperId, i, { cadence: f.recurring, hour: hh, minute: mm, weekday: f.recDay ?? (pd.getDay() + 1) % 7, runs: f.recRuns }); } return res; });
     setBusy(false);
     if (!r.ok) { toast(r.error, "err"); setStep(0); return setErr({ submit: r.error }); }
     try { sessionStorage.removeItem(DRAFT); } catch { /* ignore */ }
@@ -130,7 +133,7 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
   };
 
   const cash = cashEligibleShipper(s, shipperId, quote?.total ?? 0);
-  const proDrivers = s.drivers.filter((d) => d.pro.status === "pro" && d.personId !== shipperId && matchVehicle(d.vehicle, { vehicleKind: f.vehicle, tempMax: fridge ? f.tMax : undefined, tempMin: fridge ? f.tMin : undefined, weightKg: f.weightKg ?? 0, cargoMode: f.mode } as never).ok);
+  const proDrivers = s.drivers.filter((d) => d.pro.status === "pro" && d.personId !== shipperId && matchVehicle(d.vehicle, { vehicleKind: f.vehicle, tempMax: fridge ? f.tMax : undefined, tempMin: fridge ? f.tMin : undefined, weightKg: f.weightKg ?? 0, cargoMode: f.mode } as never).ok).sort((a, b) => Number(!!b.vehicle.thermo?.connected) - Number(!!a.vehicle.thermo?.connected));
 
   return (
     <div className="mx-auto max-w-2xl space-y-5 pb-28">
@@ -196,13 +199,13 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
         <div className="space-y-4">
           <Card className="space-y-4 p-5">
             <h2 className="font-extrabold">نوع سرویس</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className={cx("grid gap-3", cv<boolean>(s, "feature.pro") && "sm:grid-cols-2")}>
               <button type="button" aria-pressed={f.service === "STANDARD"} onClick={() => set({ service: "STANDARD", assign: "OPEN", directId: undefined })} className={cx("rounded-ui border-2 p-4 text-start", f.service === "STANDARD" ? "border-act bg-act-soft" : "border-line")}>
                 <div className="font-black">استاندارد</div><p className="mt-1 text-sm leading-6 text-ink-3">بار در بازار عمومی منتشر می‌شود و هر راننده‌ی تأییدشده‌ی مناسب می‌تواند بردارد.</p>
               </button>
-              <button type="button" aria-pressed={f.service === "PRO"} onClick={() => set({ service: "PRO", assign: "PRO_POOL" })} className={cx("rounded-ui border-2 p-4 text-start", f.service === "PRO" ? "border-pro-gold bg-pro-navy text-white" : "border-line")}>
+              {cv<boolean>(s, "feature.pro") && (<button type="button" aria-pressed={f.service === "PRO"} onClick={() => set({ service: "PRO", assign: "PRO_POOL" })} className={cx("rounded-ui border-2 p-4 text-start", f.service === "PRO" ? "border-pro-gold bg-pro-navy text-white" : "border-line")}>
                 <div className="flex items-center gap-2 font-black"><ProBadge /> کامیونت پرو</div><p className={cx("mt-1 text-sm leading-6", f.service === "PRO" ? "text-white/75" : "text-ink-3")}>فقط رانندگان بازرسی‌شده‌ی پرو. کرایه‌ی نهایی {fa(Math.round(100 * (s.config.values["pro.uplift"] as number ?? 0.15)))}٪ بیشتر است.</p>
-              </button>
+              </button>)}
             </div>
           </Card>
           {f.service === "PRO" && (
@@ -237,14 +240,14 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
             {rate && <div className="rounded-ui bg-accent-50 p-4 text-sm"><div className="font-bold text-accent-700">بازه‌ی رایج این مسیر ({fa(rate.km)} کیلومتر)</div><div className="mt-1 text-lg font-black">{tomanWords(rate.min)} تا {tomanWords(rate.max)}</div>
               <button type="button" onClick={() => set({ freightT: T(Math.round((rate.min + rate.max) / 2 / 100_000) * 100_000) })} className="mt-2 inline-flex h-11 items-center gap-1 font-bold text-accent-600"><Wand2 className="size-4" aria-hidden />استفاده از میانه‌ی بازه</button></div>}
             <Field label="کرایه‌ی پیشنهادی برای هر خودرو (تومان)" error={err.freight} hint={f.freightT ? tomanWords(R(f.freightT)) : undefined}>{(id) => <NumInput id={id} value={f.freightT} onChange={(v) => set({ freightT: v })} suffix="تومان" />}</Field>
-            <Field label="انعام / جذب سریع (اختیاری)" hint="مبلغی که تخصیص سریع‌تر را تشویق می‌کند و ۱۰۰٪ به راننده می‌رسد.">{(id) => <NumInput id={id} value={f.tipT || undefined} onChange={(v) => set({ tipT: v ?? 0 })} suffix="تومان" />}</Field>
-            <CouponBox value={f.coupon} applied={f.couponOn} error={quote?.couponError} discount={quote?.discount ?? 0} onApply={(c) => set({ coupon: c, couponOn: true })} onRemove={() => set({ coupon: "", couponOn: false })} />
+            {cv<boolean>(s, "feature.tips") && (<Field label="انعام / جذب سریع (اختیاری)" hint="مبلغی که تخصیص سریع‌تر را تشویق می‌کند و ۱۰۰٪ به راننده می‌رسد.">{(id) => <NumInput id={id} value={f.tipT || undefined} onChange={(v) => set({ tipT: v ?? 0 })} suffix="تومان" />}</Field>)}
+            {cv<boolean>(s, "feature.coupons") && (<CouponBox value={f.coupon} applied={f.couponOn} error={quote?.couponError} discount={quote?.discount ?? 0} onApply={(c) => set({ coupon: c, couponOn: true })} onRemove={() => set({ coupon: "", couponOn: false })} />)}
           </Card>
 
-          <Card className="space-y-3 p-5">
+          {cv<boolean>(s, "feature.insurance") && (<Card className="space-y-3 p-5">
             <h2 className="flex items-center gap-2 font-extrabold"><ShieldCheck className="size-5 text-accent-600" aria-hidden />بیمه‌ی محموله</h2>
             <InsurancePicker s={s} ambient={!fridge} value={f.insurance} onChange={(v) => set({ insurance: v })} declared={R(f.declaredT ?? 0)} coverage={f.coverage} />
-          </Card>
+</Card>)}
 
           <Card className="space-y-3 p-5">
             <h2 className="font-extrabold">شرایط پرداخت</h2>
@@ -262,10 +265,31 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
             <div className="flex items-center justify-between gap-3 rounded-ui bg-surface-2 p-4"><div><div className="flex items-center gap-1.5 font-bold"><Zap className="size-4" aria-hidden />پرداخت خودکار بیعانه</div><div className="text-xs text-ink-3">اگر موجودی کیف پول کافی باشد، به‌محض انتخاب راننده پرداخت می‌شود.</div></div><Toggle checked={f.autoPay} onChange={(v) => set({ autoPay: v })} label="پرداخت خودکار بیعانه" /></div>
           </Card>
 
-          <Card className="space-y-3 p-5">
-            <h2 className="flex items-center gap-2 font-extrabold"><Repeat className="size-5" aria-hidden />تکرار سفارش</h2>
-            <Segmented<Form["recurring"]> value={f.recurring} onChange={(v) => set({ recurring: v })} options={[{ value: "none", label: "یک‌بار" }, { value: "daily", label: "روزانه" }, { value: "weekly", label: "هفتگی" }]} />
-          </Card>
+          {cv<boolean>(s, "feature.recurring") && (
+            <Card className="space-y-4 p-5">
+              <h2 className="flex items-center gap-2 font-extrabold"><Repeat className="size-5" aria-hidden />تکرار سفارش</h2>
+              <Segmented<Form["recurring"]> value={f.recurring} onChange={(v) => set({ recurring: v })} options={[{ value: "none", label: "یک‌بار" }, { value: "daily", label: "روزانه" }, { value: "weekly", label: "هفتگی" }]} />
+              {f.recurring !== "none" && (() => {
+                const pd = new Date(f.pickupAt);
+                const time = f.recTime ?? `${String(pd.getHours()).padStart(2, "0")}:${String(pd.getMinutes()).padStart(2, "0")}`;
+                const day = f.recDay ?? (pd.getDay() + 1) % 7;
+                const [hh, mm] = time.split(":").map(Number);
+                const rec = { cadence: f.recurring as "daily" | "weekly", hour: hh, minute: mm, weekday: day };
+                const next = nextOccurrence(f.pickupAt, rec);
+                return (
+                  <div className="space-y-3 rounded-ui bg-surface-2 p-4">
+                    <p className="text-sm leading-7 text-ink-3">همین سفارش اولین نوبت است؛ نوبت‌های بعدی خودکار با همین مشخصات ثبت و منتشر می‌شوند (۱۲ ساعت پیش از بارگیری).</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {f.recurring === "weekly" && <Field label="روز هفته">{(id) => <Select id={id} value={day} onChange={(e) => set({ recDay: +e.target.value })}>{WEEKDAYS.map((w, i) => <option key={w} value={i}>{w}</option>)}</Select>}</Field>}
+                      <Field label={f.recurring === "daily" ? "ساعت بارگیری هر روز" : "ساعت بارگیری"}>{(id) => <Select id={id} value={time} onChange={(e) => set({ recTime: e.target.value })}>{Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`).map((x) => <option key={x} value={x}>{faText(x)}</option>)}</Select>}</Field>
+                      <Field label="پایان تکرار">{(id) => <Select id={id} value={f.recRuns ?? 0} onChange={(e) => set({ recRuns: +e.target.value })}><option value={0}>تا زمانی که متوقف کنم</option>{[2, 4, 8, 12, 26, 52].map((n) => <option key={n} value={n}>{fa(n)} نوبت بعد از این سفارش</option>)}</Select>}</Field>
+                    </div>
+                    <p className="text-sm font-bold">نوبت بعدی: {jShort(next)}، {hhmm(next)}</p>
+                  </div>
+                );
+              })()}
+            </Card>
+          )}
         </div>
       )}
 
@@ -353,8 +377,8 @@ function ProDriverCard({ d, s, selected, onSelect, onProfile }: { d: DriverProfi
   const clean = !!d.clean.badgeUntil && d.clean.badgeUntil > Date.now();
   return (
     <div className={cx("w-64 shrink-0 snap-start space-y-2 rounded-ui border-2 p-3", selected ? "border-pro-gold bg-pro-navy text-white" : "border-line bg-white")}>
-      <div className="flex items-center gap-3"><Avatar name={person(s, d.personId)?.name ?? "راننده"} pro size={46} hue={(d.personId.length * 61) % 360} /><div className="min-w-0"><div className="truncate font-black">{person(s, d.personId)?.name}</div><TruckIllustration kind={d.vehicle.kind} color={d.vehicle.color} state="cooling" className="mt-1 h-10 w-16" /></div></div>
-      <div className="flex flex-wrap items-center gap-2 text-xs">{<RatingPill r={{ avg: st.rating, count: st.ratingCount }} />}<span className={selected ? "text-white/70" : "text-ink-3"}>{fa(st.trips)} سفر</span>{clean && <CleanBadge />}</div>
+      <div className="flex items-center gap-3"><Avatar name={person(s, d.personId)?.name ?? "راننده"} pro size={46} hue={(d.personId.length * 61) % 360} /><div className="min-w-0"><div className="truncate font-black">{person(s, d.personId)?.name}</div><div className="truncate text-xs opacity-80">{vehicleTitle(d.vehicle)}</div><TruckIllustration kind={d.vehicle.kind} color={d.vehicle.color} state="cooling" className="mt-1 h-10 w-16" /></div></div>
+      <div className="flex flex-wrap items-center gap-2 text-xs">{<RatingPill r={{ avg: st.rating, count: st.ratingCount }} />}<span className={selected ? "text-white/70" : "text-ink-3"}>{fa(st.trips)} سفر</span>{clean && <CleanBadge />}{d.vehicle.thermo?.connected && <SensorBadge />}</div>
       <div className="grid grid-cols-2 gap-2"><Button size="sm" variant={selected ? "secondary" : "primary"} onClick={onSelect}>{selected ? "انتخاب شد" : "انتخاب"}</Button><Button size="sm" variant="secondary" onClick={onProfile}>پروفایل</Button></div>
     </div>
   );

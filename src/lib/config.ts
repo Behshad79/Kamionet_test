@@ -28,9 +28,18 @@ const G = {
   pro: "کامیونت پرو",
   match: "تطبیق و تخصیص",
   support: "پشتیبانی",
+  features: "قابلیت‌ها (روشن / خاموش)",
 } as const;
 
 export const CONFIG_DEFS: CfgDef[] = [
+  { key: "feature.telemetry", group: G.features, label: "دماسنج و دمای لحظه‌ای", kind: "bool", default: true, help: "خاموش: نمودار دما و ردیابی دما برای صاحب بار و گیرنده نمایش داده نمی‌شود" },
+  { key: "feature.insurance", group: G.features, label: "بیمه‌ی بار", kind: "bool", default: true, help: "خاموش: مرحله‌ی بیمه در ثبت سفارش حذف می‌شود" },
+  { key: "feature.recurring", group: G.features, label: "سفارش تکرارشونده", kind: "bool", default: true },
+  { key: "feature.coupons", group: G.features, label: "کد تخفیف", kind: "bool", default: true },
+  { key: "feature.tips", group: G.features, label: "انعام و جذب سریع", kind: "bool", default: true },
+  { key: "feature.pro", group: G.features, label: "سرویس کامیونت پرو", kind: "bool", default: true, help: "خاموش: صاحب بار فقط سرویس استاندارد را می‌بیند" },
+  { key: "feature.sensor", group: G.features, label: "برنامه‌ی اتصال دماسنج راننده", kind: "bool", default: true, help: "امتیاز و نشان «سنسور متصل»" },
+  { key: "feature.guestBrowse", group: G.features, label: "مرور بار برای بازدیدکننده‌ی ثبت‌نام‌نکرده", kind: "bool", default: true },
   { key: "commission.standard", group: G.fees, label: "کارمزد پایه", kind: "pct", default: 0.2 },
   { key: "commission.pro", group: G.fees, label: "کارمزد رانندگان پرو", kind: "pct", default: 0.18 },
   { key: "commission.ambient", group: G.fees, label: "کارمزد بار غیریخچالی", kind: "pct", default: 0.15 },

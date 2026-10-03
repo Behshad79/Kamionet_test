@@ -26,7 +26,7 @@ await a.waitForURL(/admin\/payments/);
 ok(true, "palette navigates");
 
 /* config change is applied + audited */
-await a.goto(`${B}/admin/config/`); await a.waitForSelector("text=کارمزد پایه");
+await a.goto(`${B}/admin/config/`); await a.getByRole("tab", { name: "کارمزد و تسویه" }).click(); await a.waitForSelector("text=کارمزد پایه");
 await a.getByRole("button", { name: "ویرایش" }).first().click();
 await a.getByRole("dialog").getByRole("spinbutton").or(a.getByRole("dialog").locator("input").first()).fill("21");
 await a.getByRole("dialog").getByRole("button", { name: "ذخیره" }).click();

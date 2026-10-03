@@ -47,3 +47,43 @@ export const VEHICLE_COLORS: { id: string; label: string; hex: string }[] = [
 export const PLATE_LETTERS = ["الف", "ب", "پ", "ت", "ث", "ج", "د", "ز", "س", "ش", "ص", "ط", "ع", "ف", "ق", "ک", "گ", "ل", "م", "ن", "و", "ه", "ی"];
 
 export const ODOR_LABEL: Record<OdorClass, string> = { NONE: "بدون بو", LOW: "بوی کم", STRONG: "بوی شدید" };
+
+/** Typical makes + models per class (the driver can still type any exact model). */
+export const MAKES: Record<VehicleKind, { make: string; models: string[] }[]> = {
+  pickup: [{ make: "پراید", models: ["۱۵۱ وانت", "۱۳۱ وانت"] }, { make: "زامیاد", models: ["Z24", "Z24 دوکابین"] }, { make: "مزدا", models: ["۲۰۰۰ وانت"] }],
+  nissan: [{ make: "زامیاد", models: ["نیسان Z24", "نیسان دیزل"] }, { make: "نیسان", models: ["۲۰۰۰"] }],
+  kamionet: [{ make: "ایسوزو", models: ["NHR", "NKR"] }, { make: "کاویان", models: ["۶ تن", "۴ تن"] }, { make: "هیوندای", models: ["HD65", "HD72"] }],
+  khavar: [{ make: "ایسوزو", models: ["NPR ۷۵", "NPR ۸۵"] }, { make: "کاویان", models: ["۸ تن"] }, { make: "هیوندای", models: ["HD78"] }],
+  truck10: [{ make: "ولوو", models: ["FL", "FM"] }, { make: "مرسدس‌بنز", models: ["آکسور ۱۹۱۸", "۲۶۴۰"] }, { make: "ایسوزو", models: ["FVR"] }],
+  dahcharkh: [{ make: "ولوو", models: ["FM ده‌چرخ"] }, { make: "مرسدس‌بنز", models: ["آکتروس"] }, { make: "مان", models: ["TGS"] }],
+  trailer: [{ make: "اسکانیا", models: ["R۴۲۰", "G۴۰۰"] }, { make: "ولوو", models: ["FH"] }, { make: "مرسدس‌بنز", models: ["اکتروس ۱۸۴۴"] }],
+  dry: [{ make: "ولوو", models: ["FL"] }, { make: "مرسدس‌بنز", models: ["۱۸۳۱"] }, { make: "ایسوزو", models: ["NPR"] }],
+};
+
+const nfa = (n: number) => new Intl.NumberFormat("fa-IR", { useGrouping: false }).format(n);
+/** «ایسوزو NPR ۷۵ · مدل ۱۴۰۱» (falls back to the class name for older profiles). */
+export function vehicleTitle(v: { kind: VehicleKind; make?: string; modelName?: string; year?: number }) {
+  const name = [v.make, v.modelName].filter(Boolean).join(" ") || VEHICLES[v.kind].short;
+  return v.year ? `${name} · مدل ${nfa(v.year)}` : name;
+}
+
+export const THERMO_KINDS = [
+  { id: "none", label: "دماسنج ندارم" },
+  { id: "analog", label: "دماسنج عقربه‌ای/ساده" },
+  { id: "digital", label: "دماسنج دیجیتال روی یخچال" },
+  { id: "logger", label: "دیتالاگر دما (ثبت‌کننده)" },
+] as const;
+
+export interface FitCheck { ok: boolean; label: string }
+/** Does this driver's truck suit the order? Used on the assignment card so the shipper can judge it. */
+export function vehicleFit(v: { kind: VehicleKind; capacityKg: number; minTemp: number | null; canRunAmbient: boolean }, o: { vehicleKind: VehicleKind; weightKg: number; tempMin?: number; cargoMode: string }): FitCheck[] {
+  const out: FitCheck[] = [
+    { ok: v.capacityKg >= o.weightKg, label: v.capacityKg >= o.weightKg ? `ظرفیت ${nfa(v.capacityKg)} کیلوگرم، بار شما ${nfa(o.weightKg)} کیلوگرم` : `ظرفیت (${nfa(v.capacityKg)} کیلوگرم) از وزن بار کمتر است` },
+  ];
+  if (o.cargoMode === "REFRIGERATED" && o.tempMin !== undefined) {
+    const ok = v.minTemp !== null && v.minTemp <= o.tempMin;
+    out.push({ ok, label: ok ? `یخچال تا ${nfa(v.minTemp!)}° می‌رسد، بار شما ${nfa(o.tempMin)}° می‌خواهد` : "یخچال به دمای موردنیاز بار نمی‌رسد" });
+  }
+  out.push({ ok: v.kind === o.vehicleKind, label: v.kind === o.vehicleKind ? "نوع خودرو همان است که انتخاب کردید" : `نوع خودرو (${VEHICLES[v.kind].short}) با انتخاب شما (${VEHICLES[o.vehicleKind].short}) فرق دارد` });
+  return out;
+}

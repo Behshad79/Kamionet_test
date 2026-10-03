@@ -3,6 +3,7 @@ import { cv } from "../config";
 import { DAY, HOUR, audit, driverOf, fail, notify, now, ok, person, SYSTEM, type Result } from "./core";
 import { proCriteria } from "./admin";
 import { driverStats } from "./stats";
+import { SENSOR_BONUS_XP } from "./kyc";
 
 /* ───────────────────────── inspection scheduling ───────────────────────── */
 
@@ -101,12 +102,13 @@ export const proScanDue = (s: State) => cv<boolean>(s, "pro.autoInvite") && !s.t
 export function proAutoScan(s: State): number {
   s.txKeys[`proscan:${dayKey(now(s))}`] = "1";
   let n = 0;
+  if (!cv<boolean>(s, "feature.pro")) return 0;
   for (const d of s.drivers) {
     if (d.kyc.status !== "verified" || d.pro.status !== "none" || d.suspension || d.controls.autoPro === false) continue;
     const st = driverStats(s, d.personId);
     if (!proCriteria(s, d, { trips: st.trips, rating: st.rating, onTime: st.onTime }).eligible) continue;
     d.pro = { ...d.pro, status: "invited", invitedAt: now(s) };
-    notify(s, d.personId, "driver", "pro", "عملکرد شما عالی بوده! به برنامه‌ی «کامیونت پرو» دعوت شدید؛ زمان بازرسی را رزرو کنید.", "/driver/profile/");
+    notify(s, d.personId, "driver", "pro", "عملکرد شما عالی بوده! به جمع رانندگان «کامیونت پرو» دعوت شدید؛ زمان بازرسی را رزرو کنید.", "/driver/profile/");
     n++;
   }
   return n;
@@ -137,7 +139,7 @@ export function proJourney(s: State, d: DriverProfile): Journey {
   const month = s.orders.filter((o) => o.driverId === d.personId && ["DELIVERED", "COMPLETED"].includes(o.status) && (o.deliveredAt ?? 0) >= t - 30 * DAY);
   const cancels = s.orders.filter((o) => o.driverId === d.personId && o.status === "CANCELLED_BY_DRIVER" && (o.cancel?.at ?? 0) >= t - 30 * DAY).length;
   const clean = !!d.clean.badgeUntil && d.clean.badgeUntil > t;
-  const xp = Math.round(st.trips * 8 + st.rating * 60 + st.onTime * 120 + d.clean.score * 1.5 + (d.docs.insurance?.reviewed !== false ? 40 : 0) - d.strikes.reduce((n, x) => n + x.points * 30, 0));
+  const xp = Math.round(st.trips * 8 + st.rating * 60 + st.onTime * 120 + d.clean.score * 1.5 + (d.docs.insurance?.reviewed !== false ? 40 : 0) + (d.vehicle.thermo?.connected ? SENSOR_BONUS_XP : 0) - d.strikes.reduce((n, x) => n + x.points * 30, 0));
   const level = [...LEVELS].reverse().find((l) => xp >= l.xp) ?? LEVELS[0];
   const next = LEVELS[level.id + 1];
   const days = new Set(month.map((o) => Math.floor((o.deliveredAt ?? 0) / DAY)));
@@ -148,6 +150,7 @@ export function proJourney(s: State, d: DriverProfile): Journey {
       { id: "trips", title: "۱۰ سفر موفق در ۳۰ روز", hint: "هر سفر تحویل‌شده یک قدم نزدیک‌تر", value: month.length, target: 10, xp: 120 },
       { id: "clean", title: "دریافت نشان «تمیز تأییدشده»", hint: "یک شست‌وشوی ثبت‌شده کافی است", value: clean ? 1 : 0, target: 1, xp: 80 },
       { id: "nocancel", title: "یک ماه بدون لغو", hint: "لغو پس از تخصیص امتیاز منفی دارد", value: cancels === 0 ? 1 : 0, target: 1, xp: 100 },
+      ...(d.vehicle.minTemp !== null ? [{ id: "sensor", title: "اتصال دماسنج به سنسور کامیونت", hint: "داده‌ی لحظه‌ای دما = اعتماد بیشتر صاحب بار و رتبه‌ی بالاتر", value: d.vehicle.thermo?.connected ? 1 : 0, target: 1, xp: SENSOR_BONUS_XP }] : []),
       { id: "rating", title: "میانگین امتیاز ۴٫۶ یا بالاتر", hint: "رفتار حرفه‌ای و وقت‌شناسی", value: Math.min(st.rating, 4.6), target: 4.6, xp: 150 },
     ],
     badges: [

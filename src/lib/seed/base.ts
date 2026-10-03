@@ -25,9 +25,9 @@ export function baseState(now: number): State {
   }));
 
   s.insurers = [
-    { id: "ins-1", name: "بیمه‌ی سپهر", hue: 210 },
-    { id: "ins-2", name: "بیمه‌ی آرمان", hue: 150 },
-    { id: "ins-3", name: "بیمه‌ی نگین", hue: 30 },
+    { id: "ins-1", name: "بیمه آسیا", hue: 210 },
+    { id: "ins-2", name: "بیمه ایران", hue: 150 },
+    { id: "ins-3", name: "بیمه اختصاصی کامیونت", hue: 30 },
   ];
   s.products = [
     { id: "ip-basic", insurerId: "ins-1", name: "پایه", level: "BASIC", ambient: false, rate: 0.002, deductiblePct: 0.1, covers: ["تصادف", "آتش‌سوزی", "واژگونی"] },

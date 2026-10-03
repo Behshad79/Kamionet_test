@@ -43,3 +43,8 @@ Each item: **decision** · why · what to confirm.
 30. **Admin permissions**: a module's `perm` may be any-of; finance sub-modules share `finance.view` for visibility while actions check their own permission and approval ceilings (`CEILINGS`). Refunds/adjustments/payouts/write-offs above the ceiling need a second approver and the requester can never approve their own request.
 31. **Demo Director** only calls the production engine (no ledger shortcuts) and is shown to super/ops/finance_mgr in demo mode.
 32. **Seed finance back-office** (invoices/aging, claims, reconciliation files with unmatched rows, closes, locked period, approvals, risk flags, SMS log) is synthetic; tickets are seeded as a believable mix of new / handled / overdue.
+33. **Guests see only the guest view** (cities, cargo type, rounded price range). Unverified drivers see the full public view but cannot claim; the claim button becomes «complete verification».
+34. **Feature switches** live in the config table (group «قابلیت‌ها»). Turning one off strips it from every new order server-side (`applyFlags`) and hides the UI; existing orders keep their data.
+35. **Sensor linking is simulated** (a handshake button). Production needs a real device-pairing / data-ingest API; ranking boost is ×1.4 in smart-pick and +150 Pro XP.
+36. **Vehicle model/year are driver-typed** and unverified; admins can see them in Driver 360. Consider checking against the vehicle card OCR later.
+37. **Support assignment**: new tickets go to the least-loaded active agent of the channel's roles (trip → support/ops, account → kyc/support, finance → wallet_support/finance_op).

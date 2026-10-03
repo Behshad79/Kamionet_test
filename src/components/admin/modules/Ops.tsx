@@ -39,7 +39,7 @@ export function SupportModule() {
     { id: "ch", label: "کانال", cell: (x) => CHANNELS[x.channel].label, value: (x) => x.channel },
     { id: "sub", label: "موضوع", cell: (x) => <span className="font-bold">{x.subject}</span>, value: (x) => x.subject },
     { id: "who", label: "کاربر", cell: (x) => `${nm(s, x.personId)} · ${x.portal === "driver" ? "راننده" : "صاحب بار"}`, value: (x) => nm(s, x.personId) },
-    { id: "as", label: "مسئول", cell: (x) => (x.assignee ? nm(s, x.assignee) || x.assignee : "—"), value: (x) => x.assignee },
+    { id: "as", label: "مسئول", cell: (x) => s.admins.find((a) => a.id === x.assignee)?.name ?? "—", value: (x) => s.admins.find((a) => a.id === x.assignee)?.name },
     { id: "pri", label: "اولویت", cell: (x) => (x.priority === "high" ? <Pill tone="danger">بالا</Pill> : x.priority === "low" ? "کم" : "عادی"), value: (x) => x.priority },
     { id: "st", label: "وضعیت", cell: (x) => <Pill tone={TK_TONE[x.status]}>{TK_LABEL[x.status]}</Pill>, value: (x) => x.status },
     { id: "csat", label: "رضایت", cell: (x) => (x.csat ? `${fa(x.csat)}★` : "—"), value: (x) => x.csat, hidden: true },
@@ -99,7 +99,7 @@ export function ConfigModule() {
       {!q && <Tabs value={g} onChange={setG} tabs={groups.map((x) => ({ id: x, label: x }))} className="mb-4" />}
       <Card className="divide-y divide-line/70">{defs.map((d) => { const cur = cv(s, d.key); const changed = cur !== d.default; return (
         <div key={d.key} className="flex flex-wrap items-center justify-between gap-3 p-4"><div className="min-w-0"><div className="font-bold">{d.label}{changed && <Badge tone="warn" className="ms-2">تغییر‌یافته</Badge>}</div><div className="text-xs text-ink-3">{d.key}{d.help ? ` · ${d.help}` : ""} · پیش‌فرض {fmtCfg(d, d.default)}</div></div>
-          <div className="flex items-center gap-3"><b className="tabular text-lg">{fmtCfg(d, cur)}</b>{has("pricing") || has("finance.config") ? <Button size="sm" variant="secondary" onClick={() => { setEdit(d); setVal(toInput(d, cur)); setWhen("now"); }}>ویرایش</Button> : null}</div></div>); })}</Card>
+          <div className="flex items-center gap-3"><b className="tabular text-lg">{fmtCfg(d, cur)}</b>{d.kind === "bool" && (has("pricing") || has("finance.config")) ? <Toggle label={`${d.label}: ${cur ? "فعال" : "غیرفعال"}`} checked={!!cur} onChange={(v) => run((x, a) => setConfigValue(x, a, d.key, v), v ? "فعال شد" : "غیرفعال شد")} /> : has("pricing") || has("finance.config") ? <Button size="sm" variant="secondary" onClick={() => { setEdit(d); setVal(toInput(d, cur)); setWhen("now"); }}>ویرایش</Button> : null}</div></div>); })}</Card>
       {s.config.scheduled.length > 0 && <Panel title="تغییرهای زمان‌بندی‌شده" className="mt-5"><ul className="divide-y divide-line/70 text-sm">{s.config.scheduled.map((c) => <li key={c.id} className="flex justify-between gap-3 py-2"><span>{CONFIG_DEFS.find((d) => d.key === c.key)?.label}: {String(c.from)} ← {String(c.to)}</span><span className="text-ink-3">اعمال {jDateTime(c.effectiveAt)}</span></li>)}</ul></Panel>}
       <Panel title="تاریخچه‌ی تغییرها" className="mt-5">{s.config.history.length === 0 ? <p className="text-sm text-ink-3">تغییری ثبت نشده است.</p> : <ul className="divide-y divide-line/70 text-sm">{s.config.history.slice(0, 25).map((c) => <li key={c.id} className="flex flex-wrap justify-between gap-3 py-2"><span><b>{CONFIG_DEFS.find((d) => d.key === c.key)?.label ?? c.key}</b>: {String(c.from)} ← {String(c.to)}</span><span className="text-ink-3">{c.by} · {jDateTime(c.at)}</span></li>)}</ul>}</Panel>
       {edit && (

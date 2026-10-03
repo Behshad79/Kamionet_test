@@ -2,6 +2,8 @@
 
 import { ArrowRight, BadgeCheck, CheckCircle2, Clock, ShieldAlert } from "lucide-react";
 import { useState } from "react";
+import { DocMessages } from "./DocMessages";
+import { SensorCard, VehicleInfoFields, type VehicleInfo } from "./vehicleUi";
 import { TruckIllustration } from "../graphics/TruckIllustration";
 import { PlateInput } from "../graphics/PlateInput";
 import { FileDrop } from "../molecules";
@@ -41,6 +43,7 @@ export function KycWizard({ pid }: { pid: string }) {
   const [fridge, setFridge] = useState(d.vehicle.fridgeBrand);
   const [minTemp, setMinTemp] = useState<number | null>(d.vehicle.minTemp);
   const [amb, setAmb] = useState(d.vehicle.canRunAmbient);
+  const [info, setInfo] = useState<VehicleInfo>({ make: d.vehicle.make, modelName: d.vehicle.modelName, year: d.vehicle.year, bodyLengthM: d.vehicle.bodyLengthM, fridgeModel: d.vehicle.fridgeModel, fridgeYear: d.vehicle.fridgeYear, thermo: d.vehicle.thermo });
   const [ins, setIns] = useState(d.docs.insurance?.expiresAt ?? Date.now() + 180 * DAY);
   const [insp, setInsp] = useState(d.docs.inspection?.expiresAt ?? Date.now() + 180 * DAY);
   const [accepted, setAccepted] = useState(false);
@@ -62,8 +65,10 @@ export function KycWizard({ pid }: { pid: string }) {
     if (r.match) { toast("هویت شما با سیم‌کارت تطبیق داده شد."); go(3); }
   };
   const step5 = () => {
-    const r = act((st) => saveVehicle(st, pid, { kind, capacityKg: cap ?? meta.capacityKg, color, plate, fridgeBrand: meta.fridge ? fridge : "—", minTemp: meta.fridge ? minTemp : null, canRunAmbient: !meta.fridge || amb }, { insurance: ins, inspection: insp }));
+    const r = act((st) => saveVehicle(st, pid, { kind, capacityKg: cap ?? meta.capacityKg, color, plate, fridgeBrand: meta.fridge ? fridge : "—", minTemp: meta.fridge ? minTemp : null, canRunAmbient: !meta.fridge || amb, ...info, make: info.make?.trim(), thermo: meta.fridge ? info.thermo : undefined }, { insurance: ins, inspection: insp }));
     if (!r.ok) return setErr(r.error);
+    if (!info.modelName?.trim() || !info.year || !info.make?.trim()) return setErr("سازنده، مدل دقیق و سال ساخت خودرو را وارد کنید.");
+    if (meta.fridge && !info.thermo) return setErr("مشخص کنید دماسنج دارید یا نه.");
     if (!d.docs.regFront?.dataUrl) return setErr("عکس روی کارت خودرو را بارگذاری کنید.");
     if (!d.docs.insurance?.dataUrl || !d.docs.inspection?.dataUrl) return setErr("عکس بیمه‌نامه و برگ معاینه‌ی فنی الزامی است.");
     go(6);
@@ -73,6 +78,7 @@ export function KycWizard({ pid }: { pid: string }) {
   return (
     <div className="space-y-5">
       <div><h1 className="text-2xl font-black">احراز هویت راننده</h1><p className="mt-1 text-sm text-ink-3">هر مرحله ذخیره می‌شود؛ هر زمان خواستید می‌توانید ادامه دهید.</p></div>
+      <DocMessages d={d} />
       <Stepper steps={VISIBLE} current={step - 1} />
       {err && <div role="alert" className="rounded-ui bg-danger-bg p-3 text-sm font-medium text-danger">{err}</div>}
 
@@ -115,9 +121,9 @@ export function KycWizard({ pid }: { pid: string }) {
 
       {step === 4 && (
         <Card className="space-y-4 p-5">
-          <h2 className="font-extrabold">گواهینامه یا کارت هوشمند</h2>
-          <div className="grid gap-3 sm:grid-cols-2"><FileDrop label="گواهینامه" hint="روی کارت" value={d.docs.license?.dataUrl} onChange={doc("license")} /><FileDrop label="کارت هوشمند راننده" hint="اختیاری" value={d.docs.smartCard?.dataUrl} onChange={doc("smartCard")} /></div>
-          <Nav back={() => go(3)} next={() => (d.docs.license?.dataUrl || d.docs.smartCard?.dataUrl ? go(5) : setErr("حداقل یکی از دو مدرک را بارگذاری کنید."))} />
+          <h2 className="font-extrabold">گواهینامه و کارت هوشمند راننده</h2><p className="text-sm leading-7 text-ink-3">هر دو مدرک الزامی است؛ از روی کارت‌ها واضح عکس بگیرید.</p>
+          <div className="grid gap-3 sm:grid-cols-2"><FileDrop label="گواهینامه" hint="روی کارت" value={d.docs.license?.dataUrl} onChange={doc("license")} /><FileDrop label="کارت هوشمند راننده" hint="الزامی" value={d.docs.smartCard?.dataUrl} onChange={doc("smartCard")} /></div>
+          <Nav back={() => go(3)} next={() => (d.docs.license?.dataUrl && d.docs.smartCard?.dataUrl ? go(5) : setErr("عکس گواهینامه و کارت هوشمند راننده هر دو الزامی است."))} />
         </Card>
       )}
 
@@ -134,6 +140,7 @@ export function KycWizard({ pid }: { pid: string }) {
           <div className="text-sm font-medium text-ink-2">رنگ خودرو</div>
           <div className="-mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label="رنگ خودرو">{VEHICLE_COLORS.map((c) => <button key={c.id} type="button" role="radio" aria-checked={color === c.id} aria-label={c.label} onClick={() => setColor(c.id)} className={cx("grid size-11 place-items-center rounded-full border-2", color === c.id ? "border-act" : "border-line")}><span className="size-7 rounded-full border border-ink/20" style={{ background: c.hex }} /></button>)}</div>
           <PlateInput value={plate} onChange={setPlate} />
+          <VehicleInfoFields kind={kind} fridge={meta.fridge} value={info} onChange={setInfo} />
           <Field label="ظرفیت بار (کیلوگرم)">{(id) => <NumInput id={id} value={cap} onChange={setCap} suffix="کیلوگرم" />}</Field>
           {meta.fridge && (
             <div className="space-y-3 rounded-ui bg-surface-2 p-4">
@@ -142,6 +149,7 @@ export function KycWizard({ pid }: { pid: string }) {
               <div className="flex items-center justify-between gap-3"><div><div className="font-bold">می‌توانم بار غیریخچالی با یخچال خاموش ببرم</div><div className="text-xs text-ink-3">برای دریافت بارهای خشک‌بار در سفرهای برگشت.</div></div><Toggle checked={amb} onChange={setAmb} label="بار غیریخچالی" /></div>
             </div>
           )}
+          {meta.fridge && info.thermo && <SensorCard pid={pid} thermo={{ ...info.thermo, connected: !!d.vehicle.thermo?.connected, helpRequested: d.vehicle.thermo?.helpRequested }} persist={info.thermo} />}
           <div className="grid gap-3 sm:grid-cols-2"><FileDrop label="کارت خودرو (رو)" value={d.docs.regFront?.dataUrl} onChange={doc("regFront")} /><FileDrop label="کارت خودرو (پشت)" value={d.docs.regBack?.dataUrl} onChange={doc("regBack")} /></div>
           <div className="grid gap-3 sm:grid-cols-2"><FileDrop label="عکس بیمه‌نامه‌ی شخص ثالث" hint="الزامی" value={d.docs.insurance?.dataUrl} onChange={doc("insurance")} /><FileDrop label="عکس برگ معاینه‌ی فنی" hint="الزامی" value={d.docs.inspection?.dataUrl} onChange={doc("inspection")} /></div>
           <div className="grid gap-3 sm:grid-cols-2"><JalaliDatePicker label="انقضای بیمه‌ی شخص ثالث" value={ins} onChange={setIns} /><JalaliDatePicker label="انقضای معاینه‌ی فنی" value={insp} onChange={setInsp} /></div>

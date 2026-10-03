@@ -1,5 +1,6 @@
 "use client";
 
+import { cv } from "@/lib/config";
 import { Check, KeyRound, MapPin, PackageCheck, Truck } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/brand";
@@ -54,7 +55,7 @@ export default function Page() {
             <div className="flex items-center justify-between gap-3 p-4 text-sm"><span className="flex items-center gap-1.5 font-bold"><MapPin className="size-4" aria-hidden />{fa(Math.round(prog * 100))}٪ مسیر طی شده</span>{left !== undefined && left > 0 && <span className="text-ink-3">زمان باقی‌مانده (شبیه‌سازی): {mmss(left)}</span>}</div>
           </Card>
         )}
-        {o.loadedAt && o.tempMin !== undefined && o.tempMax !== undefined && <TempPanel o={{ ...tel, tempMin: o.tempMin, tempMax: o.tempMax, status: o.status }} />}
+        {o.loadedAt && cv<boolean>(s, "feature.telemetry") && o.tempMin !== undefined && o.tempMax !== undefined && <TempPanel o={{ ...tel, tempMin: o.tempMin, tempMax: o.tempMax, status: o.status }} />}
         {!o.loadedAt && <Card className="flex items-center gap-3 p-5 text-sm text-ink-3"><Truck className="size-6" aria-hidden />{o.assignedAt ? "راننده تعیین شده و به‌زودی بارگیری آغاز می‌شود." : "هنوز راننده‌ای تعیین نشده است."}</Card>}
         {done && <Card className="space-y-3 p-5"><h2 className="flex items-center gap-2 font-extrabold text-ok"><Check className="size-5" aria-hidden />بار تحویل داده شد</h2><Link href={`/certificate/?t=${o.consignee.token}`} className="inline-flex h-11 items-center font-bold text-accent-600">مشاهده‌ی گواهی زنجیره‌ی سرد</Link></Card>}
         {driver && o.assignedAt && <Card className="space-y-1 p-5 text-sm"><div className="text-ink-3">راننده</div><div className="font-black">{first}</div></Card>}

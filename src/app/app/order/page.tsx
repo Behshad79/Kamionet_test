@@ -1,5 +1,6 @@
 "use client";
 
+import { cv } from "@/lib/config";
 import { AlertTriangle, CheckCircle2, Copy, Heart, Link2, MapPin, Phone, Zap } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -25,7 +26,8 @@ import { useNow, usePortal, useQueryId } from "@/lib/hooks";
 import { R } from "@/lib/money";
 import { act } from "@/lib/store";
 import { telemetryOf, tripProgress } from "@/lib/telemetry";
-import { VEHICLES } from "@/lib/vehicles";
+import { vehicleTitle, VEHICLES } from "@/lib/vehicles";
+import { FitList, SensorBadge, VehicleSpecs } from "@/components/driver/vehicleUi";
 import type { Order } from "@/lib/types";
 
 export default function Page() {
@@ -69,7 +71,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
 
       {/* ───── status-aware action panel ───── */}
       {(o.status === "OPEN" || o.status === "PRO_POOL") && (
-        <Card className="space-y-3 border-2 border-brand-500 p-5"><h2 className="font-extrabold">{o.status === "PRO_POOL" ? "در انتظار راننده‌ی پرو" : "در انتظار راننده"}</h2><p className="text-sm leading-7 text-ink-3">بار هم‌اکنون برای رانندگان مناسب نمایش داده می‌شود. اگر دیر شد، با افزودن انعام جذب را سریع‌تر کنید.</p><div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => setBoostOpen(true)}><Zap className="size-4" aria-hidden />افزودن انعام جذب</Button></div></Card>
+        <Card className="space-y-3 border-2 border-brand-500 p-5"><h2 className="font-extrabold">{o.status === "PRO_POOL" ? "در انتظار راننده‌ی پرو" : "در انتظار راننده"}</h2><p className="text-sm leading-7 text-ink-3">بار هم‌اکنون برای رانندگان مناسب نمایش داده می‌شود. اگر دیر شد، با افزودن انعام جذب را سریع‌تر کنید.</p><div className="flex flex-wrap gap-2">{cv<boolean>(s, "feature.tips") && <Button size="sm" onClick={() => setBoostOpen(true)}><Zap className="size-4" aria-hidden />افزودن انعام جذب</Button>}</div></Card>
       )}
       {o.status === "DIRECT_REQUESTED" && <DirectPanel o={o} now={now} />}
       {o.status === "LOCKED" && o.lockedUntil && <Card className="space-y-3 p-5"><h2 className="font-extrabold">راننده در حال تأیید نهایی است</h2><Countdown until={o.lockedUntil} total={150} /></Card>}
@@ -77,6 +79,13 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
         <Card className="space-y-3 border-2 border-brand-500 p-5">
           <h2 className="font-extrabold">راننده انتخاب شد؛ بیعانه را بپردازید</h2>
           {o.depositDueAt && <Countdown until={o.depositDueAt} total={600} />}
+          {driver && dp && (
+            <div className="space-y-3 rounded-ui bg-surface-2 p-4">
+              <div className="flex items-center gap-3"><Avatar name={driver.name} pro={dp.pro.status === "pro"} size={44} hue={(driver.id.length * 61) % 360} /><div className="min-w-0 flex-1"><Link href={`/app/driver/?id=${driver.id}`} className="font-black text-accent-700 hover:underline">{driver.name}</Link><div className="text-sm text-ink-3">{vehicleTitle(dp.vehicle)} · {fa(Math.round(driverStats(s, dp.personId).rating * 10) / 10)} از ۵ · {fa(driverStats(s, dp.personId).trips)} سفر</div></div>{dp.vehicle.thermo?.connected && <SensorBadge />}</div>
+              <FitList v={dp.vehicle} o={o} />
+              <details className="text-sm"><summary className="min-h-9 cursor-pointer font-bold">مشخصات کامل خودرو</summary><div className="mt-3"><VehicleSpecs v={dp.vehicle} /></div></details>
+            </div>
+          )}
           <p className="text-sm leading-7 text-ink-3">پس از پرداخت، آدرس دقیق و مشخصات راننده باز و بارنامه صادر می‌شود. در صورت نپرداختن، سفارش دوباره برای رانندگان باز می‌شود.</p>
           <Button size="lg" block onClick={() => setPayOpen("deposit")}>پرداخت بیعانه · {toman(depDue)}</Button>
         </Card>
@@ -98,7 +107,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
           <div className="flex items-center justify-between gap-3 p-4 text-sm"><span className="flex items-center gap-1.5 font-bold"><MapPin className="size-4" aria-hidden />پیشرفت مسیر {fa(Math.round(tripProgress(tel, now) * 100))}٪</span><span className="text-xs text-ink-3">موقعیت شبیه‌سازی‌شده است</span></div>
         </Card>
       )}
-      {transit && o.tempMin !== undefined && o.tempMax !== undefined && <TempPanel o={{ ...tel, tempMin: o.tempMin, tempMax: o.tempMax, status: o.status }} contact={driver ? { name: driver.name, phone: driver.phone } : undefined} />}
+      {transit && cv<boolean>(s, "feature.telemetry") && o.tempMin !== undefined && o.tempMax !== undefined && <TempPanel o={{ ...tel, tempMin: o.tempMin, tempMax: o.tempMax, status: o.status }} contact={driver ? { name: driver.name, phone: driver.phone } : undefined} />}
 
       <div className="grid gap-5 lg:grid-cols-[1.2fr_1fr]">
         <div className="space-y-5">
@@ -107,8 +116,11 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
               <div className="flex items-center justify-between"><h2 className="font-extrabold">راننده</h2>
                 <button onClick={() => act((st) => { const sh = shipperOf(st, meId); if (!sh || !o.driverId) return; sh.favorites = isFav ? sh.favorites.filter((x) => x !== o.driverId) : [...sh.favorites, o.driverId]; })} aria-pressed={isFav} aria-label={isFav ? "حذف از راننده‌های محبوب" : "افزودن به راننده‌های محبوب"} className="grid size-11 place-items-center rounded-full hover:bg-surface-3"><Heart className={isFav ? "size-5 fill-danger text-danger" : "size-5"} /></button></div>
               <TruckIllustration kind={dp.vehicle.kind} color={dp.vehicle.color} state={o.status === "IN_TRANSIT" ? "driving" : "idle"} className="h-20 w-full" label="خودروی راننده" />
-              <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-3"><Avatar name={driver.name} pro={dp.pro.status === "pro"} size={48} hue={(driver.id.length * 61) % 360} /><div><Link href={`/app/driver/?id=${driver.id}`} className="font-black text-accent-700 hover:underline">{driver.name}</Link><div className="text-sm text-ink-3">{VEHICLES[dp.vehicle.kind].short} · {fa(Math.round(driverStats(s, dp.personId).rating * 10) / 10)} از ۵</div></div></div>
+              <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-3"><Avatar name={driver.name} pro={dp.pro.status === "pro"} size={48} hue={(driver.id.length * 61) % 360} /><div><Link href={`/app/driver/?id=${driver.id}`} className="font-black text-accent-700 hover:underline">{driver.name}</Link><div className="text-sm text-ink-3">{vehicleTitle(dp.vehicle)} · {fa(Math.round(driverStats(s, dp.personId).rating * 10) / 10)} از ۵</div></div></div>
                 <a href={`tel:${driver.phone}`} className="inline-flex h-11 items-center gap-2 rounded-ui bg-surface-3 px-4 font-bold"><Phone className="size-4" aria-hidden /><span dir="ltr">{driver.phone}</span></a></div>
+              {dp.vehicle.thermo?.connected && <SensorBadge />}
+              <FitList v={dp.vehicle} o={o} />
+              <details className="rounded-ui border border-line p-3 text-sm"><summary className="min-h-9 cursor-pointer font-bold">مشخصات کامل خودرو</summary><div className="mt-3"><VehicleSpecs v={dp.vehicle} /></div></details>
               {dp.vehicle.plate && <div className="text-sm text-ink-3">پلاک: <span className="font-bold text-ink">{dp.vehicle.plate.two} {dp.vehicle.plate.letter} {dp.vehicle.plate.three} · ایران {dp.vehicle.plate.prov}</span></div>}
             </Card>
           )}
@@ -141,7 +153,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
               <h2 className="font-extrabold">نظر شما</h2>
               {transit && o.tempMin !== undefined && <Link href={`/certificate/?id=${o.id}`} className="flex h-11 items-center justify-center rounded-ui border border-line font-bold">گواهی زنجیره‌ی سرد (PDF)</Link>}
               {reviewed ? <p className="flex items-center gap-2 text-sm text-ok"><CheckCircle2 className="size-4" aria-hidden />نظر شما ثبت شده است.</p> : <ReviewForm personId={meId} orderId={o.id} role="shipper" />}
-              <Button variant="secondary" block onClick={() => setPayOpen("tip")}>انعام به راننده</Button>
+              {cv<boolean>(s, "feature.tips") && <Button variant="secondary" block onClick={() => setPayOpen("tip")}>انعام به راننده</Button>}
             </Card>
           )}
 

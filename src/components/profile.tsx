@@ -21,7 +21,7 @@ const initials = (name: string) => name.trim().split(/\s+/).slice(0, 2).map((w) 
 
 export function Avatar({ name, hue = 210, pro, size = 64, src, className }: { name: string; hue?: number; pro?: boolean; size?: number; src?: string; className?: string }) {
   const inner = (
-    <span className="grid place-items-center overflow-hidden rounded-full bg-white font-black text-white ring-2 ring-white" style={{ width: size, height: size, background: `linear-gradient(135deg, hsl(${hue} 70% 52%), hsl(${(hue + 40) % 360} 70% 38%))`, fontSize: size * 0.36 }}>
+    <span className="grid place-items-center overflow-hidden rounded-full bg-white font-black text-white ring-2 ring-white" style={{ width: size, height: size, background: `hsl(${hue} 62% 42%)`, fontSize: size * 0.36 }}>
       {src ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={src} alt="" className="size-full object-cover" /> : initials(name)}
     </span>
   );
@@ -47,18 +47,16 @@ export function ProfileHero({ name, headline, hue, pro, verified, badges, stats,
 }) {
   return (
     <section className="overflow-hidden rounded-[28px] bg-white shadow-soft">
-      <div className={cx("relative h-28 sm:h-36", pro ? "pro-card rounded-none!" : "")} style={pro ? undefined : { background: cover ?? `linear-gradient(120deg, hsl(${hue ?? 210} 75% 55%), hsl(${((hue ?? 210) + 55) % 360} 80% 62%) 55%, #ffb000 140%)` }}>
-        {!pro && <div className="grid-dots absolute inset-0 opacity-60 mix-blend-overlay" />}
+      <div className={cx("relative h-24 sm:h-32", pro ? "pro-card rounded-none!" : "")} style={pro ? undefined : { background: cover ?? `hsl(${hue ?? 210} 58% 46%)` }}>
+        {!pro && <div className="grid-dots absolute inset-0 opacity-50 mix-blend-overlay" aria-hidden />}
         {pro && <span className="absolute end-4 top-4 text-xs font-extrabold tracking-wide pro-gold-text">کامیونت پرو</span>}
-        {actions && <div className="absolute start-3 top-3 flex gap-2">{actions}</div>}
+        {actions && <div className="absolute start-3 top-3 z-10 flex gap-2">{actions}</div>}
       </div>
       <div className="px-5 pb-5">
-        <div className="-mt-12 flex items-end gap-4 sm:-mt-14">
-          <Avatar name={name} hue={hue} pro={pro} size={88} />
-          <div className="min-w-0 flex-1 pb-1 pt-14">
-            <h1 className="flex flex-wrap items-center gap-2 text-xl font-black leading-tight sm:text-2xl">{name}{verified && <BadgeCheck className="size-6 text-accent-600" aria-label="تأییدشده" />}</h1>
-            {headline && <p className="mt-0.5 text-sm text-ink-3">{headline}</p>}
-          </div>
+        <div className="relative z-10 -mt-11 sm:-mt-12"><Avatar name={name} hue={hue} pro={pro} size={84} /></div>
+        <div className="mt-3 min-w-0">
+          <h1 className="flex flex-wrap items-center gap-2 text-xl font-black leading-tight sm:text-2xl">{name}{verified && <BadgeCheck className="size-6 text-accent-600" aria-label="تأییدشده" />}</h1>
+          {headline && <p className="mt-1 text-sm text-ink-3">{headline}</p>}
         </div>
         {(rating !== undefined || badges) && (
           <div className="mt-4 flex flex-wrap items-center gap-2">

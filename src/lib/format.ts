@@ -102,3 +102,6 @@ export const PAY_TERMS: Record<PayTerms, string> = {
 
 export const windowLabel = (from: number, to: number) => `${jShort(from)}، ${hhmm(from)} تا ${hhmm(to)}`;
 export const stars = (avg: number) => new Intl.NumberFormat("fa-IR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(avg);
+
+/** Persian digits for any string (times, plates, codes). */
+export const faText = (x: string) => x.replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[+d]);

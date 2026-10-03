@@ -186,7 +186,7 @@ export function seedDebtAndSupport(sim: Sim, now: number) {
     // older tickets are mostly handled already, so the queue shows a believable mix (new, pending, resolved, a few overdue)
     if (tk.ok && i % 3 !== 0 && i % 7 !== 1) {
       sim.t += r.int(5, 40) * MIN; s._now = sim.t;
-      replyTicket(s, tk.id, "agent", "سلام، موضوع شما بررسی و اقدام لازم انجام شد.", "پشتیبان کامیونت");
+      replyTicket(s, tk.id, "agent", "سلام، موضوع شما بررسی و اقدام لازم انجام شد.", s.admins.find((a) => a.id === s.tickets.find((x) => x.id === tk.id)?.assignee)?.name ?? "پشتیبان کامیونت");
       const t2 = s.tickets.find((x) => x.id === tk.id);
       if (t2 && i % 2 === 0) { t2.status = "RESOLVED"; if (i % 4 === 0) t2.csat = r.int(3, 5); }
     }

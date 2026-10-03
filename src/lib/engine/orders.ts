@@ -48,10 +48,23 @@ export function insurancePremium(s: State, productId: string | null, declared: R
   return { premium: r1000(coverage * p.rate), coverage, deductible: r1000(coverage * p.deductiblePct), productId: p.id as string | null };
 }
 
+/** Admin feature switches: a disabled feature is stripped from every order, whatever the client sent. */
+export function applyFlags(s: State, i: OrderInput): OrderInput {
+  const on = (k: string) => cv<boolean>(s, k);
+  return {
+    ...i,
+    insuranceProductId: on("feature.insurance") ? i.insuranceProductId : null,
+    tipPre: on("feature.tips") ? i.tipPre : 0,
+    couponCode: on("feature.coupons") ? i.couponCode : undefined,
+    ...(on("feature.pro") ? {} : { serviceClass: "STANDARD" as const, assignMode: "OPEN" as const, directDriverId: undefined, cleanOnly: i.cleanOnly }),
+  };
+}
+
 export function priceOrder(s: State, shipperId: string, i: OrderInput): PriceQuote {
+  i = applyFlags(s, i);
   const upliftPct = i.serviceClass === "PRO" ? cv<number>(s, "pro.uplift") : 0;
   const freight = r1000(i.freightBase * (1 + upliftPct));
-  const mandatory = cv<string>(s, "insurance.mode") === "mandatory";
+  const mandatory = cv<string>(s, "insurance.mode") === "mandatory" && cv<boolean>(s, "feature.insurance");
   const productId = i.insuranceProductId ?? (mandatory ? (i.cargoMode === "AMBIENT" ? "ip-amb-std" : "ip-std") : null);
   const ins = insurancePremium(s, productId, i.declaredValue, i.coveragePct || 1);
   const vatRate = cv<number>(s, "vat.rate");
@@ -127,6 +140,7 @@ function validateInput(s: State, shipperId: string, i: OrderInput): string | nul
 }
 
 export function createOrders(s: State, shipperId: string, input: OrderInput, templateId?: string): Result<{ ids: string[] }> {
+  input = applyFlags(s, input);
   const err = validateInput(s, shipperId, input);
   if (err) return fail(err);
   const q = priceOrder(s, shipperId, input);
@@ -893,6 +907,7 @@ export function spawnFromTemplate(s: State, tp: State["templates"][number]) {
   const input: OrderInput = { ...tp.draft, pickupAt: tp.nextRunAt, pickupTo: tp.nextRunAt + tp.windowMs, deliverBy: tp.nextRunAt + tp.deliverAfterMs };
   createOrders(s, tp.shipperId, input, tp.id);
   tp.nextRunAt += tp.cadence === "daily" ? DAY : 7 * DAY;
+  if (tp.runsLeft !== undefined && --tp.runsLeft <= 0) { tp.active = false; tp.runsLeft = 0; }
 }
 
 export { completePayment };
@@ -903,9 +918,24 @@ void matchVehicle;
 
 /* ───────────────────────── recurring templates ───────────────────────── */
 
-export function saveTemplate(s: State, shipperId: string, input: OrderInput, cadence: "daily" | "weekly"): Result<{ id: string }> {
+export interface Recurrence { cadence: "daily" | "weekly"; hour: number; minute: number; weekday?: number; runs?: number }
+export const WEEKDAYS = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه"];
+const persianDay = (d: Date) => (d.getDay() + 1) % 7;
+
+/** First run strictly after `after` that matches the chosen time (and weekday for weekly). */
+export function nextOccurrence(after: number, r: Pick<Recurrence, "cadence" | "hour" | "minute" | "weekday">): number {
+  const d = new Date(after);
+  d.setHours(r.hour, r.minute, 0, 0);
+  for (let i = 0; i < 9; i++) {
+    if (d.getTime() > after && (r.cadence === "daily" || persianDay(d) === (r.weekday ?? persianDay(new Date(after))))) return d.getTime();
+    d.setDate(d.getDate() + 1);
+  }
+  return after + DAY;
+}
+
+export function saveTemplate(s: State, shipperId: string, input: OrderInput, rec: Recurrence): Result<{ id: string }> {
   const { pickupAt, pickupTo, deliverBy, ...draft } = input;
   const id = uid(s, "tp");
-  s.templates.push({ id, shipperId, cadence, hour: new Date(pickupAt).getHours(), active: true, nextRunAt: pickupAt + (cadence === "daily" ? DAY : 7 * DAY), windowMs: pickupTo - pickupAt, deliverAfterMs: deliverBy - pickupAt, draft });
+  s.templates.push({ id, shipperId, cadence: rec.cadence, hour: rec.hour, minute: rec.minute, weekday: rec.cadence === "weekly" ? rec.weekday : undefined, runsLeft: rec.runs || undefined, active: true, nextRunAt: nextOccurrence(pickupAt, rec), windowMs: pickupTo - pickupAt, deliverAfterMs: deliverBy - pickupAt, draft });
   return ok({ id });
 }

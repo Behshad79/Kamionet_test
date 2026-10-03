@@ -4,7 +4,7 @@ import { CheckCircle2, Filter, Map as MapIcon, PackageSearch, Power, Route, Shie
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DriverOrderCard } from "@/components/driver/cards";
-import { InReview, KycWizard } from "@/components/driver/KycWizard";
+import { DriverTour, GuestMarket, isLive, StageBanner, Suspended } from "@/components/driver/Stages";
 import { MapView } from "@/components/MapView";
 import { ProBadge } from "@/components/brand";
 import { AcceptSheet } from "@/components/rules";
@@ -32,38 +32,13 @@ const tempKind = (v: PublicView) => (v.cargoMode === "AMBIENT" || v.tempMax === 
 
 export default function Page() {
   const { s, me, driver, stage, ready } = usePortal("driver");
-  if (!ready || !me) return <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-40" /><Skeleton className="h-40" /></div>;
-  if (!driver || stage === "not_started") return <KycWizard pid={me.id} />;
-  if (stage === "in_review") return <InReview submittedAt={driver.kyc.submittedAt} />;
-  if (stage === "rejected") return <Rejected pid={me.id} reasons={driver.kyc.rejectReasons ?? []} />;
+  const [tourOpen, setTourOpen] = useState(true);
+  if (!ready) return <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-40" /><Skeleton className="h-40" /></div>;
+  if (!me) return <GuestMarket />;
   if (stage === "suspended") return <Suspended pid={me.id} />;
+  if (!me.tourDone && tourOpen && (!driver || stage === "not_started")) return <DriverTour pid={me.id} onDone={() => setTourOpen(false)} />;
+  void s;
   return <Market />;
-}
-
-function Rejected({ pid, reasons }: { pid: string; reasons: string[] }) {
-  return (
-    <Card className="space-y-4 p-6">
-      <h1 className="flex items-center gap-2 text-xl font-black text-danger"><ShieldAlert className="size-6" aria-hidden />مدارک شما نیاز به اصلاح دارد</h1>
-      <ul className="list-disc space-y-1 ps-5 text-sm leading-7">{reasons.map((r) => <li key={r}>{r}</li>)}</ul>
-      <Button block onClick={() => act((s) => resumeKycAfterReject(s, pid))}>اصلاح و ارسال مجدد مدارک</Button>
-    </Card>
-  );
-}
-
-function Suspended({ pid }: { pid: string }) {
-  const { s, driver } = usePortal("driver");
-  const sus = driver && suspensionOf(s, driver);
-  const [txt, setTxt] = useState("");
-  if (!sus) return null;
-  return (
-    <Card className="space-y-4 p-6">
-      <h1 className="flex items-center gap-2 text-xl font-black text-danger"><ShieldAlert className="size-6" aria-hidden />حساب شما معلق است</h1>
-      <p className="text-sm leading-7">{sus.reason}</p>
-      {sus.derived ? <p className="rounded-ui bg-surface-2 p-3 text-sm leading-7">با ثبت مدرک جدید در بخش پروفایل، تعلیق خودکار برداشته می‌شود.</p> : sus.appeal === "none" ? (
-        <div className="space-y-3"><Field label="درخواست تجدیدنظر">{(id) => <Textarea id={id} value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="توضیح دهید و در صورت لزوم مدرک پیوست کنید." />}</Field><Button disabled={txt.trim().length < 10} onClick={() => { const r = act((st) => submitAppeal(st, pid, txt)); toast(r.ok ? "درخواست ثبت شد." : r.error, r.ok ? "ok" : "err"); }}>ارسال درخواست</Button></div>
-      ) : <p className="rounded-ui bg-warn-bg p-3 text-sm font-bold text-warn">{{ open: "درخواست شما در حال بررسی است.", rejected: "درخواست رد شد.", accepted: "درخواست پذیرفته شد." }[sus.appeal as "open" | "rejected" | "accepted"]}</p>}
-    </Card>
-  );
 }
 
 function Market() {
@@ -76,12 +51,13 @@ function Market() {
   const [trip, setTrip] = useState(false);
   const [f, setF] = useState<{ temp: "" | "frozen" | "chilled" | "cool" | "ambient"; cargo: "" | CargoKind; near: boolean; proOnly: boolean; minNet?: number; day: "" | "today" | "tomorrow" }>({ temp: "", cargo: "", near: false, proOnly: false, day: "" });
   const [accept, setAccept] = useState(false);
-  const d = driver!;
-  const from = d.lastLoc ?? cityPlace(s.persons.find((p) => p.id === me!.id) ? "تهران" : "تهران");
+  const d = driver ?? undefined;
+  const live = isLive(stage);
+  const from = d?.lastLoc ?? cityPlace("تهران");
   const block = claimBlock(s, d);
   const lock = s.orders.find((o) => o.status === "LOCKED" && o.lockedBy === me!.id);
   const active = s.orders.filter((o) => o.driverId === me!.id && ["AWAITING_DEPOSIT", "ASSIGNED", "EN_ROUTE_TO_PICKUP", "AT_PICKUP", "MISMATCH_REVIEW", "IN_TRANSIT", "AT_DELIVERY"].includes(o.status));
-  const activeTrip = d.declaredTrips.find((t) => t.active);
+  const activeTrip = d?.declaredTrips.find((t) => t.active);
 
   const rows = useMemo(() => {
     const out: { o: Order; v: PublicView; net: number; fit: { ok: boolean; why?: string }; dead: number }[] = [];
@@ -90,12 +66,12 @@ function Market() {
       const v = viewOrder(o, s, me!.id);
       if (!isPublic(v) && !isFull(v)) continue;
       const pv = v as PublicView;
-      const e = eligibility(s, d, o);
+      const e: { ok: boolean; why: string } = d && live ? { why: "", ...eligibility(s, d, o) } : { ok: true, why: "" };
       if (!e.ok && /پرو|دیگری|حساب شما/.test(e.why) && !pv.isDirectToMe) continue; // invisible, not just unfit
       out.push({ o, v: pv, net: driverNetFor(s, o).net, fit: e.ok ? { ok: true } : { ok: false, why: e.why }, dead: roadKm(from, pv.originArea) });
     }
     return out;
-  }, [s, d, me, from]);
+  }, [s, d, me, from, live]);
 
   const list = rows.filter((r) => {
     if (tab === "direct" && !r.v.isDirectToMe) return false;
@@ -116,13 +92,13 @@ function Market() {
 
   return (
     <div className="space-y-4">
-      <Card className="flex items-center justify-between gap-3 p-4">
+      {live && d ? (<Card className="flex items-center justify-between gap-3 p-4">
         <div className="min-w-0"><div className="flex items-center gap-2 font-black">{me!.name}{d.pro.status === "pro" && <ProBadge />}</div><div className="text-xs text-ink-3">{fa(st.trips)} سفر · امتیاز {fa(Math.round(st.rating * 10) / 10)}</div></div>
         <button role="switch" aria-checked={d.online} onClick={() => act((x) => { const dd = x.drivers.find((q) => q.personId === me!.id); if (dd) dd.online = !dd.online; })} className={`flex h-12 items-center gap-2 rounded-full px-4 font-bold ${d.online ? "bg-ok text-white" : "bg-surface-3 text-ink-2"}`}><Power className="size-4" aria-hidden />{d.online ? "آنلاین" : "آفلاین"}</button>
-      </Card>
+      </Card>) : <StageBanner stage={stage ?? "not_started"} pid={me!.id} />}
 
-      {me && needsAcceptance(s, me.id, "driver") && <Card className="flex flex-wrap items-center justify-between gap-3 border border-warn/30 bg-warn-bg p-4"><span className="font-bold text-warn">نسخه‌ی جدید قوانین منتشر شده؛ برای ادامه باید بپذیرید.</span><Button size="sm" onClick={() => setAccept(true)}>مطالعه و پذیرش</Button></Card>}
-      {stage === "pro_invited" && <Card className="p-4"><div className="flex items-center justify-between gap-3"><span className="font-bold">به برنامه‌ی کامیونت پرو دعوت شده‌اید.</span><ButtonLink href="/driver/profile/" size="sm">مشاهده</ButtonLink></div></Card>}
+      {live && me && needsAcceptance(s, me.id, "driver") && <Card className="flex flex-wrap items-center justify-between gap-3 border border-warn/30 bg-warn-bg p-4"><span className="font-bold text-warn">نسخه‌ی جدید قوانین منتشر شده؛ برای ادامه باید بپذیرید.</span><Button size="sm" onClick={() => setAccept(true)}>مطالعه و پذیرش</Button></Card>}
+      {stage === "pro_invited" && <Card className="p-4"><div className="flex items-center justify-between gap-3"><span className="font-bold">به جمع رانندگان کامیونت پرو دعوت شده‌اید.</span><ButtonLink href="/driver/profile/" size="sm">مشاهده</ButtonLink></div></Card>}
       {block && <Card className="border border-warn/30 bg-warn-bg p-4 text-sm font-bold text-warn">{block}</Card>}
       {lock && <Link href={`/driver/order/?id=${lock.id}`} className="block"><Card className="border-2 border-brand-500 p-4 font-bold">یک بار در انتظار تأیید نهایی شماست؛ برای ادامه بزنید.</Card></Link>}
       {active.map((o) => <Link key={o.id} href={`/driver/trip/?id=${o.id}`} className="block"><Card className="flex items-center justify-between gap-3 border-2 border-act p-4"><span className="font-black">سفر جاری: {o.origin.city} ← {o.dest.city}</span><Badge tone="info">ادامه</Badge></Card></Link>)}
@@ -133,7 +109,7 @@ function Market() {
       <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
         <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setSheet(true)}><Filter className="size-4" aria-hidden />فیلتر{nf ? ` (${fa(nf)})` : ""}</Button>
         <Select aria-label="مرتب‌سازی" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-11 w-40 shrink-0"><option value="near">نزدیک‌ترین</option><option value="price">بیشترین درآمد</option><option value="soon">زودترین بارگیری</option></Select>
-        <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setTrip(true)}><Route className="size-4" aria-hidden />سفر من</Button>
+        {live && <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setTrip(true)}><Route className="size-4" aria-hidden />سفر من</Button>}
         <Button variant="ghost" size="sm" aria-pressed={mode === "map"} onClick={() => setMode(mode === "map" ? "list" : "map")} className="ms-auto shrink-0"><MapIcon className="size-4" aria-hidden />{mode === "map" ? "فهرست" : "نقشه"}</Button>
       </div>
       {activeTrip && <p className="rounded-ui bg-act-soft p-3 text-sm font-medium">سفر اعلام‌شده: {activeTrip.from} ← {activeTrip.to}، بازگشت به {activeTrip.backTo} · تب «برگشتی» بارهای هم‌مسیر شما را نشان می‌دهد.</p>}

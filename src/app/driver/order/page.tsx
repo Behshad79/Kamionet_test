@@ -9,7 +9,8 @@ import { ProBadge } from "@/components/brand";
 import { CargoLabel, Countdown, RatingPill, RouteLine, TempChip } from "@/components/molecules";
 import { CleanBadge, OdorChip } from "@/components/order/parts";
 import { toast } from "@/components/Toaster";
-import { Button, Card, EmptyState, Field, Input, Sheet, Skeleton } from "@/components/ui";
+import { Button, ButtonLink, Card, EmptyState, Field, Input, Sheet, Skeleton } from "@/components/ui";
+import { isLive } from "@/components/driver/Stages";
 import { acceptDirect, claimOrder, confirmAssign, declineDirect, releaseLock } from "@/lib/engine/orders";
 import { claimBlock, eligibility } from "@/lib/engine/drivers";
 import { commissionRate, driverNetFor } from "@/lib/engine/pay";
@@ -22,23 +23,24 @@ import { VEHICLES } from "@/lib/vehicles";
 export default function Page() {
   const id = useQueryId();
   const router = useRouter();
-  const { s, me, driver, ready } = usePortal("driver");
+  const { s, me, driver, ready, stage } = usePortal("driver");
   const now = useNow(500);
   const [decline, setDecline] = useState(false);
   const [reason, setReason] = useState("مسیر یا زمان مناسب نیست");
   const o = s.orders.find((x) => x.id === id);
   if (id === undefined || !ready) return <Skeleton className="h-64" />;
-  if (!o || !me || !driver) return <EmptyState icon={<AlertTriangle className="size-8" />} title="بار پیدا نشد" action={<Link href="/driver/" className="font-bold text-accent-600">بازگشت به بارها</Link>} />;
+  if (!o || !me) return <EmptyState icon={<AlertTriangle className="size-8" />} title="بار پیدا نشد" action={<Link href="/driver/" className="font-bold text-accent-600">بازگشت به بارها</Link>} />;
   if (o.driverId === me.id && !["LOCKED", "AWAITING_DEPOSIT", "DIRECT_REQUESTED"].includes(o.status)) { router.replace(`/driver/trip/?id=${o.id}`); return null; }
   const v = viewOrder(o, s, me.id);
   if (!isPublic(v)) return <EmptyState icon={<Lock className="size-8" />} title="این بار دیگر در دسترس نیست" body="بار به راننده‌ی دیگری اختصاص یافته است." action={<Link href="/driver/" className="font-bold text-accent-600">بازگشت به بارها</Link>} />;
   const net = driverNetFor(s, o);
-  const e = eligibility(s, driver, o);
+  const live = isLive(stage);
+  const e: { ok: boolean; why: string } = driver && live ? { why: "", ...eligibility(s, driver, o) } : { ok: false, why: "" };
   const block = claimBlock(s, driver);
   const mineLocked = o.status === "LOCKED" && o.lockedBy === me.id;
   const direct = o.status === "DIRECT_REQUESTED" && o.directDriverId === me.id;
   const waitingDeposit = o.status === "AWAITING_DEPOSIT" && o.driverId === me.id;
-  const canClaim = ["OPEN", "PRO_POOL"].includes(o.status) && e.ok && !block;
+  const canClaim = ["OPEN", "PRO_POOL"].includes(o.status) && e.ok && live && !block;
   const run = (fn: () => { ok: boolean; error?: string }, okMsg: string) => { const r = fn(); if (!r.ok) toast(r.error ?? "انجام نشد", "err"); else toast(okMsg); return r; };
 
   return (
@@ -64,11 +66,12 @@ export default function Page() {
         {o.terms === "CASH_BALANCE_TO_DRIVER" && o.cashAgreed > 0 && <p className="flex gap-2 rounded-ui bg-accent-50 p-3 text-sm leading-7 text-accent-700"><Info className="mt-1 size-4 shrink-0" aria-hidden />{toman(o.cashAgreed)} از کرایه را هنگام تحویل نقد از گیرنده می‌گیرید و باید مبلغ را در اپ تأیید کنید.</p>}
       </Card>
 
-      {!e.ok && !direct && <p role="alert" className="rounded-ui bg-warn-bg p-3 text-sm font-medium text-warn">{e.why}</p>}
+      {!e.ok && live && !direct && <p role="alert" className="rounded-ui bg-warn-bg p-3 text-sm font-medium text-warn">{e.why}</p>}
       {block && <p role="alert" className="rounded-ui bg-warn-bg p-3 text-sm font-medium text-warn">{block}</p>}
 
       <div className="pb-safe glass fixed inset-x-0 bottom-[86px] z-20 border-t border-white/60 p-3">
         <div className="mx-auto max-w-2xl space-y-2">
+          {!live && ["OPEN", "PRO_POOL"].includes(o.status) && <><ButtonLink href="/driver/kyc/" size="lg" block className="h-14">{stage === "in_review" ? "مدارک در حال بررسی است" : "احراز هویت را کامل کنید تا بار را بگیرید"}</ButtonLink><p className="text-center text-xs text-ink-3">پس از تأیید مدارک می‌توانید بار انتخاب کنید؛ تا آن زمان بارها را ببینید.</p></>}
           {canClaim && <><Button block size="lg" className="h-14" onClick={() => run(() => act((st) => claimOrder(st, me.id, o.id)), "بار برای شما رزرو شد.")}>انتخاب این بار · {toman(net.net)}</Button><p className="text-center text-xs text-ink-3">با انتخاب این بار، بلافاصله برای شما رزرو می‌شود.</p></>}
           {mineLocked && <div className="grid grid-cols-[1fr_2fr] gap-2"><Button variant="secondary" size="lg" onClick={() => run(() => act((st) => releaseLock(st, me.id, o.id)), "رزرو آزاد شد.")}>انصراف</Button><Button size="lg" onClick={() => { const r = run(() => act((st) => confirmAssign(st, me.id, o.id)), "تأیید شد؛ منتظر بیعانه‌ی صاحب بار."); if (r.ok) router.replace("/driver/"); }}>تأیید نهایی</Button></div>}
           {direct && <div className="grid grid-cols-[1fr_2fr] gap-2"><Button variant="secondary" size="lg" onClick={() => setDecline(true)}>رد درخواست</Button><Button size="lg" onClick={() => run(() => act((st) => acceptDirect(st, me.id, o.id)), "درخواست پذیرفته شد.")}>پذیرش</Button></div>}

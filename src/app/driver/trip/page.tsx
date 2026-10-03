@@ -112,7 +112,7 @@ export default function Page() {
       {(o.status === "IN_TRANSIT" || o.status === "AT_DELIVERY") && tel && pos && (
         <>
           <Card className="overflow-hidden"><MapView className="h-52" markers={[{ id: "o", lat: o.origin.lat, lng: o.origin.lng, kind: "origin" }, { id: "d", lat: o.dest.lat, lng: o.dest.lng, kind: "dest" }, { id: "t", lat: pos.lat, lng: pos.lng, kind: "truck" }]} lines={[{ id: "l", points: [[o.origin.lat, o.origin.lng], [o.dest.lat, o.dest.lng]], dashed: true, tone: "accent" }]} fitKey={o.id} /></Card>
-          {o.tempMin !== undefined && o.tempMax !== undefined && <TempPanel o={{ ...tel, tempMin: o.tempMin, tempMax: o.tempMax, status: o.status }} />}
+          {cv<boolean>(s, "feature.telemetry") && o.tempMin !== undefined && o.tempMax !== undefined && <TempPanel o={{ ...tel, tempMin: o.tempMin, tempMax: o.tempMax, status: o.status }} />}
         </>
       )}
       {o.status === "IN_TRANSIT" && (

@@ -1,6 +1,6 @@
 import { applyScheduledConfig, cfgDef, cv } from "../config";
 import { A, post } from "../ledger";
-import type { AdminRole, AdminUser, Approval, ConfigChange, DriverControls, Rial, ShipperControls, State } from "../types";
+import type { DocKey, AdminRole, AdminUser, Approval, ConfigChange, DriverControls, Rial, ShipperControls, State } from "../types";
 import { adminOf, audit, DAY, driverOf, fail, HOUR, MIN, notify, now, ok, orderOf, person, setStatus, shipperOf, uid, type Actor, type Result } from "./core";
 import { acceptDirect as _a } from "./orders";
 import { executeWriteOff, payRefund, payoutAction } from "./payout";
@@ -19,7 +19,7 @@ export const PERM_LABELS: Record<string, string> = {
   "drivers.act": "تعلیق/مسدودی راننده",
   "shippers.view": "مشاهده‌ی صاحبان بار",
   "shippers.act": "مسدودی و محدودیت صاحب بار",
-  pro: "برنامه‌ی کامیونت پرو",
+  pro: "رانندگان کامیونت پرو",
   pricing: "قیمت‌گذاری و تنظیمات",
   "finance.view": "مشاهده‌ی امور مالی",
   "finance.payouts": "برداشت‌ها و دسته‌های پرداخت",
@@ -401,7 +401,7 @@ export function proInvite(s: State, adminId: string, driverId: string): Result {
   const d = driverOf(s, driverId);
   if (!d || d.kyc.status !== "verified") return fail("فقط رانندگان تأییدشده دعوت می‌شوند.");
   d.pro = { ...d.pro, status: "invited", invitedAt: now(s) };
-  notify(s, driverId, "driver", "pro", "تبریک! به برنامه‌ی «کامیونت پرو» دعوت شده‌اید.", "/driver/profile/");
+  notify(s, driverId, "driver", "pro", "تبریک! به جمع رانندگان «کامیونت پرو» دعوت شده‌اید.", "/driver/profile/");
   audit(s, g.actor, "pro.invite", person(s, driverId)?.name ?? "", driverId);
   return ok();
 }
@@ -472,7 +472,7 @@ export function reviewShipperDoc(s: State, adminId: string, shipperId: string, a
   return ok();
 }
 
-export function reviewDriverDoc(s: State, adminId: string, driverId: string, key: "insurance" | "inspection" | "regFront" | "selfie" | "license", approve: boolean): Result {
+export function reviewDriverDoc(s: State, adminId: string, driverId: string, key: DocKey, approve: boolean): Result {
   const g = guard(s, adminId, "drivers.kyc");
   if (!g.ok) return g;
   const d = driverOf(s, driverId);
@@ -481,5 +481,24 @@ export function reviewDriverDoc(s: State, adminId: string, driverId: string, key
   if (approve) f.reviewed = true;
   else { delete d.docs[key]; notify(s, driverId, "driver", "kyc", "مدرک بارگذاری‌شده پذیرفته نشد؛ لطفاً دوباره بارگذاری کنید.", "/driver/profile/"); }
   audit(s, g.actor, approve ? "doc.approve" : "doc.reject", key, driverId);
+  return ok();
+}
+
+export const DOC_LABELS: Record<DocKey, string> = {
+  nationalFront: "کارت ملی (رو)", nationalBack: "کارت ملی (پشت)", selfie: "عکس چهره", license: "گواهینامه", smartCard: "کارت هوشمند راننده", regFront: "کارت خودرو (رو)", regBack: "کارت خودرو (پشت)",
+  insurance: "بیمه‌نامه", inspection: "معاینه‌ی فنی", carExterior: "عکس بیرون خودرو", carInterior: "عکس داخل باکس",
+};
+
+/** Staff leave a message on one uploaded document; the driver gets a push/SMS and sees it next to that document. */
+export function commentDriverDoc(s: State, adminId: string, driverId: string, key: DocKey, text: string): Result {
+  const g = guard(s, adminId, "drivers.kyc");
+  if (!g.ok) return g;
+  const d = driverOf(s, driverId);
+  if (!d) return fail("راننده پیدا نشد.");
+  if (text.trim().length < 3) return fail("متن پیام را بنویسید.");
+  const f = (d.docs[key] ??= {});
+  (f.notes ??= []).unshift({ text: text.trim(), by: g.admin.name, at: now(s) });
+  notify(s, driverId, "driver", "kyc", `پیام تیم بررسی درباره‌ی «${DOC_LABELS[key]}»: ${text.trim()}`, "/driver/profile/");
+  audit(s, g.actor, "doc.comment", `${key}: ${text.trim()}`, driverId);
   return ok();
 }

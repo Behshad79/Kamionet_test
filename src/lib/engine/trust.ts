@@ -1,5 +1,5 @@
 import { A, bal, driverWallet, shipperWallet } from "../ledger";
-import type { Review, RuleAcceptance, RuleDoc, State, Ticket, TicketChannel } from "../types";
+import type { AdminRole, AdminUser, Review, RuleAcceptance, RuleDoc, State, Ticket, TicketChannel } from "../types";
 import { cv } from "../config";
 import { actorPerson, audit, DAY, driverOf, fail, HOUR, MIN, notify, now, ok, orderOf, person, shipperOf, uid, type Actor, type Result } from "./core";
 import { DRIVER_CRITERIA, SHIPPER_CRITERIA } from "./stats";
@@ -115,6 +115,15 @@ export const MACROS: Record<TicketChannel, { id: string; title: string; text: st
   ],
 };
 
+const CHANNEL_ROLES: Record<TicketChannel, AdminRole[]> = { trip: ["support", "ops"], account: ["kyc", "support"], finance: ["wallet_support", "finance_op"] };
+
+/** The agent who would pick up a new ticket on this channel right now: the least-loaded active specialist. */
+export function agentFor(s: State, channel: TicketChannel): AdminUser | undefined {
+  const pool = s.admins.filter((a) => a.active && CHANNEL_ROLES[channel].includes(a.role));
+  const load = (a: AdminUser) => s.tickets.filter((t) => t.assignee === a.id && !["RESOLVED", "CLOSED"].includes(t.status)).length;
+  return [...pool].sort((a, b) => load(a) - load(b) || a.id.localeCompare(b.id))[0];
+}
+
 export function openTicket(s: State, personId: string, portal: "shipper" | "driver", a: { channel: TicketChannel; category: string; subject: string; text: string; orderId?: string }): Result<{ id: string }> {
   if (!a.text.trim()) return fail("شرح مشکل را بنویسید.");
   const o = orderOf(s, a.orderId);
@@ -138,6 +147,8 @@ export function openTicket(s: State, personId: string, portal: "shipper" | "driv
     messages: [{ from: "user", text: a.text.trim(), at: now(s) }, { from: "system", text: `درخواست شما ثبت شد. پاسخ‌گویی ${CHANNELS[a.channel].hint.split("؛")[1]?.trim() ?? "در اسرع وقت"}.`, at: now(s) }],
     context: ctx, linked: [],
   };
+  const agent = agentFor(s, a.channel);
+  if (agent) { t.assignee = agent.id; t.messages[1].text = `درخواست شما ثبت شد و به ${agent.name.replace(/\s*\(.*\)\s*/, "")} سپرده شد. پاسخ‌گویی ${CHANNELS[a.channel].hint.split("؛")[1]?.trim() ?? "در اسرع وقت"}.`; }
   s.tickets.unshift(t);
   return ok({ id: t.id });
 }

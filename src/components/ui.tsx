@@ -219,7 +219,7 @@ export function Stepper({ steps, current }: { steps: string[]; current: number }
 export function Progress({ value, tone = "brand" }: { value: number; tone?: "brand" | "warn" | "danger" }) {
   const c = { brand: "bg-brand-500", warn: "bg-warn", danger: "bg-danger" }[tone];
   return (
-    <div className="h-2 overflow-hidden rounded-full bg-surface-3">
+    <div className="h-2 w-full min-w-0 flex-1 overflow-hidden rounded-full bg-surface-3">
       <div className={cx("h-full rounded-full transition-all duration-500", c)} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
     </div>
   );

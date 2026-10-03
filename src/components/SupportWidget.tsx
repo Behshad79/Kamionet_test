@@ -5,7 +5,9 @@ import { cv } from "@/lib/config";
 import { person } from "@/lib/engine/core";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CATEGORIES, CHANNELS, openTicket, rateTicket, replyTicket } from "@/lib/engine/trust";
+import { agentFor, CATEGORIES, CHANNELS, openTicket, rateTicket, replyTicket } from "@/lib/engine/trust";
+import { ROLE_LABELS } from "@/lib/engine/admin";
+import { Avatar } from "./profile";
 import { fa, jDateTime } from "@/lib/format";
 import { usePortal } from "@/lib/hooks";
 import { act } from "@/lib/store";
@@ -13,6 +15,7 @@ import type { Ticket, TicketChannel } from "@/lib/types";
 import { toast } from "./Toaster";
 import { Badge, Button, Field, Input, Select, Sheet, Stars, Tabs, Textarea, cx } from "./ui";
 
+const short = (n: string) => n.replace(/\s*\(.*\)\s*/, "");
 const ST: Record<Ticket["status"], [string, "ok" | "warn" | "info" | "neutral"]> = { OPEN: ["باز", "warn"], PENDING: ["پاسخ داده شد", "info"], ESCALATED: ["ارجاع‌شده", "warn"], RESOLVED: ["حل‌شده", "ok"], CLOSED: ["بسته", "neutral"] };
 
 /** Floating, context-aware support: opens on the right channel for the screen the user is on and attaches the current order. */
@@ -48,6 +51,7 @@ export function SupportWidget({ portal }: { portal: "shipper" | "driver" }) {
           <div className="space-y-4">
             <button onClick={() => setSel(null)} className="inline-flex h-11 items-center gap-1 text-sm font-bold text-accent-600"><ArrowRight className="size-4" aria-hidden />همه‌ی گفتگوها</button>
             <div className="flex flex-wrap items-center gap-2"><Badge tone={ST[t.status][1]}>{ST[t.status][0]}</Badge><span className="text-xs text-ink-3">{CHANNELS[t.channel].label} · {t.category}</span></div>
+            {(() => { const ag = s.admins.find((a) => a.id === t.assignee); return ag ? <div className="flex items-center gap-3 rounded-ui bg-surface-2 p-3"><Avatar name={short(ag.name)} hue={(ag.id.length * 97) % 360} size={44} /><div className="min-w-0 flex-1"><div className="font-extrabold">{short(ag.name)}</div><div className="text-xs text-ink-3">{ROLE_LABELS[ag.role]} · کامیونت</div></div><span className="inline-flex items-center gap-1.5 text-xs font-bold text-ok"><span className="size-2 rounded-full bg-ok" aria-hidden />آنلاین</span></div> : null; })()}
             <div className="space-y-2">{t.messages.map((m, i) => <div key={i} className={cx("max-w-[88%] rounded-2xl p-3 text-sm leading-7", m.from === "user" ? "ms-auto bg-act-soft" : m.from === "agent" ? "bg-white shadow-soft" : "bg-surface-2 text-ink-3")}>{m.from === "agent" && <div className="text-xs font-bold text-accent-700">{m.by ?? "پشتیبانی"}</div>}{m.text}<div className="mt-1 text-[11px] text-ink-4">{jDateTime(m.at)}</div></div>)}</div>
             {t.status === "RESOLVED" && !t.csat && <div className="space-y-2 rounded-ui bg-surface-2 p-4 text-center"><div className="text-sm font-bold">از پشتیبانی راضی بودید؟</div><div className="flex justify-center"><Stars value={0} size={30} onChange={(n) => { act((x) => rateTicket(x, t.id, n)); toast("سپاس از بازخورد شما."); }} /></div></div>}
             {t.csat && <p className="flex items-center gap-1 text-sm text-ok"><Star className="size-4 fill-current" aria-hidden />امتیاز شما: {fa(t.csat)} از ۵</p>}
@@ -55,7 +59,7 @@ export function SupportWidget({ portal }: { portal: "shipper" | "driver" }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="space-y-2 rounded-2xl bg-gradient-to-br from-accent-50 to-white p-4 ring-1 ring-accent-600/10">
+            <div className="space-y-2 rounded-2xl bg-accent-50 p-4 ring-1 ring-accent-600/10">
               <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-accent-600 text-white"><Phone className="size-5" aria-hidden /></span><div><div className="font-extrabold">تماس مستقیم با پشتیبانی</div><div className="text-xs text-ink-3">ساعات پاسخ‌گویی: {cv<string>(s, "support.hours")} · هر روز</div></div></div>
               <div className="grid grid-cols-2 gap-2"><a href={`tel:${cv<string>(s, "support.phone").replace(/[^0-9۰-۹]/g, "").replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))}`} className="flex h-12 items-center justify-center gap-2 rounded-ui bg-accent-600 font-black text-white"><Phone className="size-4" aria-hidden /><span dir="ltr" className="tabular">{cv<string>(s, "support.phone")}</span></a>
                 <Button variant="secondary" onClick={() => { const r = act((x) => openTicket(x, me.id, portal, { channel: "trip", category: "سایر", subject: "درخواست تماس تلفنی", text: `لطفاً با شماره‌ی ${person(x, me.id)?.phone} تماس بگیرید.` })); toast(r.ok ? "درخواست تماس ثبت شد؛ همکاران ما تماس می‌گیرند." : r.error, r.ok ? "ok" : "err"); }}>درخواست تماس از طرف ما</Button></div>
@@ -67,6 +71,7 @@ export function SupportWidget({ portal }: { portal: "shipper" | "driver" }) {
                   {(Object.keys(CHANNELS) as TicketChannel[]).map((k) => <button key={k} role="radio" aria-checked={ch === k} onClick={() => setCh(k)} className={cx("rounded-ui border-2 p-3 text-start", ch === k ? "border-act bg-act-soft" : "border-line bg-white")}><div className="font-extrabold">{CHANNELS[k].label}</div><div className="text-xs text-ink-3">{CHANNELS[k].hint}</div></button>)}
                 </div>
                 {order && ch === "trip" && <p className="flex items-center gap-2 rounded-ui bg-accent-50 p-3 text-sm font-medium text-accent-700"><LifeBuoy className="size-4" aria-hidden />سفارش {order.origin.city} ← {order.dest.city} به این درخواست پیوست می‌شود.</p>}
+                {(() => { const ag = agentFor(s, ch); return ag ? <div className="flex items-center gap-3 rounded-ui bg-surface-2 p-3"><Avatar name={short(ag.name)} hue={(ag.id.length * 97) % 360} size={40} /><div className="min-w-0 text-sm"><div className="text-xs text-ink-3">پاسخ‌گوی شما در این کانال</div><div className="font-extrabold">{short(ag.name)} <span className="font-medium text-ink-3">· {ROLE_LABELS[ag.role]}</span></div></div></div> : null; })()}
                 <Field label="موضوع">{(id) => <Select id={id} value={cat} onChange={(e) => setCat(e.target.value)}>{CATEGORIES[ch].map((c) => <option key={c}>{c}</option>)}</Select>}</Field>
                 <Field label="شرح مشکل">{(id) => <Textarea id={id} value={text} onChange={(e) => setText(e.target.value)} />}</Field>
                 <Button block size="lg" disabled={text.trim().length < 5} onClick={() => { const r = act((x) => openTicket(x, me.id, portal, { channel: ch, category: cat, subject: cat, text, orderId: ch === "trip" ? orderId : undefined })); if (r.ok) { toast("درخواست ثبت شد."); setText(""); setView("list"); setSel(r.id); } else toast(r.error, "err"); }}>ثبت درخواست</Button>

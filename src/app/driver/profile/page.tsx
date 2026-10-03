@@ -18,7 +18,9 @@ import { proCriteria, submitWash } from "@/lib/engine/admin";
 import { renewDoc } from "@/lib/engine/kyc";
 import { bookInspection, cancelInspection, INSPECT_CENTERS, INSPECT_CHECKS, inspectionSlots, LEVELS, PASS_SCORE, proJourney, SLOT_CAPACITY } from "@/lib/engine/pro";
 import { driverStats } from "@/lib/engine/stats";
-import { person } from "@/lib/engine/core";
+import { fail, ok, person } from "@/lib/engine/core";
+import { DocMessages } from "@/components/driver/DocMessages";
+import { SensorCard, VehicleInfoFields, VehicleSpecs, type VehicleInfo } from "@/components/driver/vehicleUi";
 import { fa, jDateTime, jShort } from "@/lib/format";
 import { usePortal } from "@/lib/hooks";
 import { act } from "@/lib/store";
@@ -45,7 +47,7 @@ export default function Page() {
         badges={<><Badge tone={stage === "suspended" ? "danger" : stage === "verified" || pro ? "ok" : "warn"}>{STAGE_LABEL[stage!]}</Badge>{pro && <ProBadge />}{clean && <CleanBadge />}</>}
         stats={[{ label: "سفر", value: fa(st.trips) }, { label: "وقت‌شناسی", value: `${fa(Math.round(st.onTime * 100))}٪` }, { label: "نظافت", value: fa(driver.clean.score) }]} />
       <Card className="flex items-center gap-4 p-4"><TruckIllustration kind={driver.vehicle.kind} color={driver.vehicle.color} state="cooling" className="h-20 w-32 shrink-0" label="خودروی شما" />{driver.vehicle.plate && <PlateView plate={driver.vehicle.plate} />}</Card>
-      <Tabs<Tab> value={tab} onChange={setTab} tabs={[{ id: "me", label: "عملکرد" }, { id: "docs", label: "مدارک و خودرو" }, { id: "clean", label: "نظافت" }, { id: "pro", label: "مسیر پرو" }, { id: "rules", label: "قوانین" }]} />
+      <Tabs<Tab> value={tab} onChange={setTab} tabs={[{ id: "me", label: "عملکرد" }, { id: "docs", label: "مدارک و خودرو" }, { id: "clean", label: "نظافت" }, ...(cv<boolean>(s, "feature.pro") ? [{ id: "pro" as const, label: "مسیر پرو" }] : []), { id: "rules", label: "قوانین" }]} />
 
       {tab === "me" && (
         <div className="space-y-4">
@@ -72,12 +74,15 @@ export default function Page() {
 function Docs() {
   const { s, me, driver } = usePortal("driver");
   const [renew, setRenew] = useState<keyof typeof DOCS | null>(null);
+  const [vEdit, setVEdit] = useState(false);
+  const [vInfo, setVInfo] = useState<VehicleInfo>({});
   const [img, setImg] = useState<string>();
   const [at, setAt] = useState(Date.now() + 365 * DAY);
   if (!me || !driver) return null;
   const ex = docExpiry(driver, Date.now());
   return (
     <div className="space-y-4">
+      <DocMessages d={driver} />
       <Card className="space-y-4 p-5">
         <h2 className="font-extrabold">مدارک و انقضا</h2>
         {ex.items.map((i) => {
@@ -92,7 +97,9 @@ function Docs() {
         })}
         {ex.soon.length > 0 && <p className="flex items-center gap-2 rounded-ui bg-warn-bg p-3 text-sm font-medium text-warn"><CircleAlert className="size-4" aria-hidden />کمتر از ۳۰ روز تا انقضای مدرک مانده؛ پس از انقضا حساب موقتاً معلق می‌شود.</p>}
       </Card>
-      <Card className="space-y-2 p-5"><h2 className="font-extrabold">مشخصات خودرو</h2><dl className="grid grid-cols-2 gap-3 text-sm">{[["نوع", VEHICLES[driver.vehicle.kind].label], ["ظرفیت", `${fa(driver.vehicle.capacityKg)} کیلوگرم`], ["یخچال", driver.vehicle.fridgeBrand || "—"], ["کمترین دما", driver.vehicle.minTemp === null ? "بدون یخچال" : `${driver.vehicle.minTemp}°`], ["بار غیریخچالی", driver.vehicle.canRunAmbient ? "می‌توانم" : "خیر"], ["آخرین بار", ODOR_LABEL[driver.vehicle.lastCargoOdor]]].map(([k, v]) => <div key={k}><dt className="text-ink-3">{k}</dt><dd className="font-bold">{v}</dd></div>)}</dl></Card>
+      <Card className="space-y-4 p-5"><div className="flex items-center justify-between gap-3"><h2 className="font-extrabold">مشخصات خودرو</h2><Button size="sm" variant="secondary" onClick={() => { setVInfo({ make: driver.vehicle.make, modelName: driver.vehicle.modelName, year: driver.vehicle.year, bodyLengthM: driver.vehicle.bodyLengthM, fridgeModel: driver.vehicle.fridgeModel, fridgeYear: driver.vehicle.fridgeYear, thermo: driver.vehicle.thermo }); setVEdit(true); }}>ویرایش</Button></div><VehicleSpecs v={driver.vehicle} /><div className="text-sm text-ink-3">آخرین بار: {ODOR_LABEL[driver.vehicle.lastCargoOdor]}</div></Card>
+      {driver.vehicle.minTemp !== null && cv<boolean>(s, "feature.sensor") && <SensorCard pid={me.id} thermo={driver.vehicle.thermo} />}
+      <Sheet open={vEdit} onClose={() => setVEdit(false)} title="ویرایش مشخصات خودرو" footer={<Button block onClick={() => { const r = act((x) => { const d = x.drivers.find((y) => y.personId === me.id)!; if (!vInfo.modelName?.trim() || !vInfo.year || !vInfo.make?.trim()) return fail("سازنده، مدل و سال ساخت را وارد کنید."); d.vehicle = { ...d.vehicle, ...vInfo, make: vInfo.make?.trim(), thermo: vInfo.thermo ? { ...vInfo.thermo, connected: vInfo.thermo.kind === "none" ? false : d.vehicle.thermo?.connected ?? false } : d.vehicle.thermo }; return ok(); }); toast(r.ok ? "مشخصات ذخیره شد." : r.error, r.ok ? "ok" : "err"); if (r.ok) setVEdit(false); }}>ذخیره</Button>}><VehicleInfoFields kind={driver.vehicle.kind} fridge={driver.vehicle.minTemp !== null} value={vInfo} onChange={setVInfo} /></Sheet>
       <Sheet open={!!renew} onClose={() => setRenew(null)} title={renew ? `تمدید ${DOCS[renew]}` : ""} footer={<Button block disabled={!img} onClick={() => { const r = act((x) => renewDoc(x, me.id, renew!, img!, at)); toast(r.ok ? "مدرک ثبت شد و برای بازبینی ارسال شد." : r.error, r.ok ? "ok" : "err"); if (r.ok) setRenew(null); }}>{img ? "ثبت مدرک" : "ابتدا عکس مدرک را بگیرید"}</Button>}>
         <div className="space-y-4"><p className="text-sm leading-7 text-ink-3">برای تمدید، علاوه بر تاریخ، باید عکس خوانای مدرک جدید (برگه‌ی بیمه‌نامه یا برگ معاینه) را بارگذاری کنید. تیم احراز هویت آن را بازبینی می‌کند.</p>
           <FileDrop label="عکس مدرک جدید" capture value={img} onChange={(c) => setImg(c.dataUrl)} /><JalaliDatePicker label="تاریخ انقضای مدرک جدید" value={at} onChange={setAt} min={Date.now() + DAY} /></div>

@@ -18,6 +18,7 @@ import { ADMIN_MODS, GROUPS, modAllowed, modHref } from "../admin/adminNav";
 import { CommandPalette, openPalette } from "../admin/CommandPalette";
 import { DemoDirector } from "../admin/DemoDirector";
 import { can, ROLE_LABELS } from "@/lib/engine/admin";
+import { cv } from "@/lib/config";
 
 function ViewAsBanner() {
   const [v, setV] = useState<ReturnType<typeof getViewAs>>(null);
@@ -51,10 +52,12 @@ function useGate(portal: PortalId) {
   const path = usePathname();
   const p = usePortal(portal);
   const isLogin = path.includes("/login");
+  /** The driver load board is public (browse first, register when you want to claim). */
+  const guestOk = portal === "driver" && path.replace(/\/$/, "") === "/driver" && cv<boolean>(p.s, "feature.guestBrowse");
   useEffect(() => {
-    if (p.ready && !p.signedIn && !isLogin) router.replace(PORTAL_LOGIN[portal]);
-  }, [p.ready, p.signedIn, isLogin, router, portal]);
-  return { ...p, path, isLogin };
+    if (p.ready && !p.signedIn && !isLogin && !guestOk) router.replace(PORTAL_LOGIN[portal]);
+  }, [p.ready, p.signedIn, isLogin, router, portal, guestOk]);
+  return { ...p, path, isLogin, guestOk };
 }
 
 function Loading() {
@@ -77,6 +80,7 @@ export function ShipperShell({ children }: { children: ReactNode }) {
   usePushBridge(g.s.notifications.filter((n) => n.personId === g.me?.id && n.portal === "shipper"), "shipper", g.ready);
   if (g.isLogin) return <div data-portal="shipper">{children}</div>;
   if (!g.ready || !g.signedIn) return <div data-portal="shipper" className="min-h-dvh bg-tint"><Loading /></div>;
+  const nav = SHIPPER_NAV.filter((n) => n.href !== "/app/recurring/" || cv<boolean>(g.s, "feature.recurring"));
   return (
     <div data-portal="shipper" className="min-h-dvh bg-tint lg:grid lg:grid-cols-[248px_1fr]">
       <div className="lg:col-span-2 empty:hidden"><ViewAsBanner /></div>
@@ -84,7 +88,7 @@ export function ShipperShell({ children }: { children: ReactNode }) {
         <Logo className="mb-2" />
         <PortalCue label="پنل صاحب بار" tone="shipper" />
         <nav className="mt-6 grid gap-1" aria-label="ناوبری اصلی">
-          {SHIPPER_NAV.map((n) => <NavLink key={n.href} n={n} path={g.path} />)}
+          {nav.map((n) => <NavLink key={n.href} n={n} path={g.path} />)}
         </nav>
         <div className="mt-auto space-y-2">
           <div className="rounded-ui bg-act-soft p-3 text-sm"><div className="font-bold">{g.shipper?.displayName}</div><div className="text-xs text-ink-3">{g.me?.phone}</div></div>
@@ -97,7 +101,7 @@ export function ShipperShell({ children }: { children: ReactNode }) {
         </header>
         <div className="mx-auto max-w-5xl p-4 lg:p-8">{children}</div>
       </div>
-      <BottomBar items={SHIPPER_NAV} path={g.path} className="lg:hidden" />
+      <BottomBar items={nav} path={g.path} className="lg:hidden" />
       <SupportWidget portal="shipper" />
       <DemoDrawer />
     </div>
@@ -113,6 +117,13 @@ export function DriverShell({ children }: { children: ReactNode }) {
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") navigator.serviceWorker.register(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/sw.js`, { scope: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/driver/` }).catch(() => undefined);
   }, []);
   if (g.isLogin) return <div data-portal="driver">{children}</div>;
+  if (g.ready && !g.signedIn && g.guestOk) return (
+    <div data-portal="driver" className="min-h-dvh bg-tint pb-10">
+      <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-white/60 px-4"><Logo /><div className="flex items-center gap-1"><PortalCue label="اپ راننده" tone="driver" /><DemoBtn /><Link href="/driver/login/" className="inline-flex h-11 items-center rounded-ui bg-act px-4 text-sm font-black text-white">ورود / ثبت‌نام</Link></div></header>
+      <div className="mx-auto max-w-2xl p-4">{children}</div>
+      <DemoDrawer />
+    </div>
+  );
   if (!g.ready || !g.signedIn) return <div data-portal="driver" className="min-h-dvh bg-tint"><Loading /></div>;
   return (
     <div data-portal="driver" className="min-h-dvh bg-tint pb-24">

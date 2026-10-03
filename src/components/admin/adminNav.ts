@@ -12,7 +12,7 @@ export const ADMIN_MODS: AdminMod[] = [
   { slug: "drivers", title: "رانندگان", group: "افراد", perm: "drivers.view", icon: Truck },
   { slug: "kyc", title: "احراز هویت و مدارک", group: "افراد", perm: "drivers.kyc", icon: UserCheck, keywords: "kyc" },
   { slug: "shippers", title: "صاحبان بار", group: "افراد", perm: "shippers.view", icon: Building2 },
-  { slug: "pro", title: "برنامه‌ی پرو", group: "افراد", perm: "pro", icon: Sparkles, keywords: "بازرسی" },
+  { slug: "pro", title: "رانندگان پرو", group: "افراد", perm: "pro", icon: Sparkles, keywords: "بازرسی" },
   { slug: "finance", title: "مرور مالی و دفتر کل", group: "مالی", perm: "finance.view", icon: Landmark, keywords: "تراز ledger" },
   { slug: "payments", title: "پرداخت‌ها و رسیدها", group: "مالی", perm: "finance.view", icon: CreditCard, keywords: "کارت به کارت receipts" },
   { slug: "payouts", title: "برداشت‌ها", group: "مالی", perm: "finance.view", icon: Banknote, keywords: "payout batch" },

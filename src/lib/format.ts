@@ -1,9 +1,11 @@
-import type { CargoType, OrderStatus, PayMethod, Payment, VehicleType } from "./types";
+import { fa, fmtToman, fmtTomanWords } from "./money";
+import type { CargoKind, OrderStatus, PayTerms } from "./types";
 
-const nf = new Intl.NumberFormat("fa-IR");
-export const fa = (n: number) => nf.format(Math.round(n));
-export const toman = (n: number) => `${fa(n)} تومان`;
-export const millions = (n: number) => `${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(n / 1_000_000)} میلیون`;
+export { fa };
+
+/** Amounts are integer Rial; every screen shows Toman through these. */
+export const toman = fmtToman;
+export const tomanWords = fmtTomanWords;
 
 const dateFmt = new Intl.DateTimeFormat("fa-IR-u-ca-persian", { weekday: "long", day: "numeric", month: "long" });
 const dateShort = new Intl.DateTimeFormat("fa-IR-u-ca-persian", { day: "numeric", month: "long" });
@@ -33,36 +35,38 @@ export const mmss = (ms: number) => {
   return `${fa(Math.floor(s / 60))}:${String(s % 60).padStart(2, "0").replace(/\d/g, (d) => fa(+d))}`;
 };
 
-export const CARGO: Record<CargoType, { label: string }> = {
+export const CARGO: Record<CargoKind, { label: string }> = {
   dairy: { label: "لبنیات" },
   meat: { label: "گوشت و پروتئین" },
-  pharma: { label: "دارو و تجهیزات دارویی" },
+  fish: { label: "ماهی و میگو" },
+  produce: { label: "میوه و سبزی" },
   icecream: { label: "بستنی و انجمادی" },
-  other: { label: "سایر مواد فسادپذیر" },
+  pharma: { label: "دارو و تجهیزات دارویی" },
+  dry: { label: "خشک‌بار" },
+  other: { label: "سایر" },
 };
 
-export const VEHICLES: Record<VehicleType, string> = {
-  pickup: "وانت یخچال‌دار",
-  khavar: "خاور یخچال‌دار",
-  truck10: "کامیون ۱۰ تنی یخچال‌دار",
-  trailer: "تریلی یخچال‌دار",
-};
-export const VEHICLE_SHORT: Record<VehicleType, string> = { pickup: "وانت", khavar: "خاور", truck10: "کامیون ۱۰ تنی", trailer: "تریلی" };
-/** Default payload (kg) per vehicle class. */
-export const VEHICLE_CAPACITY: Record<VehicleType, number> = { pickup: 1500, khavar: 4500, truck10: 10_000, trailer: 24_000 };
-export const VEHICLE_ORDER: VehicleType[] = ["pickup", "khavar", "truck10", "trailer"];
-/** Relative price level of each class versus the 10-ton reference. */
-export const VEHICLE_PRICE_FACTOR: Record<VehicleType, number> = { pickup: 0.5, khavar: 0.75, truck10: 1, trailer: 1.6 };
-
-export const STATUS: Record<OrderStatus, { label: string; tone: "ok" | "warn" | "danger" | "info" | "neutral" | "brand" }> = {
+type Tone = "ok" | "warn" | "danger" | "info" | "neutral" | "brand";
+export const STATUS: Record<OrderStatus, { label: string; tone: Tone }> = {
   DRAFT: { label: "پیش‌نویس", tone: "neutral" },
   OPEN: { label: "در انتظار راننده", tone: "warn" },
+  PRO_POOL: { label: "در انتظار راننده‌ی حرفه‌ای", tone: "warn" },
+  DIRECT_REQUESTED: { label: "درخواست مستقیم", tone: "brand" },
   LOCKED: { label: "در حال تأیید راننده", tone: "brand" },
+  AWAITING_DEPOSIT: { label: "در انتظار بیعانه", tone: "warn" },
   ASSIGNED: { label: "راننده تعیین شد", tone: "info" },
+  EN_ROUTE_TO_PICKUP: { label: "در راه مبدأ", tone: "info" },
+  AT_PICKUP: { label: "در مبدأ", tone: "info" },
+  MISMATCH_REVIEW: { label: "بررسی مغایرت", tone: "warn" },
   IN_TRANSIT: { label: "در مسیر", tone: "info" },
+  AT_DELIVERY: { label: "در مقصد", tone: "info" },
   DELIVERED: { label: "تحویل شد", tone: "ok" },
-  CANCELLED: { label: "لغو شد", tone: "danger" },
+  COMPLETED: { label: "تکمیل شد", tone: "ok" },
+  CANCELLED_BY_SHIPPER: { label: "لغو توسط صاحب بار", tone: "danger" },
+  CANCELLED_BY_DRIVER: { label: "لغو توسط راننده", tone: "danger" },
+  CANCELLED_BY_SYSTEM: { label: "لغو توسط سیستم", tone: "danger" },
   EXPIRED: { label: "منقضی شد", tone: "neutral" },
+  DISPUTED: { label: "در اختلاف", tone: "danger" },
 };
 
 /* ───── Temperature: one source of truth for class, label and digits ───── */
@@ -89,20 +93,12 @@ export const tempClassLabel = (min: number, max: number) => TEMP_PRESETS[tempCla
 
 export const weightLabel = (kg: number) => (kg >= 1000 ? `${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(kg / 1000)} تن` : `${fa(kg)} کیلوگرم`);
 
-export const PAY: Record<PayMethod, string> = {
-  prepaid: "پیش‌پرداخت کامل",
-  deposit: "بیعانه و مابقی هنگام تحویل",
-  cod: "پرداخت هنگام تحویل",
+export const PAY_TERMS: Record<PayTerms, string> = {
+  PREPAID: "پیش‌پرداخت کامل",
+  DEPOSIT_BALANCE_BEFORE_LOADING: "بیعانه و مابقی پیش از بارگیری",
+  DEPOSIT_BALANCE_AFTER_DELIVERY: "بیعانه و مابقی پس از تحویل",
+  CASH_BALANCE_TO_DRIVER: "بیعانه و مابقی نقد به راننده",
 };
-export const payLabel = (p: Payment) => (p.method === "deposit" ? `بیعانه ${fa(p.depositPct ?? 30)}٪، مابقی هنگام تحویل` : PAY[p.method]);
-
-/** "۱۴ میلیون تومان" / "۵ میلیارد تومان": explicit, never a bare "م". */
-export function tomanWords(n: number) {
-  const f = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 });
-  if (n >= 1e9) return `${f.format(n / 1e9)} میلیارد تومان`;
-  if (n >= 1e6) return `${f.format(n / 1e6)} میلیون تومان`;
-  return `${fa(n)} تومان`;
-}
 
 export const windowLabel = (from: number, to: number) => `${jShort(from)}، ${hhmm(from)} تا ${hhmm(to)}`;
 export const stars = (avg: number) => new Intl.NumberFormat("fa-IR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(avg);

@@ -8,7 +8,8 @@
     "start": "npx serve out",
     "typecheck": "tsc --noEmit",
     "e2e": "node tests/e2e/marketplace.mjs && node tests/e2e/wizard.mjs && node tests/e2e/telemetry.mjs && node tests/e2e/audit.mjs",
-    "test:db": "bash supabase/tests/run.sh"
+    "test:db": "bash supabase/tests/run.sh",
+    "test:ledger": "tsx tests/ledger.test.ts"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
@@ -27,6 +28,7 @@
     "playwright": "^1.63.0",
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
 }

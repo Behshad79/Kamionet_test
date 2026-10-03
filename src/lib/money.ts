@@ -6,6 +6,8 @@ const nf = new Intl.NumberFormat("fa-IR");
 const nf1 = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 });
 
 export const fa = (n: number) => nf.format(Math.round(n) || 0);
+/** Persian digits without grouping (years, ids, plate numbers). */
+export const faRaw = (n: number | string) => String(n).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[+d]);
 export const fa1 = (n: number) => nf1.format(n);
 
 /** Toman typed by a user → Rial stored. */

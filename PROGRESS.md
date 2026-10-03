@@ -6,8 +6,10 @@
 
 - **M1** landing (animated Iran map, counters, tabs, Pro, fleet, live loads, FAQ), `/login` chooser + 3 portal logins/sessions, shells with identity cues, demo drawer, personas + scenarios seed (687 orders, 44 open, 14 in transit, payouts, tickets), IndexedDB store, e2e `auth` + `landing`.
 
+- **M2** shipper portal: dashboard (grouped multi-vehicle, to-do, tabs), 5-step wizard (Jalali pickers, temp slider, odor, vehicle illustrations, Pro + driver carousel/profile, insurance picker, terms, recurring, draft persistence), order detail (live map + telemetry, timeline, waybill versions, deposit/balance payment, tip, boost, cancel with exact fee, review, tracking link, rebook), wallet/invoices/refunds/arrears, profile (public profile, completeness, prefs, recurring, favorites, rules), payment sheet, e2e `shipper`.
+
 ## In progress
-- M2: shipper portal (wizard, dashboard, order detail, wallet, profile).
+- M3: driver portal.
 
 ## Next
 - M2 shipper portal · M3 driver portal · M4 money/rules/mismatch/support/tracking/reviews/certificate · M5 admin console + Demo Director · M6 polish, QA, DEMO_GUIDE.md, deploy

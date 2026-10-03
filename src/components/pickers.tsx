@@ -3,12 +3,13 @@
 import { CalendarDays, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { useState } from "react";
 import { fa } from "@/lib/format";
+import { faRaw } from "@/lib/money";
 import { JALALI_MONTHS, WEEKDAYS_SHORT, fromJalali, jalaliMonthLength, jalaliParts, monthGrid } from "@/lib/jalali";
 import { Sheet, cx } from "./ui";
 
 const fmt = (ts: number, time: boolean) => {
   const p = jalaliParts(ts);
-  const d = `${fa(p.jd)} ${JALALI_MONTHS[p.jm - 1]} ${fa(p.jy)}`;
+  const d = `${fa(p.jd)} ${JALALI_MONTHS[p.jm - 1]} ${faRaw(p.jy)}`;
   return time ? `${d}، ${String(p.h).padStart(2, "0").replace(/\d/g, (x) => fa(+x))}:${String(p.mi).padStart(2, "0").replace(/\d/g, (x) => fa(+x))}` : d;
 };
 
@@ -37,7 +38,7 @@ export function JalaliDateTimePicker({ label, value, onChange, min, withTime = t
         footer={<button onClick={() => setOpen(false)} className="h-12 w-full rounded-ui bg-brand-500 font-bold">تأیید</button>}>
         <div className="mb-3 flex items-center justify-between">
           <button type="button" onClick={() => nav(-1)} aria-label="ماه قبل" className="grid size-11 place-items-center rounded-full hover:bg-surface-3"><ChevronRight className="size-5" /></button>
-          <div className="font-black">{JALALI_MONTHS[view.m - 1]} {fa(view.y)}</div>
+          <div className="font-black">{JALALI_MONTHS[view.m - 1]} {faRaw(view.y)}</div>
           <button type="button" onClick={() => nav(1)} aria-label="ماه بعد" className="grid size-11 place-items-center rounded-full hover:bg-surface-3"><ChevronLeft className="size-5" /></button>
         </div>
         <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-ink-3">{WEEKDAYS_SHORT.map((w) => <div key={w} className="py-1">{w}</div>)}</div>

@@ -18,15 +18,15 @@ type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & BtnStyle & { loading?:
 
 function btnClass({ variant = "primary", size = "md", block }: BtnStyle, extra?: string) {
   const v = {
-    primary: "bg-brand-500 text-ink hover:bg-brand-400 active:bg-brand-600 shadow-soft font-bold",
-    accent: "bg-accent-600 text-white hover:bg-accent-700 shadow-soft font-bold",
-    secondary: "bg-white text-ink border border-line hover:bg-surface-3 font-medium",
-    ghost: "text-ink-2 hover:bg-surface-3 font-medium",
-    danger: "bg-danger-bg text-danger hover:bg-red-200 font-bold",
+    primary: "bg-gradient-to-b from-[#ffc933] to-brand-500 text-ink shadow-[var(--shadow-brand)] hover:brightness-105 active:brightness-95 font-extrabold",
+    accent: "bg-gradient-to-b from-[#2a86cf] to-accent-600 text-white shadow-[var(--shadow-accent)] hover:brightness-110 font-extrabold",
+    secondary: "bg-white text-ink shadow-soft hover:bg-surface-2 font-bold",
+    ghost: "text-ink-2 hover:bg-ink/5 font-bold",
+    danger: "bg-danger-bg text-danger ring-1 ring-danger/15 hover:bg-red-200 font-extrabold",
   }[variant];
   const sz = { sm: "h-11 px-4 text-sm", md: "h-12 px-5 text-[15px]", lg: "h-14 px-6 text-base" }[size];
   return cx(
-    "inline-flex items-center justify-center gap-2 rounded-ui transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
+    "inline-flex items-center justify-center gap-2 rounded-ui transition duration-200 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
     v, sz, block && "w-full", extra,
   );
 }
@@ -50,7 +50,7 @@ export function ButtonLink({ variant, size, block, className, children, ...rest 
 }
 
 const fieldBase =
-  "w-full rounded-ui border border-line bg-white px-4 text-[15px] text-ink transition focus:border-accent-600 focus:outline-none focus:ring-4 focus:ring-accent-100 disabled:bg-surface-3 disabled:text-ink-3";
+  "w-full rounded-ui border border-line/80 bg-white/90 px-4 text-[15px] text-ink shadow-[0_1px_2px_rgb(16_24_40/0.04)] transition focus:border-accent-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-accent-100 disabled:bg-surface-3 disabled:text-ink-3";
 
 export function Input({ className, ...p }: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...p} className={cx(fieldBase, "h-12", className)} />;
@@ -95,12 +95,12 @@ export function Toggle({ checked, onChange, disabled, label }: { checked: boolea
 
 export type Tone = "ok" | "warn" | "danger" | "info" | "neutral" | "brand";
 const tones: Record<Tone, string> = {
-  ok: "bg-ok-bg text-ok",
-  warn: "bg-warn-bg text-warn",
-  danger: "bg-danger-bg text-danger",
-  info: "bg-accent-50 text-accent-700",
-  neutral: "bg-surface-3 text-ink-2",
-  brand: "bg-brand-100 text-brand-700",
+  ok: "bg-ok-bg text-ok ring-1 ring-inset ring-ok/15",
+  warn: "bg-warn-bg text-warn ring-1 ring-inset ring-warn/15",
+  danger: "bg-danger-bg text-danger ring-1 ring-inset ring-danger/15",
+  info: "bg-accent-50 text-accent-700 ring-1 ring-inset ring-accent-600/15",
+  neutral: "bg-surface-3 text-ink-2 ring-1 ring-inset ring-ink/5",
+  brand: "bg-brand-100 text-brand-700 ring-1 ring-inset ring-brand-500/25",
 };
 export function Badge({ tone = "neutral", children, dot, className }: { tone?: Tone; children: ReactNode; dot?: boolean; className?: string }) {
   return (
@@ -132,12 +132,12 @@ export function EmptyState({ icon, title, body, action }: { icon: ReactNode; tit
   );
 }
 
-export function Stat({ label, value, sub, tone }: { label: string; value: ReactNode; sub?: string; tone?: "brand" | "accent" }) {
+export function Stat({ label, value, sub, tone, icon }: { label: string; value: ReactNode; sub?: string; tone?: "brand" | "accent"; icon?: ReactNode }) {
   return (
-    <Card className="p-4">
-      <div className="text-[13px] text-ink-3">{label}</div>
-      <div className={cx("mt-1 text-2xl font-black tabular", tone === "accent" && "text-accent-600")}>{value}</div>
-      {sub && <div className="mt-0.5 text-xs text-ink-3">{sub}</div>}
+    <Card className={cx("card-lift relative overflow-hidden p-4", tone === "accent" && "bg-gradient-to-br from-white to-accent-50", tone === "brand" && "bg-gradient-to-br from-white to-brand-50")}>
+      <div className="flex items-start justify-between gap-2"><div className="text-[13px] font-medium text-ink-3">{label}</div>{icon && <span className={cx("grid size-9 place-items-center rounded-xl", tone === "brand" ? "bg-brand-100 text-brand-700" : "bg-accent-50 text-accent-600")}>{icon}</span>}</div>
+      <div className={cx("mt-2 text-[26px] font-black leading-none tabular tracking-tight", tone === "accent" && "text-accent-700")}>{value}</div>
+      {sub && <div className="mt-1.5 text-xs text-ink-3">{sub}</div>}
     </Card>
   );
 }
@@ -185,7 +185,7 @@ export function Segmented<T extends string | number>({ value, onChange, options 
         return (
           <button key={String(o.value)} type="button" role="radio" aria-checked={on} onClick={() => onChange(o.value)}
             className={cx("rounded-ui border-2 px-3 py-3 text-center transition",
-              on ? "border-brand-500 bg-brand-50 shadow-soft" : "border-line bg-white hover:border-ink-4")}>
+              on ? "border-act bg-act-soft shadow-soft" : "border-transparent bg-white shadow-soft hover:bg-surface-2")}>
             <div className="text-[15px] font-bold">{o.label}</div>
             {o.sub && <div className="mt-0.5 text-xs text-ink-3">{o.sub}</div>}
           </button>
@@ -315,7 +315,7 @@ export function Sheet({ open, onClose, title, children, footer, wide }: { open: 
   return (
     <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-ink/40 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={onClose}>
       <div ref={ref} role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}
-        className={cx("flex max-h-[92dvh] w-full animate-rise flex-col rounded-t-3xl bg-white shadow-lift sm:rounded-ui", wide ? "max-w-2xl" : "max-w-md")}>
+        className={cx("flex max-h-[92dvh] w-full animate-rise flex-col rounded-t-[28px] bg-white shadow-lift sm:rounded-[28px]", wide ? "max-w-2xl" : "max-w-md")}>
         <div className="flex items-center justify-between border-b border-line px-5 py-3">
           <h2 className="text-lg font-bold">{title}</h2>
           <button onClick={onClose} aria-label="بستن" className="grid size-11 place-items-center rounded-full hover:bg-surface-3"><X className="size-5" /></button>
@@ -331,14 +331,14 @@ export function Sheet({ open, onClose, title, children, footer, wide }: { open: 
 
 export function Tabs<T extends string>({ value, onChange, tabs, className }: { value: T; onChange: (v: T) => void; tabs: { id: T; label: ReactNode; count?: number }[]; className?: string }) {
   return (
-    <div role="tablist" className={cx("no-scrollbar flex gap-1 overflow-x-auto border-b border-line", className)}>
+    <div role="tablist" className={cx("no-scrollbar flex gap-1 overflow-x-auto rounded-full bg-ink/[0.045] p-1", className)}>
       {tabs.map((t) => {
         const on = t.id === value;
         return (
           <button key={t.id} role="tab" aria-selected={on} onClick={() => onChange(t.id)}
-            className={cx("flex h-12 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-bold transition", on ? "border-act text-act-ink" : "border-transparent text-ink-3 hover:text-ink")}>
+            className={cx("flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-bold transition duration-200", on ? "bg-white text-ink shadow-soft" : "text-ink-3 hover:text-ink")}>
             {t.label}
-            {t.count !== undefined && <span className="rounded-full bg-surface-3 px-2 py-0.5 text-xs">{faGroup.format(t.count)}</span>}
+            {t.count !== undefined && <span className={cx("rounded-full px-2 py-0.5 text-[11px]", on ? "bg-act-soft text-act-ink" : "bg-ink/5")}>{faGroup.format(t.count)}</span>}
           </button>
         );
       })}

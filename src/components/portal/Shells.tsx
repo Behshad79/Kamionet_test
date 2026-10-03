@@ -1,15 +1,19 @@
 "use client";
 
-import { Bell, ClipboardList, Gauge, Home, ListChecks, LogOut, PackagePlus, ShieldCheck, Truck, User, Wallet, type LucideIcon } from "lucide-react";
+import { Bell, ClipboardList, Gauge, Home, ListChecks, LogOut, Menu, PackagePlus, ShieldCheck, Truck, User, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { usePortal } from "@/lib/hooks";
 import { logout, PORTAL_LOGIN } from "@/lib/store";
 import type { PortalId } from "@/lib/types";
 import { Logo, PortalCue, ProBadge } from "../brand";
 import { Skeleton, cx } from "../ui";
-import { DemoDrawer } from "./DemoDrawer";
+import { DemoDrawer, openDemo } from "./DemoDrawer";
+import { DEMO_MODE } from "@/lib/store";
+import { FlaskConical } from "lucide-react";
+
+const DemoBtn = () => (DEMO_MODE ? <button onClick={openDemo} aria-label="حساب‌های دمو" className="grid size-11 place-items-center rounded-full hover:bg-ink/5 lg:hidden"><FlaskConical className="size-5" aria-hidden /></button> : null);
 
 interface Nav { href: string; label: string; icon: LucideIcon }
 
@@ -66,7 +70,7 @@ export function ShipperShell({ children }: { children: ReactNode }) {
   if (!g.ready || !g.signedIn) return <div data-portal="shipper" className="min-h-dvh bg-tint"><Loading /></div>;
   return (
     <div data-portal="shipper" className="min-h-dvh bg-tint lg:grid lg:grid-cols-[248px_1fr]">
-      <aside className="sticky top-0 hidden h-dvh flex-col border-e border-line bg-white p-4 lg:flex">
+      <aside className="sticky top-0 hidden h-dvh flex-col border-e border-line/60 bg-white/70 p-4 backdrop-blur-xl lg:flex">
         <Logo className="mb-2" />
         <PortalCue label="پنل صاحب بار" tone="shipper" />
         <nav className="mt-6 grid gap-1" aria-label="ناوبری اصلی">
@@ -78,8 +82,8 @@ export function ShipperShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <div className="min-w-0 pb-24 lg:pb-8">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-line bg-white/90 px-4 backdrop-blur lg:hidden">
-          <Logo /><div className="flex items-center gap-1"><PortalCue label="پنل صاحب بار" tone="shipper" /><Bell2 n={g.unread} href="/app/notifications/" /></div>
+        <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-white/60 px-4 lg:hidden">
+          <Logo /><div className="flex items-center gap-1"><PortalCue label="پنل صاحب بار" tone="shipper" /><DemoBtn /><Bell2 n={g.unread} href="/app/notifications/" /></div>
         </header>
         <div className="mx-auto max-w-5xl p-4 lg:p-8">{children}</div>
       </div>
@@ -100,9 +104,9 @@ export function DriverShell({ children }: { children: ReactNode }) {
   if (!g.ready || !g.signedIn) return <div data-portal="driver" className="min-h-dvh bg-tint"><Loading /></div>;
   return (
     <div data-portal="driver" className="min-h-dvh bg-tint pb-24">
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-line bg-white/95 px-4 backdrop-blur">
+      <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-white/60 px-4">
         <div className="flex items-center gap-2"><Logo />{g.driver?.pro.status === "pro" && <ProBadge />}</div>
-        <div className="flex items-center gap-1"><PortalCue label="اپ راننده" tone="driver" /><Bell2 n={g.unread} href="/driver/notifications/" /></div>
+        <div className="flex items-center gap-1"><PortalCue label="اپ راننده" tone="driver" /><DemoBtn /><Bell2 n={g.unread} href="/driver/notifications/" /></div>
       </header>
       <div className="mx-auto max-w-2xl p-4">{children}</div>
       <BottomBar items={DRIVER_NAV} path={g.path} large />
@@ -115,25 +119,36 @@ export function DriverShell({ children }: { children: ReactNode }) {
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const g = useGate("admin");
+  const [menu, setMenu] = useState(false);
+  useEffect(() => setMenu(false), [g.path]);
   if (g.isLogin) return <div data-portal="admin">{children}</div>;
   if (!g.ready || !g.signedIn) return <div data-portal="admin" className="min-h-dvh bg-tint"><Loading /></div>;
-  return (
-    <div data-portal="admin" className="min-h-dvh bg-tint lg:grid lg:grid-cols-[240px_1fr]">
-      <aside className="sticky top-0 hidden h-dvh flex-col bg-slate-nav p-4 text-slate-200 lg:flex">
-        <Logo tone="white" className="mb-2" />
-        <PortalCue label="مدیریت" tone="admin" />
-        <nav className="mt-6 grid gap-1" aria-label="ناوبری مدیریت">
-          {ADMIN_NAV.map((n) => <NavLink key={n.href} n={n} path={g.path} dark />)}
-        </nav>
-        <div className="mt-auto space-y-2">
-          <div className="rounded-ui bg-white/10 p-3 text-sm"><div className="font-bold text-white">{g.admin?.name}</div><div className="text-xs text-slate-400">{g.admin?.role}</div></div>
-          <SignOut portal="admin" dark />
-        </div>
-      </aside>
-      <div className="min-w-0">
-        <div className="mx-auto hidden max-w-[1400px] p-6 lg:block">{children}</div>
-        <div className="grid min-h-dvh place-items-center p-8 text-center lg:hidden"><div><PortalCue label="مدیریت" tone="admin" /><p className="mt-3 font-bold">کنسول مدیریت برای صفحه‌ی دسکتاپ طراحی شده است.</p><p className="mt-1 text-sm text-ink-3">لطفاً با رایانه وارد شوید.</p></div></div>
+  const side = (
+    <>
+      <div className="flex items-center justify-between"><Logo tone="white" /><PortalCue label="مدیریت" tone="admin" /></div>
+      <nav className="mt-6 grid gap-1" aria-label="ناوبری مدیریت">{ADMIN_NAV.map((n) => <NavLink key={n.href} n={n} path={g.path} dark onClick={() => setMenu(false)} />)}</nav>
+      <div className="mt-auto space-y-2 pt-6">
+        <div className="rounded-2xl bg-white/8 p-3 text-sm"><div className="font-bold text-white">{g.admin?.name}</div><div className="text-xs text-slate-400">{g.admin?.role}</div></div>
+        <SignOut portal="admin" dark />
       </div>
+    </>
+  );
+  return (
+    <div data-portal="admin" className="min-h-dvh bg-tint lg:grid lg:grid-cols-[264px_1fr]">
+      <aside className="sticky top-0 hidden h-dvh flex-col bg-gradient-to-b from-[#0f172a] to-[#111c33] p-4 text-slate-200 lg:flex">{side}</aside>
+      <div className="min-w-0">
+        <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-white/60 px-4 lg:hidden">
+          <button onClick={() => setMenu(true)} aria-label="باز کردن منو" aria-expanded={menu} className="grid size-11 place-items-center rounded-full hover:bg-ink/5"><Menu className="size-5" /></button>
+          <Logo /><div className="flex items-center gap-1"><PortalCue label="مدیریت" tone="admin" /><DemoBtn /></div>
+        </header>
+        <div className="mx-auto max-w-[1500px] p-4 lg:p-8">{children}</div>
+      </div>
+      {menu && (
+        <div className="fixed inset-0 z-50 flex lg:hidden" role="dialog" aria-modal="true" aria-label="منوی مدیریت">
+          <div className="flex w-72 max-w-[85%] animate-rise flex-col bg-gradient-to-b from-[#0f172a] to-[#111c33] p-4 text-slate-200">{side}</div>
+          <button className="flex-1 bg-ink/50" aria-label="بستن منو" onClick={() => setMenu(false)} />
+        </div>
+      )}
       <DemoDrawer />
     </div>
   );
@@ -141,25 +156,26 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
 /* ───────────────────────── bits ───────────────────────── */
 
-function NavLink({ n, path, dark }: { n: Nav; path: string; dark?: boolean }) {
+function NavLink({ n, path, dark, onClick }: { n: Nav; path: string; dark?: boolean; onClick?: () => void }) {
   const on = active(path, n.href);
   return (
-    <Link href={n.href} aria-current={on ? "page" : undefined}
-      className={cx("flex h-11 items-center gap-3 rounded-ui px-3 text-sm font-bold transition",
-        dark ? (on ? "bg-white/15 text-white" : "text-slate-300 hover:bg-white/10") : on ? "bg-act-soft text-act-ink" : "text-ink-2 hover:bg-surface-3")}>
-      <n.icon className="size-5" aria-hidden />{n.label}
+    <Link href={n.href} onClick={onClick} aria-current={on ? "page" : undefined}
+      className={cx("group relative flex h-11 items-center gap-3 rounded-2xl px-3 text-sm font-bold transition duration-200",
+        dark ? (on ? "bg-white/12 text-white" : "text-slate-400 hover:bg-white/8 hover:text-white") : on ? "bg-act-soft text-act-ink shadow-[0_0_0_1px_rgb(16_24_40/0.04)]" : "text-ink-3 hover:bg-ink/[0.04] hover:text-ink")}>
+      {on && <span className={cx("absolute inset-y-2.5 start-0 w-1 rounded-full", dark ? "bg-brand-500" : "bg-act")} aria-hidden />}
+      <n.icon className="size-5 shrink-0" aria-hidden />{n.label}
     </Link>
   );
 }
 
 function BottomBar({ items, path, large, className }: { items: Nav[]; path: string; large?: boolean; className?: string }) {
   return (
-    <nav aria-label="ناوبری اصلی" className={cx("pb-safe fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-white", className)} style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}>
+    <nav aria-label="ناوبری اصلی" className={cx("glass fixed inset-x-3 bottom-3 z-30 grid rounded-[26px] p-1.5 shadow-lift ring-1 ring-ink/5", className)} style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)`, marginBottom: "env(safe-area-inset-bottom)" }}>
       {items.map((n) => {
         const on = active(path, n.href);
         return (
-          <Link key={n.href} href={n.href} aria-current={on ? "page" : undefined} className={cx("flex flex-col items-center justify-center gap-1 pt-2 text-[11px] font-bold", large ? "min-h-16" : "min-h-14", on ? "text-act-ink" : "text-ink-3")}>
-            <span className={cx("grid h-8 w-14 place-items-center rounded-full transition", on && "bg-act-soft")}><n.icon className="size-5" aria-hidden /></span>
+          <Link key={n.href} href={n.href} aria-current={on ? "page" : undefined} className={cx("flex flex-col items-center justify-center gap-0.5 rounded-[20px] text-[11px] font-extrabold transition duration-200", large ? "min-h-[58px]" : "min-h-[54px]", on ? "bg-gradient-to-b from-act-soft to-white text-act-ink shadow-soft" : "text-ink-3")}>
+            <n.icon className={cx("size-[22px] transition", on && "scale-110")} aria-hidden />
             {n.label}
           </Link>
         );

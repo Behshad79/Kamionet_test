@@ -67,7 +67,7 @@ export default function Page() {
       {!e.ok && !direct && <p role="alert" className="rounded-ui bg-warn-bg p-3 text-sm font-medium text-warn">{e.why}</p>}
       {block && <p role="alert" className="rounded-ui bg-warn-bg p-3 text-sm font-medium text-warn">{block}</p>}
 
-      <div className="pb-safe fixed inset-x-0 bottom-16 z-20 border-t border-line bg-white/95 p-3 backdrop-blur">
+      <div className="pb-safe glass fixed inset-x-0 bottom-[86px] z-20 border-t border-white/60 p-3">
         <div className="mx-auto max-w-2xl space-y-2">
           {canClaim && <><Button block size="lg" className="h-14" onClick={() => run(() => act((st) => claimOrder(st, me.id, o.id)), "بار برای شما رزرو شد.")}>انتخاب این بار · {toman(net.net)}</Button><p className="text-center text-xs text-ink-3">با انتخاب این بار، بلافاصله برای شما رزرو می‌شود.</p></>}
           {mineLocked && <div className="grid grid-cols-[1fr_2fr] gap-2"><Button variant="secondary" size="lg" onClick={() => run(() => act((st) => releaseLock(st, me.id, o.id)), "رزرو آزاد شد.")}>انصراف</Button><Button size="lg" onClick={() => { const r = run(() => act((st) => confirmAssign(st, me.id, o.id)), "تأیید شد؛ منتظر بیعانه‌ی صاحب بار."); if (r.ok) router.replace("/driver/"); }}>تأیید نهایی</Button></div>}

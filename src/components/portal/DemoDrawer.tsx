@@ -2,7 +2,7 @@
 
 import { FlaskConical, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DEMO_DRIVERS, DEMO_SHIPPERS, ADMIN_DEMO } from "@/lib/seed/scenarios";
 import { demoSignIn, DEMO_MODE, PORTAL_HOME, resetDemo } from "@/lib/store";
 import type { PortalId } from "@/lib/types";
@@ -45,13 +45,16 @@ export function DemoAccounts({ portal, compact }: { portal?: PortalId; compact?:
   );
 }
 
-/** Floating launcher (demo mode only). */
-export function DemoDrawer() {
+export const openDemo = () => window.dispatchEvent(new Event("km:demo"));
+
+/** Floating launcher (demo mode only). `always` keeps it visible on mobile (public pages); portals use the header button instead. */
+export function DemoDrawer({ always }: { always?: boolean }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => { const h = () => setOpen(true); window.addEventListener("km:demo", h); return () => window.removeEventListener("km:demo", h); }, []);
   if (!DEMO_MODE) return null;
   return (
     <>
-      <button onClick={() => setOpen(true)} aria-label="حساب‌های دمو" className="fixed bottom-28 left-0 z-40 grid h-11 w-8 place-items-center rounded-r-full bg-ink/80 text-white shadow-lift lg:bottom-5"><FlaskConical className="size-5" aria-hidden /></button>
+      <button onClick={() => setOpen(true)} aria-label="حساب‌های دمو" className={`fixed bottom-28 left-0 z-40 h-11 w-8 place-items-center rounded-r-full bg-ink/80 text-white shadow-lift lg:bottom-5 ${always ? "grid" : "hidden lg:grid"}`}><FlaskConical className="size-5" aria-hidden /></button>
       {open && (
         <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label="حساب‌های دمو">
           <button className="flex-1 bg-ink/40" aria-label="بستن" onClick={() => setOpen(false)} />

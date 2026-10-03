@@ -27,22 +27,22 @@ const NAV = [
 function Header() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+    <header className="sticky top-0 z-40 px-3 pt-3">
+      <div className="glass mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 rounded-full px-3 ps-5 shadow-soft ring-1 ring-white/70">
         <Link href="/" aria-label="کامیونت"><Logo /></Link>
-        <nav aria-label="ناوبری اصلی" className="hidden items-center gap-1 lg:flex">
-          {NAV.map((n) => <a key={n.href} href={n.href} className="flex h-11 items-center rounded-full px-4 text-sm font-medium text-ink-2 hover:bg-surface-3">{n.label}</a>)}
+        <nav aria-label="ناوبری اصلی" className="hidden items-center gap-0.5 lg:flex">
+          {NAV.map((n) => <a key={n.href} href={n.href} className="flex h-10 items-center rounded-full px-4 text-sm font-bold text-ink-2 transition hover:bg-ink/5">{n.label}</a>)}
         </nav>
-        <div className="flex items-center gap-2">
-          <ButtonLink href="/login/" variant="ghost" size="sm" className="max-sm:hidden!">ورود</ButtonLink>
-          <ButtonLink href="/app/login/" size="sm">ثبت بار</ButtonLink>
-          <button className="grid size-11 place-items-center rounded-full hover:bg-surface-3 lg:hidden" aria-label={open ? "بستن منو" : "باز کردن منو"} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X className="size-5" /> : <Menu className="size-5" />}</button>
+        <div className="flex items-center gap-1.5">
+          <ButtonLink href="/login/" variant="ghost" size="sm" className="max-sm:hidden! rounded-full!">ورود</ButtonLink>
+          <ButtonLink href="/app/login/" size="sm" className="rounded-full!">ثبت بار</ButtonLink>
+          <button className="grid size-11 place-items-center rounded-full hover:bg-ink/5 lg:hidden" aria-label={open ? "بستن منو" : "باز کردن منو"} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X className="size-5" /> : <Menu className="size-5" />}</button>
         </div>
       </div>
       {open && (
-        <nav aria-label="منوی موبایل" className="animate-fade grid gap-1 border-t border-line bg-white p-3 lg:hidden">
-          {NAV.map((n) => <a key={n.href} onClick={() => setOpen(false)} href={n.href} className="flex h-12 items-center rounded-ui px-4 font-medium hover:bg-surface-3">{n.label}</a>)}
-          <Link href="/login/" className="flex h-12 items-center rounded-ui px-4 font-bold text-accent-600">ورود به حساب</Link>
+        <nav aria-label="منوی موبایل" className="glass mx-auto mt-2 grid max-w-6xl animate-rise gap-1 rounded-3xl p-3 shadow-lift lg:hidden">
+          {NAV.map((n) => <a key={n.href} onClick={() => setOpen(false)} href={n.href} className="flex h-12 items-center rounded-2xl px-4 font-bold hover:bg-ink/5">{n.label}</a>)}
+          <Link href="/login/" className="flex h-12 items-center rounded-2xl px-4 font-extrabold text-accent-600">ورود به حساب</Link>
         </nav>
       )}
     </header>
@@ -71,22 +71,32 @@ function CountUp({ to, suffix = "" }: { to: number; suffix?: string }) {
 }
 
 function Hero() {
+  const s = useStore();
+  const live = s.ready ? s.orders.filter((o) => o.status === "IN_TRANSIT").length : 0;
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-accent-50 via-white to-white">
-      <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-12 lg:grid-cols-[1.05fr_1fr] lg:py-20">
-        <div className="space-y-6">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-accent-700 shadow-soft"><Thermometer className="size-4" aria-hidden />مخصوص زنجیره‌ی سرد ایران</span>
-          <h1 className="text-balance text-4xl font-black leading-[1.25] lg:text-5xl">بار یخچالی‌تان را به <span className="text-accent-600">کامیونِ مناسب</span> بسپارید</h1>
-          <p className="max-w-xl text-lg leading-8 text-ink-2">مستقیم، شفاف، بیمه‌شده. قیمت را خودتان تعیین می‌کنید، دمای بار را لحظه‌به‌لحظه می‌بینید و پول تا تحویل سالم نزد کامیونت امانت می‌ماند.</p>
+    <section className="mesh relative -mt-[68px] overflow-hidden pt-[68px]">
+      <div className="blob pointer-events-none absolute -start-24 top-40 size-72 rounded-full bg-brand-500/25 blur-3xl" aria-hidden />
+      <div className="blob pointer-events-none absolute -end-20 top-10 size-80 rounded-full bg-accent-500/20 blur-3xl [animation-delay:-4s]" aria-hidden />
+      <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-14 lg:grid-cols-[1.05fr_1fr] lg:pb-24 lg:pt-20">
+        <div className="space-y-7">
+          <span className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-extrabold text-accent-700 shadow-soft ring-1 ring-white/70"><span className="relative flex size-2"><span className="live-ring absolute inset-0 rounded-full bg-ok" /><span className="relative size-2 rounded-full bg-ok" /></span>مخصوص زنجیره‌ی سرد ایران</span>
+          <h1 className="text-balance text-[40px] font-black leading-[1.2] tracking-tight lg:text-[58px]">بار یخچالی‌تان را به <span className="text-grad">کامیونِ مناسب</span> بسپارید</h1>
+          <p className="max-w-xl text-lg leading-8 text-ink-2">مستقیم، شفاف، بیمه‌شده. قیمت را خودتان می‌گذارید، دمای بار را لحظه‌به‌لحظه می‌بینید و پول تا تحویل سالم نزد کامیونت امانت می‌ماند.</p>
           <div className="flex flex-wrap gap-3">
-            <ButtonLink href="/app/login/" size="lg">ثبت بار</ButtonLink>
-            <ButtonLink href="/driver/login/" size="lg" variant="secondary"><Truck className="size-5" aria-hidden />راننده هستم</ButtonLink>
+            <ButtonLink href="/app/login/" size="lg" className="rounded-full! px-8!">ثبت بار</ButtonLink>
+            <ButtonLink href="/driver/login/" size="lg" variant="secondary" className="rounded-full! px-7!"><Truck className="size-5" aria-hidden />راننده هستم</ButtonLink>
           </div>
-          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-ink-2">
-            {["پرداخت امانی تا تحویل", "ثبت و گزارش دما", "بیمه‌ی محموله", "تحویل با کد گیرنده"].map((t) => <li key={t} className="flex items-center gap-1.5"><BadgeCheck className="size-4 text-ok" aria-hidden />{t}</li>)}
+          <ul className="flex flex-wrap gap-2 text-sm font-bold text-ink-2">
+            {["پرداخت امانی تا تحویل", "ثبت و گزارش دما", "بیمه‌ی محموله", "تحویل با کد گیرنده"].map((x) => <li key={x} className="glass flex items-center gap-1.5 rounded-full px-3 py-1.5 ring-1 ring-white/70"><BadgeCheck className="size-4 text-ok" aria-hidden />{x}</li>)}
           </ul>
         </div>
-        <div className="relative"><IranMap className="float-y mx-auto w-full max-w-xl" /></div>
+        <div className="relative">
+          <div className="glass rounded-[32px] p-3 shadow-lift ring-1 ring-white/80"><IranMap className="float-y mx-auto w-full max-w-xl" /></div>
+          <div className="glass absolute -bottom-5 start-4 flex items-center gap-3 rounded-2xl px-4 py-3 shadow-lift ring-1 ring-white/80 max-sm:scale-90">
+            <span className="grid size-10 place-items-center rounded-xl bg-ok-bg text-ok"><Thermometer className="size-5" aria-hidden /></span>
+            <div><div className="text-[11px] font-bold text-ink-3">در حال حمل همین الان</div><div className="text-xl font-black tabular">{s.ready ? fa(live) : "—"} <span className="text-sm font-bold text-ink-3">کامیون یخچال‌دار</span></div></div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -103,12 +113,12 @@ function Stats() {
     { n: cities, label: "شهر تحت پوشش", suffix: "" },
   ];
   return (
-    <section aria-label="آمار" className="mx-auto max-w-6xl px-4">
-      <div className="-mt-2 grid grid-cols-2 gap-3 rounded-ui bg-white p-5 shadow-soft md:grid-cols-4">
+    <section aria-label="آمار" className="relative z-10 mx-auto -mt-2 max-w-6xl px-4">
+      <div className="glass grid grid-cols-2 gap-px overflow-hidden rounded-[28px] shadow-lift ring-1 ring-white/80 md:grid-cols-4">
         {items.map((i) => (
-          <div key={i.label} className="text-center">
-            <div className="text-3xl font-black text-accent-700">{s.ready ? <CountUp to={i.n} suffix={i.suffix} /> : "—"}</div>
-            <div className="mt-1 text-sm text-ink-3">{i.label}</div>
+          <div key={i.label} className="bg-white/60 p-6 text-center">
+            <div className="text-4xl font-black text-grad">{s.ready ? <CountUp to={i.n} suffix={i.suffix} /> : "—"}</div>
+            <div className="mt-1 text-sm font-bold text-ink-3">{i.label}</div>
           </div>
         ))}
       </div>
@@ -144,7 +154,7 @@ function HowItWorks() {
       </div>
       <ol key={tab} className="mt-8 grid gap-4 md:grid-cols-4">
         {STEPS[tab].map((s, i) => (
-          <li key={s.t} className="animate-rise rounded-ui bg-white p-5 shadow-soft" style={{ animationDelay: `${i * 70}ms` }}>
+          <li key={s.t} className="card-lift animate-rise rounded-[24px] bg-white p-5 shadow-soft" style={{ animationDelay: `${i * 70}ms` }}>
             <div className="mb-3 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-act-soft text-act-ink"><s.i className="size-5" aria-hidden /></span><span className="text-sm font-black text-ink-3">{fa(i + 1)}</span></div>
             <h3 className="font-extrabold">{s.t}</h3>
             <p className="mt-1.5 text-sm leading-7 text-ink-3">{s.d}</p>
@@ -165,16 +175,20 @@ const FEATURES = [
 ];
 
 function Features() {
+  const span = ["lg:col-span-2", "", "", "lg:col-span-2", "", ""];
+  const tone = ["from-accent-50", "from-brand-50", "from-ok-bg", "from-brand-50", "from-accent-50", "from-surface-3"];
   return (
-    <section id="features" className="scroll-mt-20 bg-white py-16">
+    <section id="features" className="scroll-mt-20 py-20">
       <div className="mx-auto max-w-6xl px-4">
-        <h2 className="text-center text-3xl font-black">هر چه برای حمل مطمئن لازم است</h2>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div key={f.t} className="rounded-ui border border-line p-5 transition hover:-translate-y-0.5 hover:shadow-soft">
-              <span className="mb-3 grid size-11 place-items-center rounded-ui bg-accent-50 text-accent-600"><f.i className="size-6" aria-hidden /></span>
-              <h3 className="font-extrabold">{f.t}</h3>
-              <p className="mt-1.5 text-sm leading-7 text-ink-3">{f.d}</p>
+        <h2 className="text-center text-3xl font-black tracking-tight lg:text-4xl">هر چه برای حمل مطمئن لازم است</h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-ink-3">از لحظه‌ی ثبت تا تحویل با کد گیرنده، همه‌چیز شفاف و ثبت‌شده است.</p>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {FEATURES.map((f, i) => (
+            <div key={f.t} className={cx("card-lift relative overflow-hidden rounded-[28px] bg-gradient-to-br to-white p-6 shadow-soft", tone[i], span[i])}>
+              <span className="mb-5 grid size-12 place-items-center rounded-2xl bg-white text-accent-600 shadow-soft"><f.i className="size-6" aria-hidden /></span>
+              <h3 className="text-lg font-black">{f.t}</h3>
+              <p className="mt-2 text-sm leading-7 text-ink-3">{f.d}</p>
+              <f.i className="pointer-events-none absolute -bottom-6 -end-6 size-32 text-ink/[0.035]" aria-hidden />
             </div>
           ))}
         </div>
@@ -221,16 +235,17 @@ const FLEET: { kind: VehicleKind; color: string }[] = [
 
 function Fleet() {
   return (
-    <section id="fleet" className="scroll-mt-20 bg-white py-16">
+    <section id="fleet" className="scroll-mt-20 py-20">
       <div className="mx-auto max-w-6xl px-4">
-        <h2 className="text-center text-3xl font-black">از وانت تا تریلی یخچال‌دار</h2>
-        <p className="mx-auto mt-2 max-w-xl text-center text-ink-3">هر بار به خودرویی می‌رسد که دما و ظرفیت لازم را دارد.</p>
-        <div className="no-scrollbar mt-8 flex snap-x gap-4 overflow-x-auto pb-3">
-          {FLEET.map((f) => (
-            <div key={f.kind} className="w-64 shrink-0 snap-start rounded-ui border border-line bg-surface-2 p-4">
-              <TruckIllustration kind={f.kind} color={f.color} state="cooling" className="h-28 w-full" />
-              <div className="mt-3 font-extrabold">{VEHICLES[f.kind].short}</div>
-              <div className="text-sm text-ink-3">تا {fa(VEHICLES[f.kind].capacityKg / 1000)} تن</div>
+        <h2 className="text-center text-3xl font-black tracking-tight lg:text-4xl">از وانت تا تریلی یخچال‌دار</h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-ink-3">هر بار به خودرویی می‌رسد که دما و ظرفیت لازم را دارد.</p>
+        <div className="no-scrollbar -mx-4 mt-10 flex snap-x gap-4 overflow-x-auto px-4 pb-4">
+          {FLEET.map((f, i) => (
+            <div key={f.kind} className="card-lift w-72 shrink-0 snap-start overflow-hidden rounded-[28px] bg-white shadow-soft">
+              <div className={cx("grid-dots relative grid h-44 place-items-center bg-gradient-to-br px-5", ["from-accent-50", "from-brand-50", "from-ok-bg", "from-surface-3", "from-accent-50"][i % 5], "to-white")}>
+                <TruckIllustration kind={f.kind} color={f.color} state="cooling" className="h-32 w-full" />
+              </div>
+              <div className="flex items-center justify-between p-4"><div><div className="font-black">{VEHICLES[f.kind].short}</div><div className="text-sm text-ink-3">تا {fa(VEHICLES[f.kind].capacityKg / 1000)} تن</div></div><span className="rounded-full bg-accent-50 px-3 py-1 text-xs font-extrabold text-accent-700">یخچال‌دار</span></div>
             </div>
           ))}
         </div>
@@ -263,7 +278,7 @@ function LiveLoads() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {!s.ready && Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-48" />)}
         {open.map((o) => (
-          <article key={o.id} className="space-y-3 rounded-ui bg-white p-4 shadow-soft">
+          <article key={o.id} className="card-lift space-y-3 rounded-[24px] bg-white p-5 shadow-soft">
             <div className="flex items-center justify-between"><span className="inline-flex items-center gap-1.5 text-sm font-bold"><CargoIcon type={o.cargo} />{CARGO[o.cargo].label}</span><span className="text-xs font-bold text-warn">{STATUS[o.status].label}</span></div>
             <RouteLine from={o.origin.city} to={o.dest.city} />
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -290,7 +305,7 @@ function Faq() {
   return (
     <section id="faq" className="mx-auto max-w-3xl scroll-mt-20 px-4 py-16">
       <h2 className="text-center text-3xl font-black">سؤالات پرتکرار</h2>
-      <div className="mt-8 divide-y divide-line rounded-ui bg-white shadow-soft">
+      <div className="mt-8 divide-y divide-line/70 overflow-hidden rounded-[28px] bg-white shadow-soft">
         {FAQ.map(([q, a]) => (
           <details key={q} className="group p-5">
             <summary className="flex min-h-11 list-none items-center justify-between gap-3 font-bold [&::-webkit-details-marker]:hidden">{q}<ChevronDown className="size-5 shrink-0 text-ink-3 transition group-open:rotate-180" aria-hidden /></summary>
@@ -305,12 +320,14 @@ function Faq() {
 function FinalCta() {
   return (
     <section className="mx-auto max-w-6xl px-4 pb-16">
-      <div className="rounded-ui bg-ink p-8 text-center text-white md:p-12">
+      <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-ink to-[#1d2a44] p-10 text-center text-white md:p-14"><div className="blob pointer-events-none absolute -top-20 start-10 size-64 rounded-full bg-brand-500/25 blur-3xl" aria-hidden /><div className="blob pointer-events-none absolute -bottom-24 end-10 size-72 rounded-full bg-accent-500/25 blur-3xl [animation-delay:-5s]" aria-hidden />
+        <div className="relative">
         <h2 className="text-3xl font-black">آماده‌اید اولین بار را بفرستید؟</h2>
         <p className="mx-auto mt-2 max-w-lg text-white/70">ثبت‌نام با شماره‌ی موبایل، کمتر از یک دقیقه.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <ButtonLink href="/app/login/" size="lg">ثبت بار</ButtonLink>
           <ButtonLink href="/driver/login/" size="lg" variant="secondary">ثبت‌نام راننده</ButtonLink>
+        </div>
         </div>
       </div>
     </section>
@@ -352,7 +369,7 @@ export function Landing() {
         <FinalCta />
       </main>
       <Footer />
-      <DemoDrawer />
+      <DemoDrawer always />
     </div>
   );
 }

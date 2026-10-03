@@ -40,10 +40,12 @@
   --color-warn-bg: #ffedd5;
 
   /* One radius token for the whole system (pills use rounded-full) */
-  --radius-ui: 14px;
+  --radius-ui: 18px;
 
-  --shadow-soft: 0 1px 2px rgb(16 24 40 / 0.04), 0 4px 16px rgb(16 24 40 / 0.06);
-  --shadow-lift: 0 2px 4px rgb(16 24 40 / 0.05), 0 12px 32px rgb(16 24 40 / 0.12);
+  --shadow-soft: 0 0 0 1px rgb(16 24 40 / 0.045), 0 1px 2px rgb(16 24 40 / 0.04), 0 10px 28px -10px rgb(16 24 40 / 0.14);
+  --shadow-lift: 0 0 0 1px rgb(16 24 40 / 0.05), 0 4px 8px rgb(16 24 40 / 0.05), 0 24px 48px -16px rgb(16 24 40 / 0.26);
+  --shadow-brand: 0 1px 0 rgb(255 255 255 / 0.5) inset, 0 8px 20px -6px rgb(255 176 0 / 0.55);
+  --shadow-accent: 0 1px 0 rgb(255 255 255 / 0.25) inset, 0 8px 20px -6px rgb(20 110 180 / 0.5);
 
   --animate-pop: pop 260ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
   --animate-rise: rise 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -118,7 +120,11 @@
 
 html, body { height: 100%; }
 body {
-  background: var(--color-surface-2);
+  background:
+    radial-gradient(900px 420px at 100% -8%, rgb(20 110 180 / 0.07), transparent 70%),
+    radial-gradient(760px 380px at -8% 0%, rgb(255 176 0 / 0.09), transparent 70%),
+    var(--color-surface-2);
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-feature-settings: "ss01";
@@ -223,3 +229,21 @@ input::placeholder, textarea::placeholder { color: #6b7280; opacity: 1; }
   background-size: 400% 100%;
   animation: shimmer 1.4s infinite linear;
 }
+
+
+/* ───────── Surface language: soft-UI + bento + glass ───────── */
+.glass { background: rgb(255 255 255 / 0.72); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); }
+.glass-dark { background: rgb(15 23 42 / 0.72); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); }
+.mesh { background:
+  radial-gradient(520px 320px at 12% 18%, rgb(255 176 0 / 0.30), transparent 70%),
+  radial-gradient(560px 360px at 88% 8%, rgb(20 110 180 / 0.26), transparent 70%),
+  radial-gradient(520px 340px at 70% 90%, rgb(0 168 225 / 0.20), transparent 70%),
+  linear-gradient(180deg, #fff, #f4f9fd); }
+.text-grad { background: linear-gradient(100deg, #146eb4 10%, #00a8e1 55%, #ffb000 110%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.card-lift { transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 220ms ease; }
+.card-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+.grid-dots { background-image: radial-gradient(rgb(16 24 40 / 0.07) 1px, transparent 1px); background-size: 18px 18px; }
+@keyframes blob { 0%, 100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(18px,-14px,0) scale(1.08); } }
+.blob { animation: blob 11s ease-in-out infinite; }
+@keyframes marquee { to { transform: translateX(50%); } }
+.marquee { animation: marquee 38s linear infinite; }

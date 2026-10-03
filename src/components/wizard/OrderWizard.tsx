@@ -299,7 +299,7 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
         </div>
       )}
 
-      <div className="pb-safe fixed inset-x-0 bottom-14 z-20 border-t border-line bg-white/95 p-3 backdrop-blur lg:bottom-0 lg:start-[248px]">
+      <div className="pb-safe glass fixed inset-x-0 bottom-[86px] z-20 border-t border-white/60 p-3 lg:bottom-0 lg:start-[248px]">
         <div className="mx-auto flex max-w-2xl items-center gap-3">
           {step > 0 && <Button variant="secondary" onClick={back}><ArrowRight className="size-4" aria-hidden />قبلی</Button>}
           {step < 4 ? <Button className="flex-1" onClick={next}>ادامه</Button> : <Button className="flex-1" loading={busy} onClick={submit}><Check className="size-5" aria-hidden />ثبت و انتشار سفارش</Button>}

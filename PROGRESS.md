@@ -18,6 +18,8 @@
 
 - **M6-batch-1** profile layout fixed (flat cover, avatar overlap, on-time % bug: seed stored 91 instead of 0.91), «رانندگان پرو» naming, exact vehicle card (maker/model typed by driver, year, box length, fridge model/year, thermometer type) shown to the shipper at deposit time with a fit checklist, sensor-link programme (+XP, badge, ranking ×1.4, help ticket), admin feature switches (telemetry, insurance, recurring, coupons, tips, Pro, sensor, guest browse) enforced in UI + engine (`applyFlags`), recurring orders with weekday/time/end chosen in the last wizard step, support agent name + role on every ticket (least-loaded specialist), smart card mandatory, per-document staff comments (+push/SMS), browse-first load board for guests and unverified drivers with 4-card onboarding tour and `/driver/kyc/`, insurers renamed (بیمه آسیا / بیمه ایران / بیمه اختصاصی کامیونت).
 
+- **M6-batch-2** official freight slip (instant Kamionet waybill + stamped slip uploaded by staff, admin queue `/admin/docs`, SLA configurable), driver availability («من آزادم») with shipper suggestions in wizard / order page / `/app/available`, auto-match, average arrival times, **driver radar** (`/driver/radar`: nearby or along-route loads, single alert, only with empty truck and screen open), SEO (6 articles, sitemap, robots, JSON-LD, noindex portals), designer hand-off `/handoff` (stat cards, screens + states + sizes, components, charts, flows, tokens, UX-writing guide, Figma/CSV/JSON export). Fixed a pre-existing bug: direct requests never stored `directDriverId`.
+
 ## In progress
 - M6: polish, QA at 375/768/1280, DEMO_GUIDE.md, deploy.
 

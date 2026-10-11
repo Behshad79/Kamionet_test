@@ -1,9 +1,10 @@
 "use client";
 
-import { CheckCircle2, Filter, Map as MapIcon, PackageSearch, Power, Route, ShieldAlert, Snowflake, Truck } from "lucide-react";
+import { CheckCircle2, Filter, Map as MapIcon, PackageSearch, Power, Radio, Route, ShieldAlert, Snowflake, Truck } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DriverOrderCard } from "@/components/driver/cards";
+import { AvailSheet, MyAvailability } from "@/components/driver/Availability";
 import { DriverTour, GuestMarket, isLive, StageBanner, Suspended } from "@/components/driver/Stages";
 import { MapView } from "@/components/MapView";
 import { ProBadge } from "@/components/brand";
@@ -49,6 +50,7 @@ function Market() {
   const [tab, setTab] = useState<"all" | "backhaul" | "direct">("all");
   const [sheet, setSheet] = useState(false);
   const [trip, setTrip] = useState(false);
+  const [avail, setAvail] = useState(false);
   const [f, setF] = useState<{ temp: "" | "frozen" | "chilled" | "cool" | "ambient"; cargo: "" | CargoKind; near: boolean; proOnly: boolean; minNet?: number; day: "" | "today" | "tomorrow" }>({ temp: "", cargo: "", near: false, proOnly: false, day: "" });
   const [accept, setAccept] = useState(false);
   const d = driver ?? undefined;
@@ -100,6 +102,7 @@ function Market() {
       {live && me && needsAcceptance(s, me.id, "driver") && <Card className="flex flex-wrap items-center justify-between gap-3 border border-warn/30 bg-warn-bg p-4"><span className="font-bold text-warn">نسخه‌ی جدید قوانین منتشر شده؛ برای ادامه باید بپذیرید.</span><Button size="sm" onClick={() => setAccept(true)}>مطالعه و پذیرش</Button></Card>}
       {stage === "pro_invited" && <Card className="p-4"><div className="flex items-center justify-between gap-3"><span className="font-bold">به جمع رانندگان کامیونت پرو دعوت شده‌اید.</span><ButtonLink href="/driver/profile/" size="sm">مشاهده</ButtonLink></div></Card>}
       {block && <Card className="border border-warn/30 bg-warn-bg p-4 text-sm font-bold text-warn">{block}</Card>}
+      {live && <MyAvailability s={s} pid={me!.id} />}
       {lock && <Link href={`/driver/order/?id=${lock.id}`} className="block"><Card className="border-2 border-brand-500 p-4 font-bold">یک بار در انتظار تأیید نهایی شماست؛ برای ادامه بزنید.</Card></Link>}
       {active.map((o) => <Link key={o.id} href={`/driver/trip/?id=${o.id}`} className="block"><Card className="flex items-center justify-between gap-3 border-2 border-act p-4"><span className="font-black">سفر جاری: {o.origin.city} ← {o.dest.city}</span><Badge tone="info">ادامه</Badge></Card></Link>)}
 
@@ -109,6 +112,7 @@ function Market() {
       <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
         <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setSheet(true)}><Filter className="size-4" aria-hidden />فیلتر{nf ? ` (${fa(nf)})` : ""}</Button>
         <Select aria-label="مرتب‌سازی" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-11 w-40 shrink-0"><option value="near">نزدیک‌ترین</option><option value="price">بیشترین درآمد</option><option value="soon">زودترین بارگیری</option></Select>
+        {live && <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setAvail(true)}><Radio className="size-4" aria-hidden />من آزادم</Button>}
         {live && <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setTrip(true)}><Route className="size-4" aria-hidden />سفر من</Button>}
         <Button variant="ghost" size="sm" aria-pressed={mode === "map"} onClick={() => setMode(mode === "map" ? "list" : "map")} className="ms-auto shrink-0"><MapIcon className="size-4" aria-hidden />{mode === "map" ? "فهرست" : "نقشه"}</Button>
       </div>
@@ -132,6 +136,7 @@ function Market() {
           {([["near", "نزدیک من (تا ۱۰۰ کیلومتر)"], ["proOnly", "فقط بارهای پرو"]] as const).map(([k, l]) => <label key={k} className="flex min-h-12 items-center gap-3"><input type="checkbox" className="size-5" checked={!!f[k]} onChange={(e) => setF({ ...f, [k]: e.target.checked })} />{l}</label>)}
         </div>
       </Sheet>
+      {live && <AvailSheet open={avail} onClose={() => setAvail(false)} pid={me!.id} />}
       <TripSheet open={trip} onClose={() => setTrip(false)} pid={me!.id} />
       {me && <AcceptSheet open={accept} onClose={() => setAccept(false)} personId={me.id} audience="driver" />}
     </div>

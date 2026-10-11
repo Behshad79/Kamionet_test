@@ -10,6 +10,7 @@ import { person } from "@/lib/engine/core";
 import { driverStats } from "@/lib/engine/stats";
 import { fa, jShort } from "@/lib/format";
 import { vehicleTitle } from "@/lib/vehicles";
+import { TimesChip } from "./Availability";
 import { SensorBadge, VehicleSpecs } from "./vehicleUi";
 import type { DriverProfile, State } from "@/lib/types";
 
@@ -27,6 +28,7 @@ export function DriverPublicProfile({ d, s }: { d: DriverProfile; s: State }) {
       <ProfileHero name={p?.name ?? "راننده"} hue={(d.personId.length * 61) % 360} pro={pro} verified rating={st.rating} ratingCount={st.ratingCount} headline={`${vehicleTitle(d.vehicle)} · عضو از ${fa(since)} ماه پیش`}
         badges={<>{pro && <ProBadge />}{d.vehicle.thermo?.connected && <SensorBadge />}{clean && <CleanBadge />}<Badge tone="ok">مدارک تأییدشده</Badge></>}
         stats={[{ label: "سفر", value: fa(st.trips) }, { label: "وقت‌شناسی", value: `${fa(Math.round(st.onTime * 100))}٪` }, { label: "لغو", value: `${fa(Math.round(st.cancelRate * 100))}٪` }]} />
+      <TimesChip s={s} pid={d.personId} />
       <Card className="space-y-4 p-5">
         <div className="flex items-center gap-4"><TruckIllustration kind={d.vehicle.kind} color={d.vehicle.color} state="cooling" className="h-24 w-36 shrink-0" label="خودروی راننده" /><div className="min-w-0 space-y-1 text-sm"><h2 className="font-extrabold">خودرو</h2><div className="font-black">{vehicleTitle(d.vehicle)}</div>{pro && <div className="flex items-center gap-1.5 text-brand-700"><Crown className="size-4" aria-hidden />بازرسی‌شده‌ی کامیونت</div>}</div></div>
         <VehicleSpecs v={d.vehicle} hideTitle />

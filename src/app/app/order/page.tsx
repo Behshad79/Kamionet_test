@@ -26,6 +26,9 @@ import { useNow, usePortal, useQueryId } from "@/lib/hooks";
 import { R } from "@/lib/money";
 import { act } from "@/lib/store";
 import { telemetryOf, tripProgress } from "@/lib/telemetry";
+import { FreeDrivers } from "@/components/FreeDrivers";
+import { OfficialDocCard } from "@/components/order/OfficialDoc";
+import { probeOf, requestFreeDriver } from "@/lib/engine/avail";
 import { vehicleTitle, VEHICLES } from "@/lib/vehicles";
 import { FitList, SensorBadge, VehicleSpecs } from "@/components/driver/vehicleUi";
 import type { Order } from "@/lib/types";
@@ -73,6 +76,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
       {(o.status === "OPEN" || o.status === "PRO_POOL") && (
         <Card className="space-y-3 border-2 border-brand-500 p-5"><h2 className="font-extrabold">{o.status === "PRO_POOL" ? "در انتظار راننده‌ی پرو" : "در انتظار راننده"}</h2><p className="text-sm leading-7 text-ink-3">بار هم‌اکنون برای رانندگان مناسب نمایش داده می‌شود. اگر دیر شد، با افزودن انعام جذب را سریع‌تر کنید.</p><div className="flex flex-wrap gap-2">{cv<boolean>(s, "feature.tips") && <Button size="sm" onClick={() => setBoostOpen(true)}><Zap className="size-4" aria-hidden />افزودن انعام جذب</Button>}</div></Card>
       )}
+      {o.status === "OPEN" && <FreeDrivers s={s} probe={probeOf(o)} pickLabel="ارسال درخواست" onPick={(id) => { if (!id) return; const r = act((st) => requestFreeDriver(st, meId, o.id, id)); toast(r.ok ? "درخواست برای راننده ارسال شد." : r.error, r.ok ? "ok" : "err"); }} />}
       {o.status === "DIRECT_REQUESTED" && <DirectPanel o={o} now={now} />}
       {o.status === "LOCKED" && o.lockedUntil && <Card className="space-y-3 p-5"><h2 className="font-extrabold">راننده در حال تأیید نهایی است</h2><Countdown until={o.lockedUntil} total={150} /></Card>}
       {o.status === "AWAITING_DEPOSIT" && (
@@ -140,6 +144,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
               <Accordion title="تاریخچه‌ی نسخه‌ها و تغییرات"><WaybillList o={o} /></Accordion>
             </Card>
           )}
+          <OfficialDocCard o={o} />
           {group.length > 0 && <Card className="p-5"><h2 className="mb-2 font-extrabold">سایر خودروهای این سفارش</h2><ul className="divide-y divide-line">{group.map((g) => <li key={g.id}><Link href={`/app/order/?id=${g.id}`} className="flex min-h-12 items-center justify-between"><span className="text-sm font-medium">خودروی {fa(g.groupIndex)}</span><StatusBadge status={g.status} /></Link></li>)}</ul></Card>}
         </div>
 

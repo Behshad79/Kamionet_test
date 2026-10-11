@@ -49,6 +49,7 @@ export function issueWaybill(s: State, o: Order, reason: string) {
     insurancePremium: o.insurance.premium,
   };
   o.waybills.push(w);
+  if (!o.officialDoc) o.officialDoc = { status: "PENDING", requestedAt: now(s) };
   return w;
 }
 

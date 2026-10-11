@@ -1,6 +1,6 @@
 import type { State } from "./types";
 
-export const STATE_VERSION = 4;
+export const STATE_VERSION = 5;
 
 export const EMPTY_STATE: State = {
   ready: false,
@@ -44,6 +44,7 @@ export const EMPTY_STATE: State = {
   products: [],
   claims: [],
   rates: [],
+  availabilities: [],
   demo: { gateway: "success", idMatch: "ok", ibanHolder: "ok" },
   session: { shipper: {}, driver: {}, admin: {} },
 };

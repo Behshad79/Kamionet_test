@@ -20,6 +20,7 @@ export const PERM_LABELS: Record<string, string> = {
   "shippers.view": "مشاهده‌ی صاحبان بار",
   "shippers.act": "مسدودی و محدودیت صاحب بار",
   pro: "رانندگان کامیونت پرو",
+  docs: "حواله‌ی رسمی و اسناد حمل",
   pricing: "قیمت‌گذاری و تنظیمات",
   "finance.view": "مشاهده‌ی امور مالی",
   "finance.payouts": "برداشت‌ها و دسته‌های پرداخت",
@@ -66,11 +67,11 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
 
 export const ROLE_PERMS: Record<AdminRole, string[]> = {
   super: ALL_PERMS,
-  ops: ["dashboard", "liveops", "orders.view", "orders.act", "dispatch", "drivers.view", "shippers.view", "pro", "disputes", "support.trip", "analytics", "cleanliness", "risk", "reviews", "broadcasts", "master"],
+  ops: ["dashboard", "docs", "liveops", "orders.view", "orders.act", "dispatch", "drivers.view", "shippers.view", "pro", "disputes", "support.trip", "analytics", "cleanliness", "risk", "reviews", "broadcasts", "master"],
   support: ["dashboard", "orders.view", "drivers.view", "shippers.view", "support.trip", "support.account", "reviews", "disputes"],
   kyc: ["dashboard", "drivers.view", "drivers.kyc", "support.account"],
-  finance_mgr: ["dashboard", "orders.view", "drivers.view", "shippers.view", ...FIN_ALL, "support.finance", "analytics", "exports", "risk", "disputes", "insurance", "pricing"],
-  finance_op: ["orders.view", "finance.view", "finance.payouts", "finance.recon", "finance.receipts", "finance.export"],
+  finance_mgr: ["dashboard", "docs", "orders.view", "drivers.view", "shippers.view", ...FIN_ALL, "support.finance", "analytics", "exports", "risk", "disputes", "insurance", "pricing"],
+  finance_op: ["docs", "orders.view", "finance.view", "finance.payouts", "finance.recon", "finance.receipts", "finance.export"],
   wallet_support: ["orders.view", "drivers.view", "shippers.view", "finance.view", "finance.refunds", "support.finance"],
   accountant: ["finance.view", "finance.export", "exports", "analytics"],
 };
@@ -500,5 +501,20 @@ export function commentDriverDoc(s: State, adminId: string, driverId: string, ke
   (f.notes ??= []).unshift({ text: text.trim(), by: g.admin.name, at: now(s) });
   notify(s, driverId, "driver", "kyc", `پیام تیم بررسی درباره‌ی «${DOC_LABELS[key]}»: ${text.trim()}`, "/driver/profile/");
   audit(s, g.actor, "doc.comment", `${key}: ${text.trim()}`, driverId);
+  return ok();
+}
+
+/** Staff upload the stamped official slip; both parties are notified. */
+export function uploadOfficialDoc(s: State, adminId: string, orderId: string, dataUrl: string, no: string): Result {
+  const g = guard(s, adminId, "docs");
+  if (!g.ok) return g;
+  const o = orderOf(s, orderId);
+  if (!o?.officialDoc) return fail("برای این سفارش حواله‌ای درخواست نشده است.");
+  if (!dataUrl) return fail("فایل حواله را بارگذاری کنید.");
+  o.officialDoc = { ...o.officialDoc, status: "READY", readyAt: now(s), by: g.admin.name, no: no.trim() || undefined, dataUrl };
+  const msg = `حواله‌ی رسمی سفارش ${o.origin.city} ← ${o.dest.city} آماده شد و قابل دانلود است.`;
+  notify(s, o.shipperId, "shipper", "official_ready", msg, `/app/order/?id=${o.id}`);
+  if (o.driverId) notify(s, o.driverId, "driver", "official_ready", msg, `/driver/trip/?id=${o.id}`);
+  audit(s, g.actor, "official.upload", no || o.id, o.id);
   return ok();
 }

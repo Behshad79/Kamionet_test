@@ -91,7 +91,7 @@ export function MismatchPanel({ o, role, meId }: { o: Order; role: "shipper" | "
   const need = Math.max(0, o.depositRequired - shipperPaid(o));
   const waitingPay = m.status === "APPROVED" && o.status === "MISMATCH_REVIEW";
   const exp = m.dueAt - now;
-  const run = (fn: () => { ok: boolean; error?: string }, msg: string) => { const r = fn(); toast(r.ok ? msg : r.error ?? "انجام نشد", r.ok ? "ok" : "err"); return r; };
+  const run = (fn: () => { ok: boolean; error?: string }, msg: string) => { const r = fn(); toast(r.ok ? msg : r.error ?? "این کار انجام نشد؛ دوباره تلاش کنید.", r.ok ? "ok" : "err"); return r; };
   return (
     <Card className="space-y-4 border-2 border-warn/40 p-5">
       <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="flex items-center gap-2 font-extrabold"><AlertTriangle className="size-5 text-warn" aria-hidden />مغایرت بار</h2><Badge tone={st.tone}>{st.label}</Badge></div>

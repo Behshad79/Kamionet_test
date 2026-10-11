@@ -7,10 +7,11 @@ import { DispatchModule, DisputesModule, OrdersModule } from "./modules/Orders";
 import { DriversModule, KycModule, ProModule, ShippersModule } from "./modules/People";
 import { ClaimsModule, DebtsModule, FinanceOverview, InvoicesModule, PayoutsModule, PaymentsModule, PromoModule, ReconModule, RefundsModule } from "./modules/Finance";
 import { ApprovalsModule, AuditModule, BroadcastsModule, ConfigModule, MasterModule, ReviewsModule, RiskModule, RulesModule, SupportModule, SystemModule, TeamModule, WashesModule } from "./modules/Ops";
+import { DocsModule } from "./modules/Docs";
 import { EmptyState } from "../ui";
 
 const VIEWS: Record<string, () => React.ReactNode> = {
-  "": () => <DashboardModule />, live: () => <LiveModule />, orders: () => <OrdersModule />, dispatch: () => <DispatchModule />, disputes: () => <DisputesModule />,
+  "": () => <DashboardModule />, live: () => <LiveModule />, orders: () => <OrdersModule />, dispatch: () => <DispatchModule />, docs: () => <DocsModule />, disputes: () => <DisputesModule />,
   drivers: () => <DriversModule />, kyc: () => <KycModule />, shippers: () => <ShippersModule />, pro: () => <ProModule />,
   finance: () => <FinanceOverview />, payments: () => <PaymentsModule />, payouts: () => <PayoutsModule />, refunds: () => <RefundsModule />, debts: () => <DebtsModule />,
   invoices: () => <InvoicesModule />, recon: () => <ReconModule />, promo: () => <PromoModule />, claims: () => <ClaimsModule />,

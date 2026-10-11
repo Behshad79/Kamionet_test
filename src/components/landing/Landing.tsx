@@ -114,7 +114,7 @@ function Stats() {
   ];
   return (
     <section aria-label="آمار" className="relative z-10 mx-auto -mt-2 max-w-6xl px-4">
-      <div className="glass grid grid-cols-2 gap-px overflow-hidden rounded-[28px] shadow-lift ring-1 ring-white/80 md:grid-cols-4">
+      <div className="glass grid grid-cols-2 gap-px overflow-hidden rounded-[28px] shadow-lift ring-1 ring-white/80 md:grid-cols-5">
         {items.map((i) => (
           <div key={i.label} className="bg-white/60 p-6 text-center">
             <div className="text-4xl font-black text-grad">{s.ready ? <CountUp to={i.n} suffix={i.suffix} /> : "—"}</div>
@@ -341,7 +341,8 @@ function Footer() {
         <div><Logo /><p className="mt-3 text-sm leading-7 text-ink-3">مستقیم، شفاف، بیمه‌شده. حمل بار یخچال‌دار در سراسر ایران.</p></div>
         <FooterCol title="محصول" links={[["صاحب بار", "/app/login/"], ["راننده", "/driver/login/"], ["کامیونت پرو", "#pro"]]} />
         <FooterCol title="راهنما" links={[["چطور کار می‌کند", "#how"], ["سؤالات پرتکرار", "#faq"], ["ناوگان", "#fleet"]]} />
-        <FooterCol title="ورود" links={[["انتخاب پورتال", "/login/"], ["مدیریت", "/admin/login/"]]} />
+        <FooterCol title="بلاگ" links={[["هزینه‌ی حمل بار یخچالی", "/blog/refrigerated-freight-cost-iran/"], ["رهگیری دمای بار", "/blog/cold-chain-temperature-monitoring/"], ["همه‌ی مقاله‌ها", "/blog/"]]} />
+        <FooterCol title="ورود" links={[["انتخاب پورتال", "/login/"], ["مدیریت", "/admin/login/"], ["راهنمای طراح", "/handoff/"]]} />
       </div>
       <div className="border-t border-line py-4 text-center text-xs text-ink-3">© ۱۴۰۵ کامیونت · نسخه‌ی نمایشی؛ داده‌ها و بیمه‌گران نمونه هستند.</div>
     </footer>

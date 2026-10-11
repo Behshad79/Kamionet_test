@@ -1,4 +1,5 @@
 import { applyScheduledConfig, cv } from "../config";
+import { liveAvailabilities, matchOnCreate } from "./avail";
 import { roadKm } from "../geo";
 import { A, bal, post, shipperWallet } from "../ledger";
 import { matchVehicle, MATCH_FAIL_TEXT } from "../matching";
@@ -127,11 +128,12 @@ function validateInput(s: State, shipperId: string, i: OrderInput): string | nul
     if (i.weightKg > VEHICLES[i.vehicleKind].capacityKg * 1.0 && i.weightKg > VEHICLES[i.vehicleKind].capacityKg) return "وزن بار با ظرفیت خودروی انتخابی نمی‌خواند.";
   }
   if (i.pickupTo <= i.pickupAt || i.deliverBy <= i.pickupTo) return "بازه‌ی بارگیری و مهلت تحویل را بررسی کنید.";
-  if (i.serviceClass === "STANDARD" && i.assignMode !== "OPEN") return "برای انتخاب بازار ویژه‌ی پرو یا درخواست مستقیم، سرویس پرو را انتخاب کنید.";
+  const freeDirect = i.assignMode === "DIRECT" && liveAvailabilities(s).some((a) => a.driverId === i.directDriverId);
+  if (i.serviceClass === "STANDARD" && i.assignMode !== "OPEN" && !freeDirect) return "برای انتخاب بازار ویژه‌ی پرو یا درخواست مستقیم، سرویس پرو را انتخاب کنید.";
   if (i.serviceClass === "PRO" && i.assignMode === "OPEN") return "سرویس پرو فقط برای رانندگان پرو نمایش داده می‌شود.";
   if (i.assignMode === "DIRECT") {
     const d = driverOf(s, i.directDriverId);
-    if (!d || d.pro.status !== "pro") return "راننده‌ی انتخاب‌شده در دسترس نیست.";
+    if (!d || (d.pro.status !== "pro" && !freeDirect)) return "راننده‌ی انتخاب‌شده در دسترس نیست.";
     if (d.personId === shipperId) return "نمی‌توانید از خودتان درخواست بدهید.";
   }
   if (i.tipPre < 0) return "مبلغ انعام معتبر نیست.";
@@ -163,7 +165,7 @@ export function createOrders(s: State, shipperId: string, input: OrderInput, tem
       tempMin: input.cargoMode === "AMBIENT" ? undefined : input.tempMin, tempMax: input.cargoMode === "AMBIENT" ? undefined : input.tempMax,
       vehicleKind: input.vehicleKind, weightKg: input.weightKg, volumeM3: input.volumeM3, pallets: input.pallets,
       packaging: input.packaging, itemizedInvoice: input.itemizedInvoice, declaredValue: input.declaredValue, note: input.note, cleanOnly: input.cleanOnly,
-      serviceClass: input.serviceClass, assignMode: input.assignMode,
+      serviceClass: input.serviceClass, assignMode: input.assignMode, directDriverId: input.assignMode === "DIRECT" ? input.directDriverId : undefined,
       freight: q.freight, proUpliftPct: q.upliftPct,
       insurance: { productId: q.productId, premium: q.premium, coverage: q.coverage, deductible: q.deductible },
       tipPre: input.tipPre, tipPost: 0, discount: q.discount, couponCode: input.couponCode?.toUpperCase(), vat: q.vat,
@@ -179,6 +181,7 @@ export function createOrders(s: State, shipperId: string, input: OrderInput, tem
     s.orders.unshift(o);
     ids.push(id);
     publish(s, o);
+    matchOnCreate(s, o, !!input.autoMatch);
   }
   return ok({ ids });
 }

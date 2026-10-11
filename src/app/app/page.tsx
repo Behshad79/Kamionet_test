@@ -43,7 +43,7 @@ export default function Page() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h1 className="text-2xl font-black">سلام، {me?.name}</h1><p className="text-sm text-ink-3">وضعیت بارهای شما در یک نگاه</p></div>
-        <ButtonLink href="/app/new/" size="lg"><PackagePlus className="size-5" aria-hidden />سفارش جدید</ButtonLink>
+        <div className="flex flex-wrap gap-2"><ButtonLink href="/app/available/" size="lg" variant="secondary">رانندگان آزاد</ButtonLink><ButtonLink href="/app/new/" size="lg"><PackagePlus className="size-5" aria-hidden />سفارش جدید</ButtonLink></div>
       </div>
 
       {me && needsAcceptance(s, me.id, "shipper") && (

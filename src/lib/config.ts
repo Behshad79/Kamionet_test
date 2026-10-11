@@ -32,6 +32,7 @@ const G = {
 } as const;
 
 export const CONFIG_DEFS: CfgDef[] = [
+  { key: "official.slaMin", group: G.features, label: "مهلت صدور حواله‌ی رسمی (دقیقه)", kind: "min", default: 15, help: "به مشتری نمایش داده می‌شود؛ حواله را تیم کامیونت مهر و بارگذاری می‌کند" },
   { key: "feature.telemetry", group: G.features, label: "دماسنج و دمای لحظه‌ای", kind: "bool", default: true, help: "خاموش: نمودار دما و ردیابی دما برای صاحب بار و گیرنده نمایش داده نمی‌شود" },
   { key: "feature.insurance", group: G.features, label: "بیمه‌ی بار", kind: "bool", default: true, help: "خاموش: مرحله‌ی بیمه در ثبت سفارش حذف می‌شود" },
   { key: "feature.recurring", group: G.features, label: "سفارش تکرارشونده", kind: "bool", default: true },

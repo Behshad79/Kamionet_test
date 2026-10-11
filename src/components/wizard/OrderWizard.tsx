@@ -15,6 +15,7 @@ import { suggestRate } from "@/lib/pricing";
 import { act, useStore } from "@/lib/store";
 import { vehicleTitle, VEHICLES, VEHICLE_KINDS } from "@/lib/vehicles";
 import { SensorBadge } from "../driver/vehicleUi";
+import { FreeDrivers } from "../FreeDrivers";
 import type { AssignMode, CargoKind, CargoMode, DriverProfile, OdorClass, OrderInput, PayTerms, ServiceClass, State, VehicleKind } from "@/lib/types";
 import { InsurerLogo, ProBadge } from "../brand";
 import { DriverPublicProfile } from "../driver/PublicProfile";
@@ -41,6 +42,7 @@ interface Form {
   vehicle: VehicleKind; weightKg?: number; pallets?: number; volume?: number; packaging: string; itemized: boolean; declaredT?: number; note: string; cleanOnly: boolean;
   service: ServiceClass; assign: AssignMode; directId?: string;
   freightT?: number; tipT: number; insurance: string | null; coverage: number; coupon: string; couponOn?: boolean; terms: PayTerms; autoPay: boolean; recurring: "none" | "daily" | "weekly";
+  autoMatch?: boolean;
   recTime?: string; recDay?: number; recRuns?: number;
 }
 
@@ -81,7 +83,7 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
       pickupAt: f.pickupAt, pickupTo, deliverBy: f.deliverBy, count: f.count, cargoMode: f.mode, cargo: f.cargo, odor: f.odor, odorSensitive: f.odorSensitive,
       tempMin: fridge ? f.tMin : undefined, tempMax: fridge ? f.tMax : undefined, vehicleKind: f.vehicle, weightKg: f.weightKg ?? 0, volumeM3: f.volume, pallets: f.pallets,
       packaging: f.packaging, itemizedInvoice: f.itemized, declaredValue: R(f.declaredT ?? 0), note: f.note || undefined, cleanOnly: f.cleanOnly,
-      serviceClass: f.service, assignMode: f.assign, directDriverId: f.assign === "DIRECT" ? f.directId : undefined,
+      autoMatch: f.autoMatch && f.assign === "OPEN", serviceClass: f.service, assignMode: f.assign, directDriverId: f.assign === "DIRECT" ? f.directId : undefined,
       freightBase: R(f.freightT ?? 0), tipPre: R(f.tipT), insuranceProductId: f.insurance, coveragePct: f.coverage, couponCode: f.couponOn ? f.coupon.trim() || undefined : undefined,
       terms: f.terms, autoPayDeposit: f.autoPay, consignee: { name: f.consName.trim(), phone: normalizeDigits(f.consPhone).replace(/\D/g, "") },
     };
@@ -244,6 +246,10 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
             {cv<boolean>(s, "feature.coupons") && (<CouponBox value={f.coupon} applied={f.couponOn} error={quote?.couponError} discount={quote?.discount ?? 0} onApply={(c) => set({ coupon: c, couponOn: true })} onRemove={() => set({ coupon: "", couponOn: false })} />)}
           </Card>
 
+          {f.service === "STANDARD" && f.from && f.to && (
+            <FreeDrivers s={s} probe={{ originCity: f.from.city, destCity: f.to.city, pickupAt: f.pickupAt, vehicleKind: f.vehicle, weightKg: f.weightKg ?? 0, cargoMode: f.mode, tempMin: fridge ? f.tMin : undefined, tempMax: fridge ? f.tMax : undefined, freight: R(f.freightT ?? 0), shipperId }}
+              pickedId={f.assign === "DIRECT" ? f.directId : undefined} onPick={(id) => set(id ? { assign: "DIRECT", directId: id, autoMatch: false } : { assign: "OPEN", directId: undefined })} auto={f.autoMatch} onAuto={(v) => set({ autoMatch: v, ...(v ? { assign: "OPEN" as const, directId: undefined } : {}) })} />
+          )}
           {cv<boolean>(s, "feature.insurance") && (<Card className="space-y-3 p-5">
             <h2 className="flex items-center gap-2 font-extrabold"><ShieldCheck className="size-5 text-accent-600" aria-hidden />بیمه‌ی محموله</h2>
             <InsurancePicker s={s} ambient={!fridge} value={f.insurance} onChange={(v) => set({ insurance: v })} declared={R(f.declaredT ?? 0)} coverage={f.coverage} />

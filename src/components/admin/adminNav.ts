@@ -1,4 +1,4 @@
-import { Activity, BadgeDollarSign, Banknote, BellRing, BookOpenCheck, Building2, ClipboardList, Coins, CreditCard, FileText, Gauge, Gavel, Headset, History, Landmark, LayoutDashboard, ListChecks, Map, Megaphone, MessageSquareWarning, ReceiptText, RotateCcw, Scale, Settings2, ShieldAlert, ShieldCheck, Sparkles, Star, Truck, UserCheck, Users, UsersRound, Waves, type LucideIcon } from "lucide-react";
+import { FileCheck2, Activity, BadgeDollarSign, Banknote, BellRing, BookOpenCheck, Building2, ClipboardList, Coins, CreditCard, FileText, Gauge, Gavel, Headset, History, Landmark, LayoutDashboard, ListChecks, Map, Megaphone, MessageSquareWarning, ReceiptText, RotateCcw, Scale, Settings2, ShieldAlert, ShieldCheck, Sparkles, Star, Truck, UserCheck, Users, UsersRound, Waves, type LucideIcon } from "lucide-react";
 
 export interface AdminMod { slug: string; title: string; group: string; perm: string | string[]; icon: LucideIcon; keywords?: string }
 
@@ -7,6 +7,7 @@ export const ADMIN_MODS: AdminMod[] = [
   { slug: "", title: "داشبورد", group: "عملیات", perm: "dashboard", icon: LayoutDashboard, keywords: "dashboard kpi" },
   { slug: "live", title: "عملیات زنده", group: "عملیات", perm: "liveops", icon: Map, keywords: "نقشه دما live" },
   { slug: "orders", title: "سفارش‌ها", group: "عملیات", perm: "orders.view", icon: ClipboardList },
+  { slug: "docs", title: "حواله‌های رسمی", group: "عملیات", perm: "docs", icon: FileCheck2, keywords: "فاکتور مهر بارنامه" },
   { slug: "dispatch", title: "کنسول توزیع بار", group: "عملیات", perm: "dispatch", icon: ListChecks, keywords: "تخصیص دستی" },
   { slug: "disputes", title: "اختلاف‌ها", group: "عملیات", perm: "disputes", icon: Gavel, keywords: "مغایرت" },
   { slug: "drivers", title: "رانندگان", group: "افراد", perm: "drivers.view", icon: Truck },

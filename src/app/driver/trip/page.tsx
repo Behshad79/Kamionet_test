@@ -9,6 +9,7 @@ import { CargoLabel, FileDrop, RouteLine, StatusBadge, TempChip, type Captured }
 import { PriceBreakdown, StatusTimeline } from "@/components/order/parts";
 import { MismatchPanel, MismatchSheet } from "@/components/mismatch";
 import { ReviewForm } from "@/components/ReviewForm";
+import { OfficialDocCard } from "@/components/order/OfficialDoc";
 import { TempPanel } from "@/components/TempPanel";
 import { toast } from "@/components/Toaster";
 import { Accordion, Button, Card, EmptyState, Field, Input, NumInput, Sheet, Skeleton, Textarea } from "@/components/ui";
@@ -53,7 +54,7 @@ export default function Page() {
   const shipper = person(s, o.shipperId);
   const net = driverNetFor(s, o);
   const nav = (p: { lat: number; lng: number }) => `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
-  const run = (fn: () => { ok: boolean; error?: string }, msg: string) => { const r = fn(); toast(r.ok ? msg : r.error ?? "انجام نشد", r.ok ? "ok" : "err"); return r; };
+  const run = (fn: () => { ok: boolean; error?: string }, msg: string) => { const r = fn(); toast(r.ok ? msg : r.error ?? "این کار انجام نشد؛ دوباره تلاش کنید.", r.ok ? "ok" : "err"); return r; };
   const wait = o.arrivedPickupAt && o.status === "AT_PICKUP" ? now - o.arrivedPickupAt : 0;
   const freeMs = cv<number>(s, "waiting.freeMin") * 60_000;
   const submit = async (j: Parameters<typeof submitJob>[0], okMsg: string) => {
@@ -136,6 +137,7 @@ export default function Page() {
       )}
 
       {o.waybills.length > 0 && <Link href={`/waybill/?id=${o.id}`} className="flex h-12 items-center justify-center rounded-ui border-2 border-ink font-extrabold">بارنامه‌ی سفر (نسخه‌ی {fa(o.waybills.length)})</Link>}
+      <OfficialDocCard o={o} />
       <Accordion title="درآمد این سفر"><dl className="space-y-1.5 text-sm"><div className="flex justify-between"><dt className="text-ink-3">کرایه</dt><dd className="font-bold tabular">{toman(o.freight)}</dd></div><div className="flex justify-between"><dt className="text-ink-3">کارمزد ({fa(Math.round(commissionRate(s, o) * 100))}٪)</dt><dd className="font-bold tabular text-danger">−{toman(net.commission)}</dd></div><div className="flex justify-between border-t border-line pt-2 font-black"><dt>خالص</dt><dd className="tabular text-ok">{toman(net.net)}</dd></div></dl></Accordion>
       <Accordion title="روند سفر"><StatusTimeline o={o} /></Accordion>
       <PriceBreakdownHidden />

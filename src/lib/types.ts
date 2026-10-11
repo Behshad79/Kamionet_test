@@ -348,6 +348,7 @@ export interface Order {
 
   consignee: { name: string; phone: string; token: string; otp: string };
   waybills: WaybillVersion[];
+  officialDoc?: OfficialDoc;
   mismatchId?: string;
   media: Media[];
   flag?: OrderFlag;
@@ -383,6 +384,8 @@ export interface OrderInput {
   serviceClass: ServiceClass;
   assignMode: AssignMode;
   directDriverId?: string;
+  /** Pick a matching free driver (one who accepts automatically) the moment the order is created. */
+  autoMatch?: boolean;
   /** Fare the shipper offers, before the Pro uplift. */
   freightBase: Rial;
   tipPre: Rial;
@@ -823,7 +826,35 @@ export interface SessionInfo {
   adminId?: string;
 }
 
+/** A driver announcing «I'm free from X to Y, from this price, under these conditions». Shippers see it; new orders can match it instantly. */
+export interface Availability {
+  id: string;
+  driverId: string;
+  from: string;
+  /** Destination cities; empty = anywhere. */
+  to: string[];
+  fromAt: number;
+  until: number;
+  minFreight: Rial;
+  note: string;
+  /** Accept any matching order automatically (no manual confirmation). */
+  acceptAuto: boolean;
+  active: boolean;
+  createdAt: number;
+}
+
+/** Official freight slip («حواله‌ی رسمی»): issued by Kamionet staff after the instant Kamionet waybill, stamped and uploaded. */
+export interface OfficialDoc {
+  status: "PENDING" | "READY";
+  requestedAt: number;
+  readyAt?: number;
+  by?: string;
+  no?: string;
+  dataUrl?: string;
+}
+
 export interface State {
+  availabilities: Availability[];
   ready: boolean;
   /** Transient clock override used while simulating seeded history. Never persisted. */
   _now?: number;

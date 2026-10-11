@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Eye, ClipboardList, Gauge, Home, ListChecks, LogOut, Menu, PackagePlus, Repeat, ShieldCheck, Truck, User, Wallet, type LucideIcon } from "lucide-react";
+import { Radar, Bell, Eye, ClipboardList, Gauge, Home, ListChecks, LogOut, Menu, PackagePlus, Repeat, ShieldCheck, Truck, User, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -40,6 +40,7 @@ const SHIPPER_NAV: Nav[] = [
 ];
 const DRIVER_NAV: Nav[] = [
   { href: "/driver/", label: "بارها", icon: Truck },
+  { href: "/driver/radar/", label: "رادار", icon: Radar },
   { href: "/driver/trips/", label: "سفرها", icon: ListChecks },
   { href: "/driver/wallet/", label: "درآمد", icon: Wallet },
   { href: "/driver/profile/", label: "پروفایل", icon: User },

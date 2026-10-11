@@ -5,7 +5,8 @@ import { DAY } from "../engine/core";
 import { makeDriver, makeShipper } from "./people";
 import { runOrder, topUp, type Sim } from "./history";
 import { seedFinance } from "./finance";
-import { seedActive, seedDebtAndSupport, seedOpenBoard, seedPersonas } from "./scenarios";
+import { officialPlaceholder } from "../officialPlaceholder";
+import { seedActive, seedAvailability, seedDebtAndSupport, seedOpenBoard, seedPersonas } from "./scenarios";
 
 export interface PopulateOpts {
   drivers: number;
@@ -53,6 +54,15 @@ export function populate(s: State, now: number, o: PopulateOpts = FULL): string[
   seedOpenBoard(sim, o.open, now);
   seedDebtAndSupport(sim, now);
   seedFinance(sim, now);
+  seedAvailability(sim, now);
+  // official slips: older orders are already stamped, the latest few are still waiting for staff (shows both states)
+  const admin = s.admins.find((a) => a.role === "ops")?.name ?? "کامیونت";
+  for (const o of s.orders) {
+    if (!o.officialDoc || o.officialDoc.status !== "PENDING") continue;
+    if (now - o.officialDoc.requestedAt < 25 * 60_000) continue;
+    const no = `${1404}/${String(o.id.replace(/\D/g, "")).padStart(7, "0").slice(-7)}`;
+    o.officialDoc = { ...o.officialDoc, status: "READY", readyAt: o.officialDoc.requestedAt + 12 * 60_000, by: admin, no, dataUrl: officialPlaceholder(o, no) };
+  }
   s._now = undefined;
   return sim.errors;
 }

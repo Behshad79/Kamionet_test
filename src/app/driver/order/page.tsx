@@ -41,7 +41,7 @@ export default function Page() {
   const direct = o.status === "DIRECT_REQUESTED" && o.directDriverId === me.id;
   const waitingDeposit = o.status === "AWAITING_DEPOSIT" && o.driverId === me.id;
   const canClaim = ["OPEN", "PRO_POOL"].includes(o.status) && e.ok && live && !block;
-  const run = (fn: () => { ok: boolean; error?: string }, okMsg: string) => { const r = fn(); if (!r.ok) toast(r.error ?? "انجام نشد", "err"); else toast(okMsg); return r; };
+  const run = (fn: () => { ok: boolean; error?: string }, okMsg: string) => { const r = fn(); if (!r.ok) toast(r.error ?? "این کار انجام نشد؛ دوباره تلاش کنید.", "err"); else toast(okMsg); return r; };
 
   return (
     <div className="space-y-4 pb-28">

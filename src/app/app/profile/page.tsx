@@ -41,7 +41,7 @@ export default function Page() {
     setName(shipper.displayName); setCo(shipper.company?.name ?? ""); setCode(shipper.company?.economicCode ?? "");
     setAddr(shipper.address?.text ?? ""); setPin(shipper.address ? { lat: shipper.address.lat, lng: shipper.address.lng } : undefined);
   };
-  const run = (r: { ok: boolean; error?: string }, msg: string) => { toast(r.ok ? msg : r.error ?? "انجام نشد", r.ok ? "ok" : "err"); if (r.ok) setEdit(null); };
+  const run = (r: { ok: boolean; error?: string }, msg: string) => { toast(r.ok ? msg : r.error ?? "این کار انجام نشد؛ دوباره تلاش کنید.", r.ok ? "ok" : "err"); if (r.ok) setEdit(null); };
   const title = COMPLETENESS.find((c) => c.key === edit)?.label ?? "";
   const vd = shipper.verifyDoc;
   return (

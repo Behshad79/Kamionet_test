@@ -192,3 +192,15 @@ export function seedDebtAndSupport(sim: Sim, now: number) {
     }
   }
 }
+
+/** Free-driver announcements: a few on busy routes (two cheap Karaj→Qom ones, one auto-accepting) so the shipper side always has suggestions to show. */
+export function seedAvailability(sim: Sim, now: number) {
+  const { s, r } = sim;
+  const routes: [string, string[]][] = [["کرج", ["قم"]], ["کرج", ["قم", "اصفهان"]], ["تهران", ["اصفهان", "مشهد"]], ["تهران", []], ["شیراز", ["اهواز"]], ["تبریز", ["ارومیه"]], ["اصفهان", ["تهران"]], ["مشهد", []]];
+  const pool = s.drivers.filter((d) => d.kyc.status === "verified" && !d.suspension && !d.controls.walletFrozen);
+  routes.forEach(([from, to], i) => {
+    const d = i < 2 ? pool.filter((x) => x.vehicle.kind === "truck10" && x.vehicle.minTemp !== null && x.vehicle.minTemp <= 0)[i] : pool[(i * 5 + 3) % pool.length];
+    if (!d) return;
+    s.availabilities.push({ id: uid(s, "av"), driverId: d.personId, from, to, fromAt: now - 2 * HOUR, until: now + (72 + i * 6) * HOUR, minFreight: R(i < 2 ? 500_000 : r.int(4, 25) * 1_000_000), note: i % 2 ? "بدون انتظار بیش از یک ساعت؛ تخلیه با کمک خودم" : "یخچال از شب قبل روشن است، آماده‌ی بارگیری", acceptAuto: i % 3 === 0, active: true, createdAt: now - (i + 1) * 20 * 60_000 });
+  });
+}

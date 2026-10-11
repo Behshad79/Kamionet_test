@@ -48,3 +48,7 @@ Each item: **decision** · why · what to confirm.
 35. **Sensor linking is simulated** (a handshake button). Production needs a real device-pairing / data-ingest API; ranking boost is ×1.4 in smart-pick and +150 Pro XP.
 36. **Vehicle model/year are driver-typed** and unverified; admins can see them in Driver 360. Consider checking against the vehicle card OCR later.
 37. **Support assignment**: new tickets go to the least-loaded active agent of the channel's roles (trip → support/ops, account → kyc/support, finance → wallet_support/finance_op).
+38. **Official slip** is requested automatically with the first waybill; staff upload the stamped file. Promised wait is `official.slaMin` (default 15). Seeded demo orders older than 25 min are already stamped.
+39. **Availability** direct requests are allowed for non-Pro drivers when they have a live announcement; `autoMatch` only auto-assigns drivers who set «پذیرش خودکار».
+40. **Radar** uses browser geolocation (or a demo drive) and runs only while the screen is open with an empty truck; alert once per load, ≥ 90 s apart.
+41. **SEO** content is draft copy for review; site URL via `NEXT_PUBLIC_SITE_URL` + base path.

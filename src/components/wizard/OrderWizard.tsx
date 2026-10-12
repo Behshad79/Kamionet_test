@@ -247,7 +247,7 @@ export function OrderWizard({ shipperId, initial }: { shipperId: string; initial
           </Card>
 
           {f.service === "STANDARD" && f.from && f.to && (
-            <FreeDrivers s={s} probe={{ originCity: f.from.city, destCity: f.to.city, pickupAt: f.pickupAt, vehicleKind: f.vehicle, weightKg: f.weightKg ?? 0, cargoMode: f.mode, tempMin: fridge ? f.tMin : undefined, tempMax: fridge ? f.tMax : undefined, freight: R(f.freightT ?? 0), shipperId }}
+            <FreeDrivers s={s} probe={{ cargo: f.cargo, terms: f.terms, originCity: f.from.city, destCity: f.to.city, pickupAt: f.pickupAt, vehicleKind: f.vehicle, weightKg: f.weightKg ?? 0, cargoMode: f.mode, tempMin: fridge ? f.tMin : undefined, tempMax: fridge ? f.tMax : undefined, freight: R(f.freightT ?? 0), shipperId }}
               pickedId={f.assign === "DIRECT" ? f.directId : undefined} onPick={(id) => set(id ? { assign: "DIRECT", directId: id, autoMatch: false } : { assign: "OPEN", directId: undefined })} auto={f.autoMatch} onAuto={(v) => set({ autoMatch: v, ...(v ? { assign: "OPEN" as const, directId: undefined } : {}) })} />
           )}
           {cv<boolean>(s, "feature.insurance") && (<Card className="space-y-3 p-5">

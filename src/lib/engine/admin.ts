@@ -21,6 +21,7 @@ export const PERM_LABELS: Record<string, string> = {
   "shippers.act": "مسدودی و محدودیت صاحب بار",
   pro: "رانندگان کامیونت پرو",
   docs: "حواله‌ی رسمی و اسناد حمل",
+  comms: "گفتگوها، تماس‌ها و شکایت‌ها",
   pricing: "قیمت‌گذاری و تنظیمات",
   "finance.view": "مشاهده‌ی امور مالی",
   "finance.payouts": "برداشت‌ها و دسته‌های پرداخت",
@@ -67,8 +68,8 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
 
 export const ROLE_PERMS: Record<AdminRole, string[]> = {
   super: ALL_PERMS,
-  ops: ["dashboard", "docs", "liveops", "orders.view", "orders.act", "dispatch", "drivers.view", "shippers.view", "pro", "disputes", "support.trip", "analytics", "cleanliness", "risk", "reviews", "broadcasts", "master"],
-  support: ["dashboard", "orders.view", "drivers.view", "shippers.view", "support.trip", "support.account", "reviews", "disputes"],
+  ops: ["dashboard", "docs", "comms", "liveops", "orders.view", "orders.act", "dispatch", "drivers.view", "shippers.view", "pro", "disputes", "support.trip", "analytics", "cleanliness", "risk", "reviews", "broadcasts", "master"],
+  support: ["dashboard", "comms", "orders.view", "drivers.view", "shippers.view", "support.trip", "support.account", "reviews", "disputes"],
   kyc: ["dashboard", "drivers.view", "drivers.kyc", "support.account"],
   finance_mgr: ["dashboard", "docs", "orders.view", "drivers.view", "shippers.view", ...FIN_ALL, "support.finance", "analytics", "exports", "risk", "disputes", "insurance", "pricing"],
   finance_op: ["docs", "orders.view", "finance.view", "finance.payouts", "finance.recon", "finance.receipts", "finance.export"],

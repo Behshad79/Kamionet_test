@@ -31,7 +31,7 @@ export const actorPerson = (s: State, id: string): Actor => ({ type: "person", i
 /** Events that also go out as SMS (the in-app notification doubles as a push in the browser). */
 const SMS_KINDS = new Set([
   "assigned", "direct", "released", "deposit_expired", "deposit_wait", "deposit_cancel", "at_pickup", "in_transit", "at_delivery", "delivered", "mismatch", "mismatch_counter", "mismatch_ok",
-  "mismatch_rejected", "mismatch_escalated", "mismatch_resolved", "official_ready", "expired", "refund", "settled", "kyc", "pro", "debt", "payout", "cash_mismatch", "arrears", "pro_inspect",
+  "mismatch_rejected", "mismatch_escalated", "mismatch_resolved", "official_ready", "delivery_code", "call_missed", "complaint", "expired", "refund", "settled", "kyc", "pro", "debt", "payout", "cash_mismatch", "arrears", "pro_inspect",
 ]);
 
 export function notify(s: State, personId: string, portal: PortalId, kind: string, text: string, href?: string) {

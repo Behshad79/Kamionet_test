@@ -26,7 +26,10 @@ import { useNow, usePortal, useQueryId } from "@/lib/hooks";
 import { R } from "@/lib/money";
 import { act } from "@/lib/store";
 import { telemetryOf, tripProgress } from "@/lib/telemetry";
+import { OrderComms } from "@/components/order/OrderComms";
+import { COMMS_LIVE, PHONE_LIVE } from "@/lib/engine/comms";
 import { FreeDrivers } from "@/components/FreeDrivers";
+import { DeliveryCodeCard } from "@/components/order/DeliveryCode";
 import { OfficialDocCard } from "@/components/order/OfficialDoc";
 import { probeOf, requestFreeDriver } from "@/lib/engine/avail";
 import { vehicleTitle, VEHICLES } from "@/lib/vehicles";
@@ -51,7 +54,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
   const driver = o.driverId ? person(s, o.driverId) : undefined;
   const dp = o.driverId ? s.drivers.find((d) => d.personId === o.driverId) : undefined;
   const group = s.orders.filter((x) => x.groupId === o.groupId && x.id !== o.id);
-  const showDriver = !!driver && o.assignedAt;
+  const showDriver = !!driver && !!o.assignedAt;
   const depDue = o.status === "AWAITING_DEPOSIT" ? Math.max(0, o.depositRequired - shipperPaid(o)) : 0;
   const bal = outstanding(o);
   const tel = telemetryOf(o);
@@ -76,6 +79,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
       {(o.status === "OPEN" || o.status === "PRO_POOL") && (
         <Card className="space-y-3 border-2 border-brand-500 p-5"><h2 className="font-extrabold">{o.status === "PRO_POOL" ? "در انتظار راننده‌ی پرو" : "در انتظار راننده"}</h2><p className="text-sm leading-7 text-ink-3">بار هم‌اکنون برای رانندگان مناسب نمایش داده می‌شود. اگر دیر شد، با افزودن انعام جذب را سریع‌تر کنید.</p><div className="flex flex-wrap gap-2">{cv<boolean>(s, "feature.tips") && <Button size="sm" onClick={() => setBoostOpen(true)}><Zap className="size-4" aria-hidden />افزودن انعام جذب</Button>}</div></Card>
       )}
+      {o.driverId && (COMMS_LIVE.includes(o.status) || s.chats.some((c) => c.orderId === o.id) || s.complaints.some((c) => c.orderId === o.id) || ["DELIVERED", "COMPLETED"].includes(o.status)) && <OrderComms o={o} meId={meId} />}
       {o.status === "OPEN" && <FreeDrivers s={s} probe={probeOf(o)} pickLabel="ارسال درخواست" onPick={(id) => { if (!id) return; const r = act((st) => requestFreeDriver(st, meId, o.id, id)); toast(r.ok ? "درخواست برای راننده ارسال شد." : r.error, r.ok ? "ok" : "err"); }} />}
       {o.status === "DIRECT_REQUESTED" && <DirectPanel o={o} now={now} />}
       {o.status === "LOCKED" && o.lockedUntil && <Card className="space-y-3 p-5"><h2 className="font-extrabold">راننده در حال تأیید نهایی است</h2><Countdown until={o.lockedUntil} total={150} /></Card>}
@@ -111,7 +115,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
           <div className="flex items-center justify-between gap-3 p-4 text-sm"><span className="flex items-center gap-1.5 font-bold"><MapPin className="size-4" aria-hidden />پیشرفت مسیر {fa(Math.round(tripProgress(tel, now) * 100))}٪</span><span className="text-xs text-ink-3">موقعیت شبیه‌سازی‌شده است</span></div>
         </Card>
       )}
-      {transit && cv<boolean>(s, "feature.telemetry") && o.tempMin !== undefined && o.tempMax !== undefined && <TempPanel o={{ ...tel, tempMin: o.tempMin, tempMax: o.tempMax, status: o.status }} contact={driver ? { name: driver.name, phone: driver.phone } : undefined} />}
+      {transit && cv<boolean>(s, "feature.telemetry") && o.tempMin !== undefined && o.tempMax !== undefined && <TempPanel o={{ ...tel, tempMin: o.tempMin, tempMax: o.tempMax, status: o.status }} contact={driver && PHONE_LIVE.includes(o.status) ? { name: driver.name, phone: driver.phone } : undefined} />}
 
       <div className="grid gap-5 lg:grid-cols-[1.2fr_1fr]">
         <div className="space-y-5">
@@ -121,7 +125,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
                 <button onClick={() => act((st) => { const sh = shipperOf(st, meId); if (!sh || !o.driverId) return; sh.favorites = isFav ? sh.favorites.filter((x) => x !== o.driverId) : [...sh.favorites, o.driverId]; })} aria-pressed={isFav} aria-label={isFav ? "حذف از راننده‌های محبوب" : "افزودن به راننده‌های محبوب"} className="grid size-11 place-items-center rounded-full hover:bg-surface-3"><Heart className={isFav ? "size-5 fill-danger text-danger" : "size-5"} /></button></div>
               <TruckIllustration kind={dp.vehicle.kind} color={dp.vehicle.color} state={o.status === "IN_TRANSIT" ? "driving" : "idle"} className="h-20 w-full" label="خودروی راننده" />
               <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-3"><Avatar name={driver.name} pro={dp.pro.status === "pro"} size={48} hue={(driver.id.length * 61) % 360} /><div><Link href={`/app/driver/?id=${driver.id}`} className="font-black text-accent-700 hover:underline">{driver.name}</Link><div className="text-sm text-ink-3">{vehicleTitle(dp.vehicle)} · {fa(Math.round(driverStats(s, dp.personId).rating * 10) / 10)} از ۵</div></div></div>
-                <a href={`tel:${driver.phone}`} className="inline-flex h-11 items-center gap-2 rounded-ui bg-surface-3 px-4 font-bold"><Phone className="size-4" aria-hidden /><span dir="ltr">{driver.phone}</span></a></div>
+                {PHONE_LIVE.includes(o.status) ? <a href={`tel:${driver.phone}`} className="inline-flex h-11 items-center gap-2 rounded-ui bg-surface-3 px-4 font-bold"><Phone className="size-4" aria-hidden /><span dir="ltr">{driver.phone}</span></a> : <span className="text-xs text-ink-3">شماره‌ی راننده پس از تحویل نمایش داده نمی‌شود؛ برای هر مشکلی از «ثبت شکایت» استفاده کنید.</span>}</div>
               {dp.vehicle.thermo?.connected && <SensorBadge />}
               <FitList v={dp.vehicle} o={o} />
               <details className="rounded-ui border border-line p-3 text-sm"><summary className="min-h-9 cursor-pointer font-bold">مشخصات کامل خودرو</summary><div className="mt-3"><VehicleSpecs v={dp.vehicle} /></div></details>
@@ -145,6 +149,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
             </Card>
           )}
           <OfficialDocCard o={o} />
+          {["ASSIGNED", "EN_ROUTE_TO_PICKUP", "AT_PICKUP", "IN_TRANSIT", "AT_DELIVERY", "MISMATCH_REVIEW"].includes(o.status) && <DeliveryCodeCard o={o} />}
           {group.length > 0 && <Card className="p-5"><h2 className="mb-2 font-extrabold">سایر خودروهای این سفارش</h2><ul className="divide-y divide-line">{group.map((g) => <li key={g.id}><Link href={`/app/order/?id=${g.id}`} className="flex min-h-12 items-center justify-between"><span className="text-sm font-medium">خودروی {fa(g.groupIndex)}</span><StatusBadge status={g.status} /></Link></li>)}</ul></Card>}
         </div>
 

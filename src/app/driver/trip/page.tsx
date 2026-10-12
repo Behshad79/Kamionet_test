@@ -9,6 +9,8 @@ import { CargoLabel, FileDrop, RouteLine, StatusBadge, TempChip, type Captured }
 import { PriceBreakdown, StatusTimeline } from "@/components/order/parts";
 import { MismatchPanel, MismatchSheet } from "@/components/mismatch";
 import { ReviewForm } from "@/components/ReviewForm";
+import { OrderComms } from "@/components/order/OrderComms";
+import { PHONE_LIVE } from "@/lib/engine/comms";
 import { OfficialDocCard } from "@/components/order/OfficialDoc";
 import { TempPanel } from "@/components/TempPanel";
 import { toast } from "@/components/Toaster";
@@ -78,7 +80,7 @@ export default function Page() {
         <TruckIllustration kind={driver.vehicle.kind} color={driver.vehicle.color} state={o.status === "IN_TRANSIT" ? "driving" : "cooling"} className="h-16 w-full" />
         <RouteLine from={o.origin.city} to={o.dest.city} sub={[v.origin.address || "—", v.dest.address || "—"]} />
         <div className="flex flex-wrap items-center gap-2 text-sm"><CargoLabel type={o.cargo} />{o.tempMin !== undefined && o.tempMax !== undefined && <TempChip min={o.tempMin} max={o.tempMax} />}<span className="text-ink-3">{weightLabel(o.weightKg)}</span></div>
-        {shipper && <a href={`tel:${shipper.phone}`} className="inline-flex h-12 w-full items-center justify-between rounded-ui bg-surface-3 px-4 font-bold"><span>{shipper.name}</span><span className="flex items-center gap-2" dir="ltr"><Phone className="size-4" aria-hidden />{shipper.phone}</span></a>}
+        {shipper && PHONE_LIVE.includes(o.status) && <a href={`tel:${shipper.phone}`} className="inline-flex h-12 w-full items-center justify-between rounded-ui bg-surface-3 px-4 font-bold"><span>{shipper.name}</span><span className="flex items-center gap-2" dir="ltr"><Phone className="size-4" aria-hidden />{shipper.phone}</span></a>}
         {o.note && <p className="rounded-ui bg-surface-2 p-3 text-sm">{o.note}</p>}
       </Card>
 
@@ -123,7 +125,7 @@ export default function Page() {
       {o.status === "AT_DELIVERY" && (
         <Card className="space-y-4 p-4">
           <h2 className="font-extrabold">تحویل به گیرنده</h2>
-          <Field label="کد تحویل گیرنده" hint="گیرنده کد ۴ رقمی را از پیامک می‌خواند.">{(id) => <Input id={id} dir="ltr" inputMode="numeric" maxLength={4} className="text-center text-2xl tracking-[0.6em]" value={otp} onChange={(e) => setOtp(e.target.value)} />}</Field>
+          <Field label="کد تحویل گیرنده" hint="کد ۴ رقمی را فقط از خود گیرنده بگیرید؛ صاحب بار آن را به شما نمی‌دهد.">{(id) => <Input id={id} dir="ltr" inputMode="numeric" maxLength={4} className="text-center text-2xl tracking-[0.6em]" value={otp} onChange={(e) => setOtp(e.target.value)} />}</Field>
           <FileDrop label="عکس فاکتور تحویل" stamp capture value={inv?.dataUrl} onChange={setInv} />
           <Field label="تعداد اقلام تحویل‌شده">{(id) => <NumInput id={id} value={items} onChange={setItems} />}</Field>
           {o.cashAgreed > 0 && <Field label="مبلغ نقدی دریافتی از گیرنده (تومان)" hint={`مبلغ توافقی ${toman(o.cashAgreed)}؛ مبلغ واقعی را وارد کنید.`}>{(id) => <NumInput id={id} value={cash} onChange={setCash} suffix="تومان" />}</Field>}
@@ -137,6 +139,7 @@ export default function Page() {
       )}
 
       {o.waybills.length > 0 && <Link href={`/waybill/?id=${o.id}`} className="flex h-12 items-center justify-center rounded-ui border-2 border-ink font-extrabold">بارنامه‌ی سفر (نسخه‌ی {fa(o.waybills.length)})</Link>}
+      <OrderComms o={o} meId={me.id} />
       <OfficialDocCard o={o} />
       <Accordion title="درآمد این سفر"><dl className="space-y-1.5 text-sm"><div className="flex justify-between"><dt className="text-ink-3">کرایه</dt><dd className="font-bold tabular">{toman(o.freight)}</dd></div><div className="flex justify-between"><dt className="text-ink-3">کارمزد ({fa(Math.round(commissionRate(s, o) * 100))}٪)</dt><dd className="font-bold tabular text-danger">−{toman(net.commission)}</dd></div><div className="flex justify-between border-t border-line pt-2 font-black"><dt>خالص</dt><dd className="tabular text-ok">{toman(net.net)}</dd></div></dl></Accordion>
       <Accordion title="روند سفر"><StatusTimeline o={o} /></Accordion>

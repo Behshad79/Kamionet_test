@@ -836,6 +836,22 @@ export interface Availability {
   fromAt: number;
   until: number;
   minFreight: Rial;
+  /** Upper end of the price range the driver wants (0 = no upper limit). */
+  maxFreight?: Rial;
+  /** What the driver wants to carry: refrigerated, dry, or both. */
+  cargoMode?: "REFRIGERATED" | "AMBIENT" | "BOTH";
+  /** Load size range in kg (0 / undefined = any). */
+  minWeightKg?: number;
+  maxWeightKg?: number;
+  /** Cargo kinds he accepts; empty = all. */
+  cargoKinds?: CargoKind[];
+  /** Payment terms he accepts; empty = all. */
+  terms?: PayTerms[];
+  /** How far off the straight route he is willing to detour for pickup (km). */
+  detourKm?: number;
+  /** Helps with loading/unloading, accepts waiting up to N hours. */
+  helpsLoading?: boolean;
+  waitHours?: number;
   note: string;
   /** Accept any matching order automatically (no manual confirmation). */
   acceptAuto: boolean;
@@ -853,7 +869,23 @@ export interface OfficialDoc {
   dataUrl?: string;
 }
 
+export interface ChatMsg { id: string; from: string; text: string; at: number }
+/** In-app chat between the shipper and the assigned driver of one order; opens at the driver's confirmation. Staff can read it. */
+export interface Chat { orderId: string; shipperId: string; driverId: string; messages: ChatMsg[]; readAt: Record<string, number> }
+/** Simulated in-app call between the two parties (no numbers exchanged). */
+export interface CallLog { id: string; orderId: string; from: string; to: string; status: "RINGING" | "ACTIVE" | "ENDED" | "MISSED" | "DECLINED"; at: number; answeredAt?: number; endedAt?: number }
+/** A complaint raised by one party that the other can answer immediately; unanswered or unresolved ones go to staff. */
+export interface Complaint {
+  id: string; orderId: string; byId: string; againstId: string; byRole: "shipper" | "driver"; category: string; text: string; at: number;
+  status: "OPEN" | "ANSWERED" | "RESOLVED" | "ESCALATED";
+  messages: { from: string; text: string; at: number }[];
+  ticketId?: string; resolvedBy?: string; resolvedAt?: number;
+}
+
 export interface State {
+  chats: Chat[];
+  calls: CallLog[];
+  complaints: Complaint[];
   availabilities: Availability[];
   ready: boolean;
   /** Transient clock override used while simulating seeded history. Never persisted. */

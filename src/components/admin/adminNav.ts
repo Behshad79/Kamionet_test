@@ -1,4 +1,4 @@
-import { FileCheck2, Activity, BadgeDollarSign, Banknote, BellRing, BookOpenCheck, Building2, ClipboardList, Coins, CreditCard, FileText, Gauge, Gavel, Headset, History, Landmark, LayoutDashboard, ListChecks, Map, Megaphone, MessageSquareWarning, ReceiptText, RotateCcw, Scale, Settings2, ShieldAlert, ShieldCheck, Sparkles, Star, Truck, UserCheck, Users, UsersRound, Waves, type LucideIcon } from "lucide-react";
+import { FileCheck2, MessagesSquare, Activity, BadgeDollarSign, Banknote, BellRing, BookOpenCheck, Building2, ClipboardList, Coins, CreditCard, FileText, Gauge, Gavel, Headset, History, Landmark, LayoutDashboard, ListChecks, Map, Megaphone, MessageSquareWarning, ReceiptText, RotateCcw, Scale, Settings2, ShieldAlert, ShieldCheck, Sparkles, Star, Truck, UserCheck, Users, UsersRound, Waves, type LucideIcon } from "lucide-react";
 
 export interface AdminMod { slug: string; title: string; group: string; perm: string | string[]; icon: LucideIcon; keywords?: string }
 
@@ -24,6 +24,7 @@ export const ADMIN_MODS: AdminMod[] = [
   { slug: "promo", title: "کد تخفیف و مشوق", group: "مالی", perm: "finance.view", icon: Coins, keywords: "coupon" },
   { slug: "claims", title: "بیمه و خسارت", group: "مالی", perm: ["insurance", "finance.view"], icon: ShieldCheck },
   { slug: "support", title: "مرکز پشتیبانی", group: "پشتیبانی و کیفیت", perm: ["support.trip", "support.account", "support.finance"], icon: Headset, keywords: "تیکت" },
+  { slug: "comms", title: "گفتگوها و شکایت‌ها", group: "پشتیبانی و کیفیت", perm: "comms", icon: MessagesSquare, keywords: "چت تماس شکایت" },
   { slug: "reviews", title: "نظرات", group: "پشتیبانی و کیفیت", perm: "reviews", icon: Star },
   { slug: "washes", title: "برنامه‌ی نظافت", group: "پشتیبانی و کیفیت", perm: "cleanliness", icon: Waves },
   { slug: "risk", title: "تقلب و ریسک", group: "پشتیبانی و کیفیت", perm: "risk", icon: ShieldAlert },

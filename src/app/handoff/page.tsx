@@ -7,8 +7,12 @@ import { Badge, Button, Card, Input, Tabs } from "@/components/ui";
 import { exportCsv, download } from "@/lib/export";
 import { CHARTS, COMPONENTS, FLOWS, SCREENS, SERIES_COLORS, TOKENS, WRITING, type PortalKey } from "@/lib/handoff";
 import { fa } from "@/lib/format";
+import { CONTEXT, DEV, RELEASE, RESEARCH } from "@/lib/handoffMore";
+import { GRAND } from "@/lib/inventory";
+import { InventoryView, SectionView } from "./Views";
+import { StyleGuide } from "./StyleGuide";
 
-type Tab = "stats" | "screens" | "comps" | "flows" | "tokens" | "writing" | "figma";
+type Tab = "stats" | "count" | "screens" | "style" | "comps" | "flows" | "tokens" | "writing" | "context" | "research" | "dev" | "release" | "figma";
 const PORTALS: PortalKey[] = ["عمومی", "صاحب بار", "راننده", "ادمین", "اسناد", "بلاگ"];
 
 /** Designer hand-off: every screen with its states and sizes, components, charts, flows and tokens, plus Figma-ready exports. */
@@ -25,11 +29,17 @@ export default function Page() {
     <main className="mx-auto max-w-6xl space-y-5 p-4 py-8" data-portal="admin">
       <meta name="robots" content="noindex" />
       <header><h1 className="text-3xl font-black">راهنمای تحویل به طراح UI/UX</h1><p className="mt-1 text-sm leading-7 text-ink-3">همه‌ی صفحه‌ها، حالت‌ها (خالی، بارگذاری، خطا…)، اندازه‌ها، کامپوننت‌ها، نمودارها، فلوها و توکن‌ها. از این‌جا شروع کنید، بازطراحی کنید و به Figma ببرید.</p></header>
-      <Tabs value={tab} onChange={setTab} tabs={[{ id: "stats", label: "مرور آماری" }, { id: "screens", label: "صفحه‌ها", count: SCREENS.length }, { id: "comps", label: "کامپوننت‌ها و نمودارها" }, { id: "flows", label: "فلوها", count: FLOWS.length }, { id: "tokens", label: "توکن‌ها و اندازه‌ها" }, { id: "writing", label: "نوشتار و میکروکپی" }, { id: "figma", label: "خروجی Figma" }]} />
+      <Tabs value={tab} onChange={setTab} className="overflow-x-auto" tabs={[{ id: "stats", label: "مرور آماری" }, { id: "count", label: "شمارش دقیق", count: GRAND.total }, { id: "screens", label: "صفحه‌ها", count: SCREENS.length }, { id: "style", label: "استایل گاید زنده" }, { id: "comps", label: "جدول کامپوننت‌ها" }, { id: "flows", label: "فلوها", count: FLOWS.length }, { id: "writing", label: "نوشتار و میکروکپی" }, { id: "tokens", label: "توکن‌ها" }, { id: "context", label: "زمینه و قوانین" }, { id: "research", label: "پژوهش و مصاحبه" }, { id: "dev", label: "هنداف دولوپر" }, { id: "release", label: "انتشار" }, { id: "figma", label: "خروجی Figma" }]} />
 
+      {tab === "count" && <InventoryView />}
+      {tab === "style" && <StyleGuide />}
+      {tab === "context" && <SectionView s={CONTEXT} />}
+      {tab === "research" && <SectionView s={RESEARCH} />}
+      {tab === "dev" && <SectionView s={DEV} />}
+      {tab === "release" && <SectionView s={RELEASE} />}
       {tab === "stats" && (
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{stat("گروه صفحه‌ی طراحی‌شده", SCREENS.length, "هر گروه چند مسیر دارد؛ ادمین ۳۰ ماژول")}{stat("حالت (state) ثبت‌شده", states)}{stat("کامپوننت", COMPONENTS.length)}{stat("نمودار / داده‌نما", CHARTS.length)}{stat("فلو", FLOWS.length)}{stat("رنگ پایه", TOKENS.colors.length)}{stat("پنل", 3, "صاحب بار · راننده · ادمین")}{stat("اندازه‌ی طراحی", "۳۷۵ / ۷۶۸ / ۱۲۸۰ / ۱۴۴۰")}</div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{stat("صفحه و نما (شمارش دقیق)", GRAND.pages + GRAND.views, `${fa(GRAND.pages)} صفحه + ${fa(GRAND.views)} نما`)}{stat("پنجره‌ی شناور", GRAND.sheets)}{stat("تب", GRAND.tabs)}{stat("فریم پایه‌ی کل", GRAND.total, "با مرحله‌ها و اسلایدها")}{stat("حالت (state) ثبت‌شده", states)}{stat("کامپوننت", COMPONENTS.length)}{stat("نمودار / داده‌نما", CHARTS.length)}{stat("فلو", FLOWS.length)}{stat("رنگ پایه", TOKENS.colors.length)}{stat("پنل", 3, "صاحب بار · راننده · ادمین")}{stat("اندازه‌ی طراحی", "۳۷۵ / ۷۶۸ / ۱۲۸۰ / ۱۴۴۰")}</div>
           <Card className="space-y-3 p-5"><h2 className="font-extrabold">صفحه‌ها به تفکیک بخش</h2><ShareBar parts={byPortal} /><BarList rows={byPortal.map((p) => ({ label: p.label, value: p.value }))} /></Card>
           <Card className="space-y-3 p-5"><h2 className="font-extrabold">بیشترین حالت‌ها در یک صفحه</h2><BarList rows={[...SCREENS].sort((a, b) => b.states.length - a.states.length).slice(0, 8).map((s) => ({ label: s.title, value: s.states.length }))} /></Card>
           <Card className="space-y-2 p-5"><h2 className="font-extrabold">قراردادهای کلی</h2><ul className="list-disc space-y-1 ps-5 text-sm leading-7 text-ink-2"><li>همه‌ی صفحه‌ها <b>Loading</b> (اسکلت)، <b>Empty</b> (آیکن + عنوان + توضیح + CTA)، <b>Error</b> (نوار قرمز/زیر فیلد) و <b>Offline</b> دارند.</li><li>هیچ دکمه‌ی گرادیانی نداریم؛ سایه فقط soft/lift.</li><li>آیکن فقط SVG (lucide)، ایموجی ممنوع.</li><li>کارمزد کامیونت هرگز به صاحب بار نمایش داده نمی‌شود.</li><li>پلاک، تلفن و آدرس دقیق راننده/بار فقط پس از بیعانه.</li></ul></Card>

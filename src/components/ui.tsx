@@ -134,7 +134,7 @@ export function EmptyState({ icon, title, body, action }: { icon: ReactNode; tit
 
 export function Stat({ label, value, sub, tone, icon }: { label: string; value: ReactNode; sub?: string; tone?: "brand" | "accent"; icon?: ReactNode }) {
   return (
-    <Card className={cx("card-lift relative overflow-hidden p-4", tone === "accent" && "bg-gradient-to-br from-white to-accent-50", tone === "brand" && "bg-gradient-to-br from-white to-brand-50")}>
+    <Card className={cx("card-lift relative overflow-hidden p-4", tone === "accent" && "bg-accent-50", tone === "brand" && "bg-brand-50")}>
       <div className="flex items-start justify-between gap-2"><div className="text-[13px] font-medium text-ink-3">{label}</div>{icon && <span className={cx("grid size-9 place-items-center rounded-xl", tone === "brand" ? "bg-brand-100 text-brand-700" : "bg-accent-50 text-accent-600")}>{icon}</span>}</div>
       <div className={cx("mt-2 text-[26px] font-black leading-none tabular tracking-tight", tone === "accent" && "text-accent-700")}>{value}</div>
       {sub && <div className="mt-1.5 text-xs text-ink-3">{sub}</div>}

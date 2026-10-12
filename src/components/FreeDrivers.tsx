@@ -11,9 +11,9 @@ import { person } from "@/lib/engine/core";
 import { driverStats } from "@/lib/engine/stats";
 import { fa } from "@/lib/format";
 import { vehicleTitle } from "@/lib/vehicles";
-import type { OrderInput, Rial, State } from "@/lib/types";
+import type { State } from "@/lib/types";
 
-type Probe = Pick<OrderInput, "pickupAt" | "vehicleKind" | "weightKg" | "cargoMode" | "tempMin" | "tempMax"> & { originCity: string; destCity: string; freight?: Rial; shipperId?: string };
+type Probe = Parameters<typeof suggestFree>[1];
 
 /** Free drivers who fit this order, with their conditions and average arrival times. `onPick` turns a card into a direct request. */
 export function FreeDrivers({ s, probe, pickedId, onPick, auto, onAuto, pickLabel = "انتخاب" }: { s: State; probe: Probe; pickedId?: string; onPick: (driverId: string | undefined) => void; auto?: boolean; onAuto?: (v: boolean) => void; pickLabel?: string }) {
@@ -33,7 +33,7 @@ export function FreeDrivers({ s, probe, pickedId, onPick, auto, onAuto, pickLabe
               <div className="flex items-center gap-3"><Avatar name={person(s, a.driverId)?.name ?? "راننده"} pro={d.pro.status === "pro"} size={42} hue={(a.driverId.length * 61) % 360} />
                 <div className="min-w-0 flex-1"><Link href={`/app/driver/?id=${a.driverId}`} className="font-black text-accent-700 hover:underline">{person(s, a.driverId)?.name}</Link><div className="truncate text-xs text-ink-3">{vehicleTitle(d.vehicle)} · {fa(Math.round(st.rating * 10) / 10)} از ۵ · {fa(st.trips)} سفر</div></div>
                 {d.vehicle.thermo?.connected && <SensorBadge />}</div>
-              <p className="text-sm leading-7"><AvailLine a={a} /></p>
+              <p className="text-sm leading-7"><AvailLine a={a} full /></p>
               {a.note && <p className="text-xs leading-6 text-ink-3">شرط راننده: {a.note}</p>}
               <div className="flex flex-wrap items-center justify-between gap-2"><TimesChip s={s} pid={a.driverId} /><Button size="sm" variant={on ? "secondary" : "primary"} onClick={() => onPick(on ? undefined : a.driverId)}>{on ? "لغو انتخاب" : pickLabel}</Button></div>
             </div>

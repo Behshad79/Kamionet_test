@@ -10,6 +10,7 @@ import { CargoLabel, Countdown, RatingPill, RouteLine, TempChip } from "@/compon
 import { CleanBadge, OdorChip } from "@/components/order/parts";
 import { toast } from "@/components/Toaster";
 import { Button, ButtonLink, Card, EmptyState, Field, Input, Sheet, Skeleton } from "@/components/ui";
+import { OrderComms } from "@/components/order/OrderComms";
 import { isLive } from "@/components/driver/Stages";
 import { acceptDirect, claimOrder, confirmAssign, declineDirect, releaseLock } from "@/lib/engine/orders";
 import { claimBlock, eligibility } from "@/lib/engine/drivers";
@@ -51,6 +52,7 @@ export default function Page() {
       {mineLocked && o.lockedUntil && <Card className="space-y-3 border-2 border-brand-500 p-4"><h2 className="font-extrabold">بار برای شما رزرو شد</h2><Countdown until={o.lockedUntil} total={150} /><p className="text-sm text-ink-3">برای نهایی‌کردن، تأیید کنید؛ در غیر این صورت بار دوباره آزاد می‌شود.</p></Card>}
       {direct && v.directExpiresAt && <Card className="space-y-3 border-2 border-brand-500 p-4"><h2 className="font-extrabold">درخواست مستقیم صاحب بار</h2><Countdown until={v.directExpiresAt} total={600} /></Card>}
       {waitingDeposit && <Card className="space-y-3 border-2 border-brand-500 p-4"><h2 className="font-extrabold">منتظر پرداخت بیعانه‌ی صاحب بار هستیم</h2>{o.depositDueAt && <Countdown until={o.depositDueAt} total={600} />}<p className="text-sm leading-7 text-ink-3">به‌محض پرداخت، آدرس دقیق، پین نقشه و شماره‌ی تماس را همین‌جا نشان می‌دهیم و اعلان می‌گیرید. تا آن زمان این بار برای شما رزرو است و برای جلوگیری از تداخل نمی‌توانید بار دیگری بردارید. اگر بیعانه پرداخت نشود، رزرو آزاد می‌شود و هیچ جریمه‌ای ندارید.</p></Card>}
+      {(waitingDeposit || (o.driverId === me.id && s.complaints.some((c) => c.orderId === o.id))) && <OrderComms o={o} meId={me.id} />}
 
       <Card className="space-y-3 p-4">
         <RouteLine from={v.originCity} to={v.destCity} sub={["محدوده‌ی تقریبی؛ آدرس دقیق پس از پرداخت بیعانه", "محدوده‌ی تقریبی؛ آدرس دقیق پس از پرداخت بیعانه"]} />

@@ -2,6 +2,7 @@ import { approxArea } from "./geo";
 import { shipperStats } from "./engine/stats";
 import type { FullView, GuestView, Order, OrderView, PublicView, State } from "./types";
 import { driverOf, person, shipperOf } from "./engine/core";
+import { PHONE_LIVE } from "./engine/comms";
 
 /**
  * The only door between raw orders and the UI. Components receive a view whose
@@ -48,8 +49,8 @@ export function fullView(o: Order, s: State): FullView {
   void _l;
   return {
     ...pub, level: "full", origin: o.origin, dest: o.dest,
-    shipperContact: { name: p?.name ?? "—", phone: p?.phone ?? "—" },
-    driver: dpRow ? { id: dpRow.id, name: dpRow.name, phone: dpRow.phone, plate: dp?.vehicle.plate ? `${dp.vehicle.plate.two} ${dp.vehicle.plate.letter} ${dp.vehicle.plate.three} ایران ${dp.vehicle.plate.prov}` : undefined, vehicleKind: dp?.vehicle.kind, color: dp?.vehicle.color } : undefined,
+    shipperContact: { name: p?.name ?? "—", phone: PHONE_LIVE.includes(o.status) ? p?.phone ?? "—" : "—" },
+    driver: dpRow ? { id: dpRow.id, name: dpRow.name, phone: PHONE_LIVE.includes(o.status) ? dpRow.phone : "—", plate: dp?.vehicle.plate ? `${dp.vehicle.plate.two} ${dp.vehicle.plate.letter} ${dp.vehicle.plate.three} ایران ${dp.vehicle.plate.prov}` : undefined, vehicleKind: dp?.vehicle.kind, color: dp?.vehicle.color } : undefined,
     waybills: o.waybills, media: o.media, flag: o.flag, loadedAt: o.loadedAt, departedAt: o.departedAt, deliveredAt: o.deliveredAt, assignedAt: o.assignedAt,
     note: o.note, declaredValue: o.declaredValue, groupId: o.groupId, groupSize: o.groupSize, groupIndex: o.groupIndex, depositDueAt: o.depositDueAt, consigneeToken: o.consignee.token,
   };

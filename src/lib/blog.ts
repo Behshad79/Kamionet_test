@@ -29,3 +29,6 @@ export const POSTS: Post[] = [
 ];
 
 export const postBySlug = (slug: string) => POSTS.find((p) => p.slug === slug);
+
+export const readMin = (p: Post) => Math.max(2, Math.round(p.body.reduce((n, b) => n + b.p.length + (b.h?.length ?? 0), 0) / 650));
+export const TAGS = [...new Set(POSTS.map((p) => p.tag))];

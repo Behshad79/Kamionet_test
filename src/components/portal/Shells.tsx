@@ -10,6 +10,7 @@ import { getViewAs, logout, PORTAL_LOGIN } from "@/lib/store";
 import type { PortalId } from "@/lib/types";
 import { Logo, PortalCue, ProBadge } from "../brand";
 import { Skeleton, cx } from "../ui";
+import { CallLayer } from "../CallLayer";
 import { SupportWidget } from "../SupportWidget";
 import { DemoDrawer, openDemo } from "./DemoDrawer";
 import { DEMO_MODE } from "@/lib/store";
@@ -104,6 +105,7 @@ export function ShipperShell({ children }: { children: ReactNode }) {
       </div>
       <BottomBar items={nav} path={g.path} className="lg:hidden" />
       <SupportWidget portal="shipper" />
+      <CallLayer meId={g.me?.id} />
       <DemoDrawer />
     </div>
   );
@@ -136,6 +138,7 @@ export function DriverShell({ children }: { children: ReactNode }) {
       <div className="mx-auto max-w-2xl p-4">{children}</div>
       <BottomBar items={DRIVER_NAV} path={g.path} large />
       <SupportWidget portal="driver" />
+      <CallLayer meId={g.me?.id} />
       <DemoDrawer />
     </div>
   );
@@ -162,7 +165,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   );
   return (
     <div data-portal="admin" className="min-h-dvh bg-tint lg:grid lg:grid-cols-[264px_1fr]">
-      <aside className="sticky top-0 hidden h-dvh flex-col bg-gradient-to-b from-[#0f172a] to-[#111c33] p-4 text-slate-200 lg:flex">{side}</aside>
+      <aside className="sticky top-0 hidden h-dvh flex-col bg-[#0f172a] p-4 text-slate-200 lg:flex">{side}</aside>
       <div className="min-w-0">
         <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-white/60 px-4 lg:hidden">
           <button onClick={() => setMenu(true)} aria-label="باز کردن منو" aria-expanded={menu} className="grid size-11 place-items-center rounded-full hover:bg-ink/5"><Menu className="size-5" /></button>
@@ -172,7 +175,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </div>
       {menu && (
         <div className="fixed inset-0 z-50 flex lg:hidden" role="dialog" aria-modal="true" aria-label="منوی مدیریت">
-          <div className="flex w-72 max-w-[85%] animate-rise flex-col bg-gradient-to-b from-[#0f172a] to-[#111c33] p-4 text-slate-200">{side}</div>
+          <div className="flex w-72 max-w-[85%] animate-rise flex-col bg-[#0f172a] p-4 text-slate-200">{side}</div>
           <button className="flex-1 bg-ink/50" aria-label="بستن منو" onClick={() => setMenu(false)} />
         </div>
       )}

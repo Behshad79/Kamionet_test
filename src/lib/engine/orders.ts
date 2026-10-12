@@ -1,5 +1,6 @@
 import { applyScheduledConfig, cv } from "../config";
 import { liveAvailabilities, matchOnCreate } from "./avail";
+import { commsDue, commsTick } from "./comms";
 import { roadKm } from "../geo";
 import { A, bal, post, shipperWallet } from "../ledger";
 import { matchVehicle, MATCH_FAIL_TEXT } from "../matching";
@@ -427,6 +428,7 @@ export function startTrip(s: State, driverId: string, orderId: string, a: { carg
   o.loadedAt = now(s);
   o.waitFee += waitFeeFor(s, o.arrivedPickupAt, o.loadedAt);
   setStatus(s, o, "IN_TRANSIT", actorPerson(s, driverId), "بارگیری انجام شد");
+  s.sms.unshift({ id: uid(s, "sms"), at: now(s), personId: o.shipperId, to: o.consignee.phone, kind: "delivery_code", text: `کامیونت: بار ${o.origin.city} ← ${o.dest.city} برای شما در راه است. کد تحویل: ${o.consignee.otp} (فقط هنگام تحویل به راننده بگویید).` });
   notify(s, o.shipperId, "shipper", "in_transit", `بار شما ${o.origin.city} ← ${o.dest.city} بارگیری شد و در مسیر است.`, `/app/order/?id=${o.id}`);
   return ok();
 }
@@ -842,6 +844,7 @@ export function tickDue(s: State): boolean {
   for (const r of s.reviews) if (!r.revealed && r.at + revealMs <= t) return true;
   for (const tp of s.templates) if (tp.active && tp.nextRunAt - 12 * HOUR <= t) return true;
   if (proScanDue(s)) return true;
+  if (commsDue(s)) return true;
   for (const d of s.debts) if (d.status === "OPEN" && ladderStage(s, d) > d.stage) return true;
   return false;
 }
@@ -884,6 +887,7 @@ export function engineTick(s: State): boolean {
   }
   if (settleDelayed(s)) changed = true;
   if (proScanDue(s)) { proAutoScan(s); changed = true; }
+  if (commsTick(s)) changed = true;
   const revealMs = cv<number>(s, "review.revealDays") * DAY;
   for (const r of s.reviews) if (!r.revealed && r.at + revealMs <= t) { r.revealed = true; changed = true; }
   for (const tp of s.templates) {

@@ -201,6 +201,34 @@ export function seedAvailability(sim: Sim, now: number) {
   routes.forEach(([from, to], i) => {
     const d = i < 2 ? pool.filter((x) => x.vehicle.kind === "truck10" && x.vehicle.minTemp !== null && x.vehicle.minTemp <= 0)[i] : pool[(i * 5 + 3) % pool.length];
     if (!d) return;
-    s.availabilities.push({ id: uid(s, "av"), driverId: d.personId, from, to, fromAt: now - 2 * HOUR, until: now + (72 + i * 6) * HOUR, minFreight: R(i < 2 ? 500_000 : r.int(4, 25) * 1_000_000), note: i % 2 ? "بدون انتظار بیش از یک ساعت؛ تخلیه با کمک خودم" : "یخچال از شب قبل روشن است، آماده‌ی بارگیری", acceptAuto: i % 3 === 0, active: true, createdAt: now - (i + 1) * 20 * 60_000 });
+    s.availabilities.push({ id: uid(s, "av"), driverId: d.personId, from, to, fromAt: now - 2 * HOUR, until: now + (72 + i * 6) * HOUR, minFreight: R(i < 2 ? 500_000 : r.int(4, 25) * 1_000_000), note: i % 2 ? "بدون انتظار بیش از یک ساعت؛ تخلیه با کمک خودم" : "یخچال از شب قبل روشن است، آماده‌ی بارگیری", acceptAuto: i % 3 === 0, active: true, createdAt: now - (i + 1) * 20 * 60_000,
+      cargoMode: i % 4 === 3 ? "BOTH" : "REFRIGERATED", maxFreight: i % 2 ? R(60_000_000) : undefined, minWeightKg: i % 3 === 1 ? 2000 : undefined, maxWeightKg: i % 3 === 0 ? 9000 : undefined, cargoKinds: i % 3 === 2 ? ["dairy", "icecream"] : [], terms: [], detourKm: 30, helpsLoading: i % 2 === 0, waitHours: i % 2 ? 1 : 2 });
+  });
+}
+
+/** The demo «return trip» driver (09100000013) announces Isfahan → Tehran with conditions, so the merged «suggested for me» tab has content. */
+export function seedReturnTrip(sim: Sim, now: number) {
+  const { s } = sim;
+  const p = s.persons.find((x) => x.phone === DEMO_DRIVERS[12]?.phone);
+  if (!p) return;
+  s.availabilities.push({ id: uid(s, "av"), driverId: p.id, from: "اصفهان", to: ["تهران", "کاشان"], fromAt: now, until: now + 4 * 24 * HOUR, minFreight: R(3_000_000), maxFreight: R(30_000_000), cargoMode: "BOTH", minWeightKg: 500, maxWeightKg: 3000, cargoKinds: [], terms: [], detourKm: 40, helpsLoading: true, waitHours: 2, note: "مسیر برگشت به تهران؛ بار شکستنی نمی‌برم", acceptAuto: false, active: true, createdAt: now - 10 * 60_000 });
+}
+
+/** Demo chats, calls and complaints: live chats on in-progress trips, plus complaints in every state on finished ones. */
+export function seedComms(sim: Sim, now: number) {
+  const { s } = sim;
+  const live = s.orders.filter((o) => o.driverId && ["ASSIGNED", "EN_ROUTE_TO_PICKUP", "AT_PICKUP", "IN_TRANSIT"].includes(o.status)).slice(0, 6);
+  const lines: [boolean, string][] = [[true, "سلام، من آماده‌ام؛ ساعت چند می‌رسید؟"], [false, "سلام، حدود ۴۰ دقیقه‌ی دیگر می‌رسم مبدأ."], [true, "باشه، انبار سمت راست است؛ زنگ بزنید در را باز کنم."], [false, "رسیدم، دم در هستم."]];
+  live.forEach((o, i) => {
+    s.chats.push({ orderId: o.id, shipperId: o.shipperId, driverId: o.driverId!, messages: lines.slice(0, 2 + (i % 3)).map(([sh, text], k) => ({ id: uid(s, "m"), from: sh ? o.shipperId : o.driverId!, text, at: now - (30 - k * 7) * 60_000 })), readAt: {} });
+    if (i % 2 === 0) s.calls.push({ id: uid(s, "call"), orderId: o.id, from: o.shipperId, to: o.driverId!, status: i === 0 ? "MISSED" : "ENDED", at: now - 20 * 60_000, answeredAt: i === 0 ? undefined : now - 20 * 60_000 + 6000, endedAt: now - 20 * 60_000 + (i === 0 ? 30_000 : 95_000) });
+  });
+  const done = s.orders.filter((o) => o.driverId && o.status === "COMPLETED").slice(-4);
+  const cats: [string, "OPEN" | "ANSWERED" | "RESOLVED" | "ESCALATED"][] = [["راننده دیر رسید", "RESOLVED"], ["بار با اعلام فرق دارد", "ESCALATED"], ["رفتار نامناسب", "ANSWERED"], ["دما رعایت نشد", "OPEN"]];
+  done.forEach((o, i) => {
+    const byShipper = i % 2 === 0;
+    const [category, status] = cats[i % cats.length];
+    const by = byShipper ? o.shipperId : o.driverId!, against = byShipper ? o.driverId! : o.shipperId;
+    s.complaints.push({ id: uid(s, "cp"), orderId: o.id, byId: by, againstId: against, byRole: byShipper ? "shipper" : "driver", category, text: "توضیح مشکل: لطفاً بررسی کنید.", at: now - (2 + i) * 3_600_000, status, messages: [{ from: by, text: "توضیح مشکل: لطفاً بررسی کنید.", at: now - (2 + i) * 3_600_000 }, ...(status !== "OPEN" ? [{ from: against, text: "مشکل از طرف من نبود؛ توضیح می‌دهم.", at: now - (2 + i) * 3_600_000 + 600_000 }] : [])], resolvedAt: status === "RESOLVED" ? now - i * 3_600_000 : undefined, resolvedBy: status === "RESOLVED" ? "ثبت‌کننده" : undefined });
   });
 }

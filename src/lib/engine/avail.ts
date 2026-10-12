@@ -1,11 +1,11 @@
 import { matchVehicle } from "../matching";
-import type { Availability, Order, OrderInput, Rial, State } from "../types";
+import type { Availability, CargoKind, Order, OrderInput, PayTerms, Rial, State } from "../types";
 import { DAY, HOUR, MIN, driverOf, fail, notify, now, ok, person, uid, type Result } from "./core";
 import { claimBlock } from "./drivers";
 import { claimOrder, confirmAssign } from "./orders";
 import { driverStats } from "./stats";
 
-export interface AvailInput { from: string; to: string[]; fromAt: number; until: number; minFreight: Rial; note: string; acceptAuto: boolean }
+export type AvailInput = Omit<Availability, "id" | "driverId" | "active" | "createdAt">;
 
 export function announce(s: State, driverId: string, a: AvailInput): Result<{ id: string }> {
   const d = driverOf(s, driverId);
@@ -29,22 +29,39 @@ export function cancelAvailability(s: State, driverId: string, id: string): Resu
 
 export const liveAvailabilities = (s: State) => s.availabilities.filter((a) => a.active && a.until > now(s));
 
-type Probe = Pick<OrderInput, "pickupAt" | "vehicleKind" | "weightKg" | "cargoMode" | "tempMin" | "tempMax"> & { originCity: string; destCity: string; freight?: Rial; shipperId?: string };
+type Probe = Pick<OrderInput, "pickupAt" | "vehicleKind" | "weightKg" | "cargoMode" | "tempMin" | "tempMax"> & { originCity: string; destCity: string; freight?: Rial; shipperId?: string; cargo?: CargoKind; terms?: PayTerms };
 
-/** Free drivers that fit this (draft) order: route, window, price floor and truck. Sensor-linked and better-rated first. */
+/** Does this announcement fit this (draft) order? Route, window, price range, load size, cargo kind/mode, payment terms and the truck itself. */
+export function announcementFits(s: State, a: Availability, p: Probe): boolean {
+  const d = driverOf(s, a.driverId);
+  if (!d || d.personId === p.shipperId || claimBlock(s, d)) return false;
+  if (a.from !== p.originCity || (a.to.length > 0 && !a.to.includes(p.destCity))) return false;
+  if (p.pickupAt < a.fromAt - 2 * HOUR || p.pickupAt > a.until) return false;
+  if (p.freight !== undefined && p.freight > 0 && (p.freight < a.minFreight || (a.maxFreight && p.freight > a.maxFreight))) return false;
+  if (p.weightKg > 0 && ((a.minWeightKg && p.weightKg < a.minWeightKg) || (a.maxWeightKg && p.weightKg > a.maxWeightKg))) return false;
+  if (a.cargoMode && a.cargoMode !== "BOTH" && a.cargoMode !== p.cargoMode) return false;
+  if (p.cargo && a.cargoKinds?.length && !a.cargoKinds.includes(p.cargo)) return false;
+  if (p.terms && a.terms?.length && !a.terms.includes(p.terms)) return false;
+  return matchVehicle(d.vehicle, { vehicleKind: p.vehicleKind, tempMin: p.tempMin, tempMax: p.tempMax, weightKg: p.weightKg, cargoMode: p.cargoMode } as never).ok;
+}
+
+/** Free drivers that fit this (draft) order. Sensor-linked and better-rated first. */
 export function suggestFree(s: State, p: Probe): { a: Availability; score: number }[] {
   const out: { a: Availability; score: number }[] = [];
   for (const a of liveAvailabilities(s)) {
-    const d = driverOf(s, a.driverId);
-    if (!d || d.personId === p.shipperId || claimBlock(s, d)) continue;
-    if (a.from !== p.originCity || (a.to.length > 0 && !a.to.includes(p.destCity))) continue;
-    if (p.pickupAt < a.fromAt - 2 * HOUR || p.pickupAt > a.until) continue;
-    if (p.freight !== undefined && p.freight > 0 && p.freight < a.minFreight) continue;
-    if (!matchVehicle(d.vehicle, { vehicleKind: p.vehicleKind, tempMin: p.tempMin, tempMax: p.tempMax, weightKg: p.weightKg, cargoMode: p.cargoMode } as never).ok) continue;
+    if (!announcementFits(s, a, p)) continue;
+    const d = driverOf(s, a.driverId)!;
     const st = driverStats(s, a.driverId);
     out.push({ a, score: st.rating * 10 + (d.vehicle.thermo?.connected ? 6 : 0) + (d.pro.status === "pro" ? 4 : 0) });
   }
   return out.sort((x, y) => y.score - x.score);
+}
+
+/** Open loads that fit any of this driver's live announcements (the single «suggested for me» list; direct requests are merged in by the caller). */
+export function loadsForMe(s: State, pid: string): Order[] {
+  const mine = liveAvailabilities(s).filter((a) => a.driverId === pid);
+  if (!mine.length) return [];
+  return s.orders.filter((o) => (o.status === "OPEN" || o.status === "PRO_POOL") && mine.some((a) => announcementFits(s, a, probeOf(o))));
 }
 
 /** Shipper picks a free driver for an already-published open order → a direct request to that driver. */
@@ -60,7 +77,7 @@ export function requestFreeDriver(s: State, shipperId: string, orderId: string, 
   return ok();
 }
 
-export const probeOf = (o: Order): Probe => ({ originCity: o.origin.city, destCity: o.dest.city, pickupAt: o.pickupAt, vehicleKind: o.vehicleKind, weightKg: o.weightKg, cargoMode: o.cargoMode, tempMin: o.tempMin, tempMax: o.tempMax, freight: o.freight, shipperId: o.shipperId });
+export const probeOf = (o: Order): Probe => ({ cargo: o.cargo, terms: o.terms, originCity: o.origin.city, destCity: o.dest.city, pickupAt: o.pickupAt, vehicleKind: o.vehicleKind, weightKg: o.weightKg, cargoMode: o.cargoMode, tempMin: o.tempMin, tempMax: o.tempMax, freight: o.freight, shipperId: o.shipperId });
 
 /** Runs right after an order is published: auto-assign to a driver who accepts automatically, and tell other matching free drivers. */
 export function matchOnCreate(s: State, o: Order, auto: boolean) {

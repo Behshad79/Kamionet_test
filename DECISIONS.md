@@ -52,3 +52,8 @@ Each item: **decision** · why · what to confirm.
 39. **Availability** direct requests are allowed for non-Pro drivers when they have a live announcement; `autoMatch` only auto-assigns drivers who set «پذیرش خودکار».
 40. **Radar** uses browser geolocation (or a demo drive) and runs only while the screen is open with an empty truck; alert once per load, ≥ 90 s apart.
 41. **SEO** content is draft copy for review; site URL via `NEXT_PUBLIC_SITE_URL` + base path.
+42. **Chat/calls/complaints** open at the driver's confirmation (numbers still hidden until the deposit), stay writable until `chat.afterDoneH` (2 h) after delivery, then read-only. Phone numbers are never shown after delivery (also masked on the waybill). Calls are simulated; production needs VoIP with number masking.
+43. **Complaints**: the counterparty is notified at once; unanswered ones escalate to a support ticket after `complaint.replyMin` (15 min) or on request; only the filer can mark «solved».
+44. **Staff access** to chat text and call logs is permission-gated (`comms`) and every transcript view is written to the audit log. Add a privacy notice to the terms before launch.
+45. **Availability and declared trips are one feature** («من آزادم / مسیر من»). The old `declareTrip` engine call remains but has no UI.
+46. **Page count**: the in-repo inventory (`src/lib/inventory.ts`) is the reference (pages, views, tabs, sheets, steps, slides); it differs from the agency's 94-page report mainly in sheets (47 vs 9) and wizard steps.

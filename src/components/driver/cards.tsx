@@ -12,14 +12,14 @@ import { CargoIcon, RatingPill, RouteLine, TempChip } from "../molecules";
 import { CleanBadge, OdorChip } from "../order/parts";
 import { Badge, Card, cx } from "../ui";
 
-export function DriverOrderCard({ v, o, net, from, fit, href }: { v: PublicView; o: Order; net: number; from?: { lat: number; lng: number }; fit: { ok: boolean; why?: string }; href: string }) {
+export function DriverOrderCard({ v, o, net, from, fit, href, matched }: { v: PublicView; o: Order; net: number; from?: { lat: number; lng: number }; fit: { ok: boolean; why?: string }; href: string; matched?: boolean }) {
   const dead = from ? roadKm(from, v.originArea) : undefined;
   return (
     <Link href={href} className="block">
       <Card className={cx("space-y-3 p-4 transition active:scale-[0.99]", !fit.ok && "opacity-60")}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-sm font-bold"><CargoIcon type={v.cargo} />{CARGO[v.cargo].label}{v.cargoMode === "AMBIENT" && <Badge>غیریخچالی</Badge>}</span>
-          <div className="flex flex-wrap items-center gap-1.5">{v.serviceClass === "PRO" && <ProBadge />}{v.isDirectToMe && <Badge tone="brand">درخواست مستقیم</Badge>}{v.tipPre > 0 && <Badge tone="ok"><Gift className="size-3.5" aria-hidden />انعام {toman(v.tipPre)}</Badge>}</div>
+          <div className="flex flex-wrap items-center gap-1.5">{v.serviceClass === "PRO" && <ProBadge />}{v.isDirectToMe && <Badge tone="brand">درخواست مستقیم</Badge>}{matched && !v.isDirectToMe && <Badge tone="ok">مطابق اعلام شما</Badge>}{v.tipPre > 0 && <Badge tone="ok"><Gift className="size-3.5" aria-hidden />انعام {toman(v.tipPre)}</Badge>}</div>
         </div>
         <RouteLine from={v.originCity} to={v.destCity} />
         <div className="flex flex-wrap items-center gap-2">

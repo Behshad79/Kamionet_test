@@ -20,8 +20,10 @@
 
 - **M6-batch-2** official freight slip (instant Kamionet waybill + stamped slip uploaded by staff, admin queue `/admin/docs`, SLA configurable), driver availability («من آزادم») with shipper suggestions in wizard / order page / `/app/available`, auto-match, average arrival times, **driver radar** (`/driver/radar`: nearby or along-route loads, single alert, only with empty truck and screen open), SEO (6 articles, sitemap, robots, JSON-LD, noindex portals), designer hand-off `/handoff` (stat cards, screens + states + sizes, components, charts, flows, tokens, UX-writing guide, Figma/CSV/JSON export). Fixed a pre-existing bug: direct requests never stored `directDriverId`.
 
-## In progress
-- M6: polish, QA at 375/768/1280, DEMO_GUIDE.md, deploy.
+- **M6-batch-3** unified availability/route announcement with conditions (price range, load range, cargo, terms, detour, help, wait) + «suggested for me» tab merging direct requests and matching loads; in-app chat + simulated calls + complaints between the two parties (opens at driver confirmation, phone hidden after delivery, staff transcript view audited); delivery code shown to shipper with «don't give to driver» warning + SMS resend; blog redesign; designer hand-off v2 (exact count with agency comparison, live style guide, context & rules, research/interview guide, developer hand-off, release plan for web/Bazaar/App Store); `DEMO_GUIDE.md`; layout QA at 375/768/1280 (`tests/e2e/qa-widths.mjs`).
+
+## Done
+- M6 complete. Remaining before production: see DECISIONS.md (real gateway/SMS/Shahkar/maps/VoIP, backend migration).
 
 ## Resume notes
 - Run: `npm run dev`; tests: `npm run test:ledger` (add `--small` for a quick run), `npm run e2e` (legacy, to be rewritten), `npm run test:db`.

@@ -270,3 +270,19 @@ export function seedShowcase(sim: Sim, now: number) {
     if (ok(m, "mismatch") && step === "mismatch2" && m.ok) escalateMismatch(s, m.id, "پاسخی در مهلت دریافت نشد");
   }
 }
+
+/** Open loads from the demo shipper that fit two free drivers' announcements, so «send my load to this driver» can be tried straight away. */
+export function seedFreeMatch(sim: Sim, now: number) {
+  const { s } = sim;
+  const sh = s.persons.find((p) => p.phone === DEMO_SHIPPERS[6]?.phone);
+  if (!sh) return;
+  const seen = new Set<string>();
+  for (const a of s.availabilities.filter((x) => x.active && x.to.length > 0 && !seen.has(`${x.from}|${x.to[0]}`) && !!seen.add(`${x.from}|${x.to[0]}`)).slice(0, 2)) {
+    sim.t = now - 10 * MIN; s._now = sim.t;
+    const base = buildInput(sim, sh.id, a.driverId, { couponCode: undefined, terms: "DEPOSIT_BALANCE_AFTER_DELIVERY" });
+    const pickupAt = Math.max(now + 6 * HOUR, a.fromAt);
+    const input: OrderInput = { ...base, origin: cityPlace(a.from, "شهرک صنعتی، خیابان ۱۲"), dest: cityPlace(a.to[0], "میدان مرکزی، انبار ۴"), pickupAt, pickupTo: pickupAt + 2 * HOUR, deliverBy: pickupAt + 8 * HOUR, cargoMode: "REFRIGERATED", weightKg: Math.min(base.weightKg, a.maxWeightKg ?? base.weightKg, 4000) };
+    const res = createOrders(s, sh.id, input);
+    if (!res.ok) sim.errors.push(`freeMatch ${a.from}: ${res.error}`);
+  }
+}

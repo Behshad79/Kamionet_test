@@ -31,19 +31,27 @@ export const liveAvailabilities = (s: State) => s.availabilities.filter((a) => a
 
 type Probe = Pick<OrderInput, "pickupAt" | "vehicleKind" | "weightKg" | "cargoMode" | "tempMin" | "tempMax"> & { originCity: string; destCity: string; freight?: Rial; shipperId?: string; cargo?: CargoKind; terms?: PayTerms };
 
-/** Does this announcement fit this (draft) order? Route, window, price range, load size, cargo kind/mode, payment terms and the truck itself. */
-export function announcementFits(s: State, a: Availability, p: Probe): boolean {
+/** Why this announcement does NOT fit this (draft) order, in plain Persian. Empty = fits. Route, window, price range, load size, cargo kind/mode, payment terms and the truck itself. */
+export function fitReasons(s: State, a: Availability, p: Probe): string[] {
   const d = driverOf(s, a.driverId);
-  if (!d || d.personId === p.shipperId || claimBlock(s, d)) return false;
-  if (a.from !== p.originCity || (a.to.length > 0 && !a.to.includes(p.destCity))) return false;
-  if (p.pickupAt < a.fromAt - 2 * HOUR || p.pickupAt > a.until) return false;
-  if (p.freight !== undefined && p.freight > 0 && (p.freight < a.minFreight || (a.maxFreight && p.freight > a.maxFreight))) return false;
-  if (p.weightKg > 0 && ((a.minWeightKg && p.weightKg < a.minWeightKg) || (a.maxWeightKg && p.weightKg > a.maxWeightKg))) return false;
-  if (a.cargoMode && a.cargoMode !== "BOTH" && a.cargoMode !== p.cargoMode) return false;
-  if (p.cargo && a.cargoKinds?.length && !a.cargoKinds.includes(p.cargo)) return false;
-  if (p.terms && a.terms?.length && !a.terms.includes(p.terms)) return false;
-  return matchVehicle(d.vehicle, { vehicleKind: p.vehicleKind, tempMin: p.tempMin, tempMax: p.tempMax, weightKg: p.weightKg, cargoMode: p.cargoMode } as never).ok;
+  if (!d || d.personId === p.shipperId || claimBlock(s, d)) return ["راننده در حال حاضر قابل درخواست نیست."];
+  const r: string[] = [];
+  if (a.from !== p.originCity) r.push(`مبدأ راننده ${a.from} است، نه ${p.originCity}.`);
+  if (a.to.length > 0 && !a.to.includes(p.destCity)) r.push(`راننده فقط به ${a.to.join("، ")} می‌رود.`);
+  if (p.pickupAt < a.fromAt - 2 * HOUR || p.pickupAt > a.until) r.push("زمان بارگیری خارج از بازه‌ی آزادبودن راننده است.");
+  if (p.freight !== undefined && p.freight > 0 && p.freight < a.minFreight) r.push("کرایه‌ی بار کمتر از حداقل مبلغ راننده است.");
+  if (p.freight !== undefined && p.freight > 0 && a.maxFreight && p.freight > a.maxFreight) r.push("کرایه‌ی بار بیشتر از بازه‌ی مبلغ راننده است.");
+  if (p.weightKg > 0 && a.minWeightKg && p.weightKg < a.minWeightKg) r.push("وزن بار کمتر از حداقل بار راننده است.");
+  if (p.weightKg > 0 && a.maxWeightKg && p.weightKg > a.maxWeightKg) r.push("وزن بار بیشتر از حداکثر بار راننده است.");
+  if (a.cargoMode && a.cargoMode !== "BOTH" && a.cargoMode !== p.cargoMode) r.push("نوع حمل (یخچالی/معمولی) با شرط راننده نمی‌خواند.");
+  if (p.cargo && a.cargoKinds?.length && !a.cargoKinds.includes(p.cargo)) r.push("نوع کالا جزو کالاهای موردقبول راننده نیست.");
+  if (p.terms && a.terms?.length && !a.terms.includes(p.terms)) r.push("شرایط پرداخت سفارش با شرط راننده نمی‌خواند.");
+  const m = matchVehicle(d.vehicle, { vehicleKind: p.vehicleKind, tempMin: p.tempMin, tempMax: p.tempMax, weightKg: p.weightKg, cargoMode: p.cargoMode } as never);
+  if (!m.ok) r.push(m.why === "CAPACITY" ? "ظرفیت خودروی راننده کمتر از وزن بار است." : "نوع یا دمای خودروی راننده با بار نمی‌خواند.");
+  return r;
 }
+
+export const announcementFits = (s: State, a: Availability, p: Probe) => fitReasons(s, a, p).length === 0;
 
 /** Free drivers that fit this (draft) order. Sensor-linked and better-rated first. */
 export function suggestFree(s: State, p: Probe): { a: Availability; score: number }[] {

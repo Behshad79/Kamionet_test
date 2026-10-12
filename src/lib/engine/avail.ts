@@ -22,7 +22,7 @@ export function announce(s: State, driverId: string, a: AvailInput): Result<{ id
 
 export function cancelAvailability(s: State, driverId: string, id: string): Result {
   const a = s.availabilities.find((x) => x.id === id && x.driverId === driverId);
-  if (!a) return fail("اعلام آزادی پیدا نشد.");
+  if (!a) return fail("مسیر پیدا نشد.");
   a.active = false;
   return ok();
 }

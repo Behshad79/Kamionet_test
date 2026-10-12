@@ -19,7 +19,7 @@ export function DriverOrderCard({ v, o, net, from, fit, href, matched }: { v: Pu
       <Card className={cx("space-y-3 p-4 transition active:scale-[0.99]", !fit.ok && "opacity-60")}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-sm font-bold"><CargoIcon type={v.cargo} />{CARGO[v.cargo].label}{v.cargoMode === "AMBIENT" && <Badge>غیریخچالی</Badge>}</span>
-          <div className="flex flex-wrap items-center gap-1.5">{v.serviceClass === "PRO" && <ProBadge />}{v.isDirectToMe && <Badge tone="brand">درخواست مستقیم</Badge>}{matched && !v.isDirectToMe && <Badge tone="ok">مطابق اعلام شما</Badge>}{v.tipPre > 0 && <Badge tone="ok"><Gift className="size-3.5" aria-hidden />انعام {toman(v.tipPre)}</Badge>}</div>
+          <div className="flex flex-wrap items-center gap-1.5">{v.serviceClass === "PRO" && <ProBadge />}{v.isDirectToMe && <Badge tone="brand">درخواست مستقیم</Badge>}{matched && !v.isDirectToMe && <Badge tone="ok">سر راه شماست</Badge>}{v.tipPre > 0 && <Badge tone="ok"><Gift className="size-3.5" aria-hidden />انعام {toman(v.tipPre)}</Badge>}</div>
         </div>
         <RouteLine from={v.originCity} to={v.destCity} />
         <div className="flex flex-wrap items-center gap-2">

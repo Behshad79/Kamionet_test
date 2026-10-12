@@ -105,19 +105,19 @@ function Market() {
       {active.map((o) => <Link key={o.id} href={`/driver/trip/?id=${o.id}`} className="block"><Card className="flex items-center justify-between gap-3 border-2 border-act p-4"><span className="font-black">سفر جاری: {o.origin.city} ← {o.dest.city}</span><Badge tone="info">ادامه</Badge></Card></Link>)}
 
       <div className="flex items-center justify-between gap-2">
-        <Tabs value={tab} onChange={setTab} tabs={[{ id: "all", label: "همه‌ی بارها", count: rows.length }, { id: "mine", label: "پیشنهادی برای من", count: rows.filter((r) => r.v.isDirectToMe || mineIds.has(r.o.id)).length }]} className="flex-1" />
+        <Tabs value={tab} onChange={setTab} tabs={[{ id: "all", label: "همه‌ی بارها", count: rows.length }, { id: "mine", label: "بار سر راه من", count: rows.filter((r) => r.v.isDirectToMe || mineIds.has(r.o.id)).length }]} className="flex-1" />
       </div>
       <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
         <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setSheet(true)}><Filter className="size-4" aria-hidden />فیلتر{nf ? ` (${fa(nf)})` : ""}</Button>
         <Select aria-label="مرتب‌سازی" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-11 w-40 shrink-0"><option value="near">نزدیک‌ترین</option><option value="price">بیشترین درآمد</option><option value="soon">زودترین بارگیری</option></Select>
-        {live && <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setAvail(true)}><Radio className="size-4" aria-hidden />من آزادم / مسیر من</Button>}
+        {live && <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setAvail(true)}><Radio className="size-4" aria-hidden />بار سر راه من</Button>}
         <Button variant="ghost" size="sm" aria-pressed={mode === "map"} onClick={() => setMode(mode === "map" ? "list" : "map")} className="ms-auto shrink-0"><MapIcon className="size-4" aria-hidden />{mode === "map" ? "فهرست" : "نقشه"}</Button>
       </div>
 
       {mode === "map" ? (
         <Card className="overflow-hidden"><MapView className="h-[60dvh]" cluster markers={list.map((r) => ({ id: r.o.id, lat: r.v.originArea.lat, lng: r.v.originArea.lng, kind: "order" as const, label: `${fa(Math.round(r.net / 10_000) / 100)}م` }))} fitKey={`${list.length}`} onMarkerClick={(id) => { window.location.href = `/driver/order/?id=${id}`; }} /></Card>
       ) : list.length === 0 ? (
-        <EmptyState icon={<PackageSearch className="size-8" />} title="باری با این فیلترها پیدا نشد" body="فیلترها را کم کنید یا مسیر و شرایطتان را اعلام کنید تا بارهای مناسب را برایتان بیاوریم." action={nf ? <Button onClick={() => { setF({ temp: "", cargo: "", near: false, proOnly: false, day: "" }); setTab("all"); }}>پاک کردن فیلترها</Button> : <Button onClick={() => setAvail(true)}>من آزادم / مسیر من</Button>} />
+        <EmptyState icon={<PackageSearch className="size-8" />} title="باری با این فیلترها پیدا نشد" body="فیلترها را کم کنید یا مسیر و شرایطتان را اعلام کنید تا بارهای مناسب را برایتان بیاوریم." action={nf ? <Button onClick={() => { setF({ temp: "", cargo: "", near: false, proOnly: false, day: "" }); setTab("all"); }}>پاک کردن فیلترها</Button> : <Button onClick={() => setAvail(true)}>بار سر راه من</Button>} />
       ) : (
         <div className="space-y-3">{list.map((r) => <DriverOrderCard key={r.o.id} matched={mineIds.has(r.o.id)} v={r.v} o={r.o} net={r.net} from={from} fit={r.fit} href={`/driver/order/?id=${r.o.id}`} />)}</div>
       )}

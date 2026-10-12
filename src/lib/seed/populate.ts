@@ -6,7 +6,7 @@ import { makeDriver, makeShipper } from "./people";
 import { runOrder, topUp, type Sim } from "./history";
 import { seedFinance } from "./finance";
 import { officialPlaceholder } from "../officialPlaceholder";
-import { seedActive, seedAvailability, seedComms, seedReturnTrip, seedDebtAndSupport, seedOpenBoard, seedPersonas } from "./scenarios";
+import { seedActive, seedAvailability, seedComms, seedShowcase, seedReturnTrip, seedDebtAndSupport, seedOpenBoard, seedPersonas } from "./scenarios";
 
 export interface PopulateOpts {
   drivers: number;
@@ -56,6 +56,7 @@ export function populate(s: State, now: number, o: PopulateOpts = FULL): string[
   seedFinance(sim, now);
   seedAvailability(sim, now);
   seedReturnTrip(sim, now);
+  seedShowcase(sim, now);
   seedComms(sim, now);
   // official slips: older orders are already stamped, the latest few are still waiting for staff (shows both states)
   const admin = s.admins.find((a) => a.role === "ops")?.name ?? "کامیونت";

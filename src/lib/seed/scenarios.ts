@@ -3,10 +3,10 @@ import { R } from "../money";
 import { A, driverWallet, post } from "../ledger";
 import { openTicket, replyTicket } from "../engine/trust";
 import { DAY, HOUR, MIN, driverOf, orderOf, uid } from "../engine/core";
-import { createOrders } from "../engine/orders";
+import { arrivePickup, cancelByDriver, claimOrder, confirmAssign, createOrders, escalateMismatch, reportMismatch, startToPickup } from "../engine/orders";
 import { payoutAction, requestPayout } from "../engine/payout";
 import type { DriverProfile, OrderInput, State } from "../types";
-import { buildInput, runOrder, type Sim } from "./history";
+import { buildInput, media, payOutstanding, runOrder, type Sim } from "./history";
 import { makeDriver, makeShipper } from "./people";
 
 /** Fixed demo accounts (OTP 12345). Shown in the «حساب‌های دمو» drawer. */
@@ -231,4 +231,42 @@ export function seedComms(sim: Sim, now: number) {
     const by = byShipper ? o.shipperId : o.driverId!, against = byShipper ? o.driverId! : o.shipperId;
     s.complaints.push({ id: uid(s, "cp"), orderId: o.id, byId: by, againstId: against, byRole: byShipper ? "shipper" : "driver", category, text: "توضیح مشکل: لطفاً بررسی کنید.", at: now - (2 + i) * 3_600_000, status, messages: [{ from: by, text: "توضیح مشکل: لطفاً بررسی کنید.", at: now - (2 + i) * 3_600_000 }, ...(status !== "OPEN" ? [{ from: against, text: "مشکل از طرف من نبود؛ توضیح می‌دهم.", at: now - (2 + i) * 3_600_000 + 600_000 }] : [])], resolvedAt: status === "RESOLVED" ? now - i * 3_600_000 : undefined, resolvedBy: status === "RESOLVED" ? "ثبت‌کننده" : undefined });
   });
+}
+
+/**
+ * One order in every pre-trip / exceptional state (locked, awaiting deposit, heading to pickup, mismatch, escalated mismatch, cancelled by driver),
+ * driven through the real engine, so every screen state can be opened live from the designer hand-off.
+ */
+export function seedShowcase(sim: Sim, now: number) {
+  const { s, r } = sim;
+  const busy = new Set(s.orders.filter((o) => o.driverId && ["ASSIGNED", "EN_ROUTE_TO_PICKUP", "AT_PICKUP", "IN_TRANSIT", "AWAITING_DEPOSIT", "LOCKED", "MISMATCH_REVIEW"].includes(o.status)).map((o) => o.driverId));
+  const pool = r.shuffle(s.drivers.filter((d) => d.kyc.status === "verified" && !d.suspension && d.vehicle.minTemp !== null && d.vehicle.minTemp <= 0 && !busy.has(d.personId) && d.pro.status !== "invited"));
+  const steps = ["locked", "deposit", "enroute", "mismatch", "mismatch2", "canceldriver"] as const;
+  for (const step of steps) {
+    const d = pool.pop();
+    if (!d) return;
+    sim.t = now - 25 * MIN; s._now = sim.t;
+    const sh = r.pick(s.shippers.filter((x) => !x.controls.blocked));
+    const input = buildInput(sim, sh.personId, d.personId, { couponCode: undefined, terms: "DEPOSIT_BALANCE_AFTER_DELIVERY" });
+    const res = createOrders(s, sh.personId, input);
+    if (!res.ok) { sim.errors.push(`showcase ${step}: ${res.error}`); continue; }
+    const o = orderOf(s, res.ids[0])!;
+    const ok = (x: { ok: boolean; error?: string }, w: string) => { if (!x.ok) sim.errors.push(`showcase ${step}/${w}: ${x.error}`); return x.ok; };
+    if (!ok(claimOrder(s, d.personId, o.id), "claim")) continue;
+    /* Pin the lock/deposit windows to real "now" so the showcase order is still in that state when someone opens it. */
+    const pin = () => { const f = orderOf(s, o.id)!; const until = Date.now() + 12 * 3600_000; if (f.lockedUntil) f.lockedUntil = until; if (f.depositDueAt) f.depositDueAt = until; };
+    if (step === "locked") { pin(); continue; }
+    if (!ok(confirmAssign(s, d.personId, o.id), "confirm")) continue;
+    if (step === "deposit") { pin(); continue; }
+    payOutstanding(sim, orderOf(s, o.id)!, "deposit");
+    sim.t += 3 * MIN; s._now = sim.t;
+    if (step === "canceldriver") { ok(cancelByDriver(s, d.personId, o.id, "خرابی خودرو"), "cancel"); continue; }
+    if (!ok(startToPickup(s, d.personId, o.id), "start")) continue;
+    if (step === "enroute") continue;
+    sim.t += 25 * MIN; s._now = sim.t;
+    if (!ok(arrivePickup(s, d.personId, o.id), "arrive")) continue;
+    const fresh = orderOf(s, o.id)!;
+    const m = reportMismatch(s, d.personId, o.id, { types: ["weight_up"], actual: { weightKg: Math.round(fresh.weightKg * 1.25), note: "وزن واقعی بیشتر از اظهار است." }, photos: [media("cargo", sim.t), media("cargo", sim.t)] });
+    if (ok(m, "mismatch") && step === "mismatch2" && m.ok) escalateMismatch(s, m.id, "پاسخی در مهلت دریافت نشد");
+  }
 }

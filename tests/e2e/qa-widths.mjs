@@ -2,7 +2,7 @@
 import { chromium } from "playwright";
 import { B, demoLogin } from "./lib.mjs";
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
-const ROUTES = { public: ["/", "/login/", "/blog/", "/blog/refrigerated-freight-cost-iran/", "/handoff/"], shipper: ["/app/", "/app/new/", "/app/wallet/", "/app/profile/", "/app/recurring/", "/app/available/", "/app/notifications/"], driver: ["/driver/", "/driver/trips/", "/driver/wallet/", "/driver/profile/", "/driver/radar/", "/driver/notifications/"], admin: ["/admin/", "/admin/orders/", "/admin/finance/", "/admin/comms/", "/admin/config/"] };
+const ROUTES = { public: ["/", "/login/", "/blog/", "/blog/refrigerated-freight-cost-iran/", "/handoff/", "/handoff/dev/"], shipper: ["/app/", "/app/new/", "/app/wallet/", "/app/profile/", "/app/recurring/", "/app/available/", "/app/notifications/"], driver: ["/driver/", "/driver/trips/", "/driver/wallet/", "/driver/profile/", "/driver/radar/", "/driver/notifications/"], admin: ["/admin/", "/admin/orders/", "/admin/finance/", "/admin/comms/", "/admin/config/"] };
 const PHONE = { shipper: "09120000007", driver: "09100000006", admin: "09130000001" };
 let bad = 0;
 for (const w of [375, 768, 1280]) {

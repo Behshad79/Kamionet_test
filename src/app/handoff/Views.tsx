@@ -58,3 +58,31 @@ export function InventoryView() {
     </div>
   );
 }
+
+/* ───────── research hub: interview guide + competitor worksheet + per-page questions ───────── */
+import { AXES, METHOD, REFS } from "@/lib/atlas/competitors";
+import { ALL_PAGE_HINTS } from "./Atlas";
+import { RESEARCH } from "@/lib/handoffMore";
+import { exportCsv } from "@/lib/export";
+import { Button } from "@/components/ui";
+import { Download } from "lucide-react";
+
+export function ResearchHub() {
+  const perPage = Object.entries(ALL_PAGE_HINTS).filter(([, h]) => h.ask.length);
+  const nQ = perPage.reduce((n, [, h]) => n + h.ask.length, 0);
+  return (
+    <div className="space-y-5">
+      <Card className="space-y-2 bg-act-soft p-5"><h2 className="text-xl font-black">تحلیل رقبا و مراجع</h2><p className="text-sm leading-7 text-ink-2">این بخش فقط می‌گوید چه چیزی را کجا و چرا ببینید؛ هیچ نمره یا ادعایی درباره‌ی رقبا از پیش نوشته نشده است. جدول را خودتان با مدرک پر کنید و CSV بگیرید.</p></Card>
+      <Card className="space-y-3 p-5"><h3 className="text-lg font-black">مراجع و رقبا</h3><div className="grid gap-3 md:grid-cols-2">{REFS.map((r) => <div key={r.name} className="space-y-1 rounded-ui bg-surface-2 p-3 text-sm leading-7"><b>{r.name}</b> <Badge>{r.kind}</Badge><p className="text-ink-2"><b>چرا:</b> {r.why}</p><p className="text-ink-2"><b>چه ببینید:</b> {r.look}</p></div>)}</div></Card>
+      <Card className="space-y-3 p-5"><h3 className="text-lg font-black">روش کار</h3><ol className="list-decimal space-y-1.5 ps-5 text-sm leading-8 text-ink-2">{METHOD.map((m) => <li key={m}>{m}</li>)}</ol></Card>
+      <Card className="space-y-3 p-5"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-black">ماتریس مقایسه (۱۲ محور)</h3>
+        <Button variant="secondary" onClick={() => exportCsv("kamionet-benchmark", ["محور", "سؤال", "چرا برای ما مهم است", ...REFS.map((r) => `${r.name} (نمره ۱–۵ + مدرک)`)], AXES.map((a) => [a.axis, a.q, a.why, ...REFS.map(() => "")]))}><Download className="size-4" aria-hidden />CSV برای تکمیل</Button></div>
+        <div className="overflow-x-auto rounded-ui border border-line"><table className="w-full min-w-[720px] text-sm"><thead><tr className="bg-surface-2 text-xs text-ink-3"><th className="p-3 text-start">محور</th><th className="p-3 text-start">سؤال</th><th className="p-3 text-start">چرا مهم است</th></tr></thead><tbody>{AXES.map((a) => <tr key={a.axis} className="border-t border-line align-top"><th className="p-3 text-start font-bold">{a.axis}</th><td className="p-3 leading-7 text-ink-2">{a.q}</td><td className="p-3 leading-7 text-ink-2">{a.why}</td></tr>)}</tbody></table></div></Card>
+      <Card className="space-y-3 p-5"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-black">سؤال‌های مصاحبه به تفکیک صفحه ({fa(nQ)} سؤال)</h3>
+        <Button variant="secondary" onClick={() => exportCsv("kamionet-page-questions", ["مسیر", "کاربر", "سؤال"], perPage.flatMap(([r, h]) => h.ask.map((q) => [r, h.who, q])))}><Download className="size-4" aria-hidden />CSV سؤال‌ها</Button></div>
+        <p className="text-sm text-ink-3">«این یا آن بهتر است؟» را همین‌جا از راننده/صاحب بار بپرسید. همین سؤال‌ها کنار هر صفحه در «اطلس» هم هست.</p>
+        <div className="space-y-2">{perPage.map(([r, h]) => <details key={r} className="rounded-ui border border-line p-3"><summary className="cursor-pointer text-sm font-bold">{h.who} <span dir="ltr" className="ms-2 font-mono text-xs text-ink-3">{r}</span> · {fa(h.ask.length)} سؤال</summary><ul className="mt-2 list-disc space-y-1 ps-5 text-sm leading-7 text-ink-2">{h.ask.map((q) => <li key={q}>{q}</li>)}</ul></details>)}</div></Card>
+      <SectionView s={RESEARCH} />
+    </div>
+  );
+}

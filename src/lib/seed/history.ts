@@ -21,7 +21,7 @@ const CARGO: { kind: CargoKind; temp: [number, number]; packaging: string; value
   { kind: "fish", temp: [-2, 2], packaging: "یونولیت", value: 700, odor: "STRONG" },
 ];
 const IMG = "data:image/gif;base64,R0lGODlhAQABAAAAACw=";
-const media = (kind: Media["kind"], at: number, items?: number): Media => ({ kind, dataUrl: IMG, takenAt: at, lat: 35.7, lng: 51.4, items });
+export const media = (kind: Media["kind"], at: number, items?: number): Media => ({ kind, dataUrl: IMG, takenAt: at, lat: 35.7, lng: 51.4, items });
 
 export interface Sim {
   s: State;

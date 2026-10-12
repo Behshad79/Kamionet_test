@@ -11,7 +11,7 @@ const sm = await g.request.get(`${B}/sitemap.xml`); ok(sm.ok() && (await sm.text
 const rb = await g.request.get(`${B}/robots.txt`); ok(rb.ok() && (await rb.text()).includes("Disallow: /admin/"), "robots.txt blocks portals");
 await g.goto(`${B}/handoff/`); await g.waitForSelector("text=مرور آماری");
 ok(await g.getByText("صفحه‌ها به تفکیک بخش").isVisible(), "handoff stats cards render");
-await g.getByRole("tab", { name: /صفحه‌ها/ }).click();
+await g.getByRole("button", { name: /^صفحه‌ها/ }).click();
 ok(await g.getByText("ثبت سفارش (۵ مرحله)").isVisible(), "handoff lists screens with states");
 
 /* shipper wizard suggests free drivers on Karaj→Qom */

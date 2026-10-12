@@ -22,7 +22,7 @@ const flip = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !
 
 /**
  * One announcement for both «I'm free here» and «I'm heading there / coming back»: area or route, time window, price range, load size,
- * cargo, payment terms and personal conditions. Matching loads then appear in «پیشنهادی برای من» and shippers see the driver.
+ * cargo, payment terms and personal conditions. Matching loads then appear in «بار سر راه من» and shippers see the driver.
  */
 export function AvailSheet({ open, onClose, pid }: { open: boolean; onClose: () => void; pid: string }) {
   const s = useStore();
@@ -46,9 +46,9 @@ export function AvailSheet({ open, onClose, pid }: { open: boolean; onClose: () 
   const [auto, setAuto] = useState(false);
   const v = d?.vehicle;
   return (
-    <Sheet open={open} onClose={onClose} title="من آزادم / مسیر من" wide footer={<Button block disabled={!from || !min} onClick={() => { const r = act((st) => announce(st, pid, { from, to, fromAt, until, minFreight: R(min ?? 0), maxFreight: max ? R(max) : undefined, minWeightKg: wMin, maxWeightKg: wMax, cargoMode: mode, cargoKinds: kinds, terms, detourKm: detour, helpsLoading: help, waitHours: wait, note, acceptAuto: auto })); toast(r.ok ? "اعلام شما ثبت شد؛ بارهای مناسب در «پیشنهادی برای من» می‌آید." : r.error, r.ok ? "ok" : "err"); if (r.ok) onClose(); }}>ثبت اعلام</Button>}>
+    <Sheet open={open} onClose={onClose} title="بار سر راه من" wide footer={<Button block disabled={!from || !min} onClick={() => { const r = act((st) => announce(st, pid, { from, to, fromAt, until, minFreight: R(min ?? 0), maxFreight: max ? R(max) : undefined, minWeightKg: wMin, maxWeightKg: wMax, cargoMode: mode, cargoKinds: kinds, terms, detourKm: detour, helpsLoading: help, waitHours: wait, note, acceptAuto: auto })); toast(r.ok ? "مسیر شما ثبت شد؛ بارهای مناسب در «بار سر راه من» نمایش داده می‌شود." : r.error, r.ok ? "ok" : "err"); if (r.ok) onClose(); }}>شروع جست‌وجوی بار</Button>}>
       <div className="space-y-5">
-        <p className="text-sm leading-7 text-ink-3">یک‌بار شرایطتان را بگویید: چه موقع و از کجا آزادید یا به کجا می‌روید (مثلاً مسیر برگشت)، چه باری و با چه قیمتی می‌برید. صاحبان بار شما را می‌بینند و بارهای مناسب بلافاصله در «پیشنهادی برای من» نشان داده می‌شود.</p>
+        <p className="text-sm leading-7 text-ink-3">بگویید از کجا تا کجا می‌روید (یا کجا آزادید)، چه موقع، با چه قیمتی و چه باری می‌برید. بارهای مناسب را سر راهتان پیدا می‌کنیم و صاحبان بار هم شما را می‌بینند.</p>
         {v && <div className="rounded-ui bg-surface-2 p-3 text-sm leading-7"><b>خودروی من:</b> {vehicleTitle(v)} · ظرفیت {fa(v.capacityKg)} کیلوگرم · {v.minTemp === null ? "بدون یخچال" : `یخچال تا ${fa(v.minTemp)}°`}{v.thermo?.connected ? " · سنسور متصل" : ""}</div>}
 
         <section className="space-y-3"><h3 className="font-extrabold">مسیر و زمان</h3>
@@ -93,7 +93,7 @@ export function MyAvailability({ s, pid }: { s: State; pid: string }) {
   if (mine.length === 0) return null;
   return (
     <Card className="space-y-2 border border-ok/30 bg-ok-bg p-4">
-      <div className="flex items-center gap-2 font-extrabold text-ok"><Radio className="size-5" aria-hidden />آزادی‌های فعال شما</div>
+      <div className="flex items-center gap-2 font-extrabold text-ok"><Radio className="size-5" aria-hidden />مسیرهای فعال شما</div>
       {mine.map((a) => <div key={a.id} className="flex items-center justify-between gap-3 text-sm"><span className="min-w-0 leading-7"><AvailLine a={a} full />{a.acceptAuto && <Badge tone="ok" className="ms-2">خودکار</Badge>}</span><Button size="sm" variant="secondary" onClick={() => act((x) => cancelAvailability(x, pid, a.id))}>لغو</Button></div>)}
     </Card>
   );

@@ -71,8 +71,8 @@ export default function Page() {
       <div><h1 className="flex items-center gap-2 text-xl font-black"><Radar className="size-6 text-act" aria-hidden />رادار بار</h1><p className="mt-1 text-sm leading-7 text-ink-3">با رادار روشن، بارهای نزدیک یا سر مسیرتان را روی نقشه می‌بینید و اگر باری نزدیک شد خبر می‌گیرید. فقط وقتی این صفحه باز است و بار ندارید فعال است.</p></div>
       {block && <p role="status" className="rounded-ui bg-warn-bg p-3 text-sm font-bold text-warn">{block}</p>}
       <Card className="space-y-3 p-4">
-        <Segmented<"near" | "route"> value={mode} onChange={(v) => { setMode(v); if (v === "near") setDestName(""); }} options={[{ value: "near", label: "اطراف من", sub: "تا ۳۰ کیلومتر" }, { value: "route", label: "مسیر من", sub: "از اینجا تا مقصد" }]} />
-        {mode === "route" && <PlaceCombobox label="مقصد من" value={destName} onSelect={(p) => setDestName(p?.name ?? "")} />}
+        <Segmented<"near" | "route"> value={mode} onChange={(v) => { setMode(v); if (v === "near") setDestName(""); }} options={[{ value: "near", label: "اطراف من", sub: "تا ۳۰ کیلومتر" }, { value: "route", label: "سر مسیر", sub: "از اینجا تا مقصدی که می‌روید" }]} />
+        {mode === "route" && <PlaceCombobox label="مقصدی که می‌روید" value={destName} onSelect={(p) => setDestName(p?.name ?? "")} />}
         <div className="flex flex-wrap gap-2">
           <Button disabled={!!block || (mode === "route" && !dest)} onClick={() => { setOn(!on); seen.current.clear(); }}>{on ? "خاموش‌کردن رادار" : "روشن‌کردن رادار"}</Button>
           {on && <Button variant="secondary" onClick={() => setSim(!sim)}><Navigation className="size-4" aria-hidden />{sim ? "توقف شبیه‌سازی" : "شبیه‌سازی حرکت (دمو)"}</Button>}

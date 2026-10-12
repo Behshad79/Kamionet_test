@@ -1,23 +1,29 @@
 "use client";
 
 import { Download, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BarList, SERIES, ShareBar } from "@/components/admin/charts";
-import { Badge, Button, Card, Input, Tabs } from "@/components/ui";
+import { Badge, Button, Card, Input } from "@/components/ui";
 import { exportCsv, download } from "@/lib/export";
 import { CHARTS, COMPONENTS, FLOWS, SCREENS, SERIES_COLORS, TOKENS, WRITING, type PortalKey } from "@/lib/handoff";
 import { fa } from "@/lib/format";
-import { CONTEXT, DEV, RELEASE, RESEARCH } from "@/lib/handoffMore";
+import { CONTEXT } from "@/lib/handoffMore";
 import { GRAND } from "@/lib/inventory";
-import { InventoryView, SectionView } from "./Views";
+import { InventoryView, ResearchHub, SectionView } from "./Views";
+import { Atlas } from "./Atlas";
 import { StyleGuide } from "./StyleGuide";
 
-type Tab = "stats" | "count" | "screens" | "style" | "comps" | "flows" | "tokens" | "writing" | "context" | "research" | "dev" | "release" | "figma";
+type Tab = "stats" | "atlas" | "count" | "screens" | "style" | "comps" | "flows" | "tokens" | "writing" | "context" | "research" | "figma";
+const TABS: { id: Tab; label: string; count?: number }[] = [
+  { id: "stats", label: "مرور آماری" }, { id: "atlas", label: "اطلس زنده" }, { id: "count", label: "شمارش دقیق", count: GRAND.total }, { id: "screens", label: "صفحه‌ها", count: SCREENS.length }, { id: "style", label: "استایل گاید زنده" }, { id: "comps", label: "جدول کامپوننت‌ها" }, { id: "flows", label: "فلوها", count: FLOWS.length }, { id: "writing", label: "نوشتار و میکروکپی" }, { id: "tokens", label: "توکن‌ها" }, { id: "context", label: "زمینه و قوانین" }, { id: "research", label: "پژوهش، مصاحبه و رقبا" }, { id: "figma", label: "خروجی Figma" },
+];
 const PORTALS: PortalKey[] = ["عمومی", "صاحب بار", "راننده", "ادمین", "اسناد", "بلاگ"];
 
 /** Designer hand-off: every screen with its states and sizes, components, charts, flows and tokens, plus Figma-ready exports. */
 export default function Page() {
   const [tab, setTab] = useState<Tab>("stats");
+  const pick = (x: Tab) => { setTab(x); try { history.replaceState(null, "", `#${x}`); } catch {} };
+  useEffect(() => { const h = location.hash.slice(1) as Tab; if (TABS.some((x) => x.id === h)) setTab(h); }, []);
   const [q, setQ] = useState("");
   const [portal, setPortal] = useState<PortalKey | "">("");
   const states = SCREENS.reduce((n, s) => n + s.states.length, 0);
@@ -29,14 +35,16 @@ export default function Page() {
     <main className="mx-auto max-w-6xl space-y-5 p-4 py-8" data-portal="admin">
       <meta name="robots" content="noindex" />
       <header><h1 className="text-3xl font-black">راهنمای تحویل به طراح UI/UX</h1><p className="mt-1 text-sm leading-7 text-ink-3">همه‌ی صفحه‌ها، حالت‌ها (خالی، بارگذاری، خطا…)، اندازه‌ها، کامپوننت‌ها، نمودارها، فلوها و توکن‌ها. از این‌جا شروع کنید، بازطراحی کنید و به Figma ببرید.</p></header>
-      <Tabs value={tab} onChange={setTab} className="overflow-x-auto" tabs={[{ id: "stats", label: "مرور آماری" }, { id: "count", label: "شمارش دقیق", count: GRAND.total }, { id: "screens", label: "صفحه‌ها", count: SCREENS.length }, { id: "style", label: "استایل گاید زنده" }, { id: "comps", label: "جدول کامپوننت‌ها" }, { id: "flows", label: "فلوها", count: FLOWS.length }, { id: "writing", label: "نوشتار و میکروکپی" }, { id: "tokens", label: "توکن‌ها" }, { id: "context", label: "زمینه و قوانین" }, { id: "research", label: "پژوهش و مصاحبه" }, { id: "dev", label: "هنداف دولوپر" }, { id: "release", label: "انتشار" }, { id: "figma", label: "خروجی Figma" }]} />
+      <nav aria-label="بخش‌های راهنما" className="flex flex-wrap gap-1.5 rounded-ui bg-ink/[0.045] p-1.5">
+        {TABS.map((x) => <button key={x.id} aria-current={tab === x.id ? "page" : undefined} onClick={() => pick(x.id)} className={`flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-bold transition ${tab === x.id ? "bg-white text-ink shadow-soft" : "text-ink-3 hover:text-ink"}`}>{x.label}{x.count !== undefined && <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[11px] tabular">{fa(x.count)}</span>}</button>)}
+        <a href="dev/" className="flex min-h-11 items-center gap-1.5 rounded-full border border-ink/20 px-4 text-sm font-bold text-ink hover:bg-white">هنداف توسعه‌دهنده ↗</a>
+      </nav>
 
       {tab === "count" && <InventoryView />}
       {tab === "style" && <StyleGuide />}
       {tab === "context" && <SectionView s={CONTEXT} />}
-      {tab === "research" && <SectionView s={RESEARCH} />}
-      {tab === "dev" && <SectionView s={DEV} />}
-      {tab === "release" && <SectionView s={RELEASE} />}
+      {tab === "research" && <ResearchHub />}
+      {tab === "atlas" && <Atlas />}
       {tab === "stats" && (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{stat("صفحه و نما (شمارش دقیق)", GRAND.pages + GRAND.views, `${fa(GRAND.pages)} صفحه + ${fa(GRAND.views)} نما`)}{stat("پنجره‌ی شناور", GRAND.sheets)}{stat("تب", GRAND.tabs)}{stat("فریم پایه‌ی کل", GRAND.total, "با مرحله‌ها و اسلایدها")}{stat("حالت (state) ثبت‌شده", states)}{stat("کامپوننت", COMPONENTS.length)}{stat("نمودار / داده‌نما", CHARTS.length)}{stat("فلو", FLOWS.length)}{stat("رنگ پایه", TOKENS.colors.length)}{stat("پنل", 3, "صاحب بار · راننده · ادمین")}{stat("اندازه‌ی طراحی", "۳۷۵ / ۷۶۸ / ۱۲۸۰ / ۱۴۴۰")}</div>

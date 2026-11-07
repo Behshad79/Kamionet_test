@@ -57,7 +57,7 @@ export default function Page() {
         )}
         {o.loadedAt && cv<boolean>(s, "feature.telemetry") && o.tempMin !== undefined && o.tempMax !== undefined && <TempPanel o={{ ...tel, tempMin: o.tempMin, tempMax: o.tempMax, status: o.status }} />}
         {!o.loadedAt && <Card className="flex items-center gap-3 p-5 text-sm text-ink-3"><Truck className="size-6" aria-hidden />{o.assignedAt ? "راننده تعیین شده و به‌زودی بارگیری آغاز می‌شود." : "هنوز راننده‌ای تعیین نشده است."}</Card>}
-        {done && <Card className="space-y-3 p-5"><h2 className="flex items-center gap-2 font-extrabold text-ok"><Check className="size-5" aria-hidden />بار تحویل داده شد</h2><Link href={`/certificate/?t=${o.consignee.token}`} className="inline-flex h-11 items-center font-bold text-accent-600">مشاهده‌ی گواهی زنجیره‌ی سرد</Link></Card>}
+        {done && <Card className="space-y-3 p-5"><h2 className="flex items-center gap-2 font-extrabold text-ok"><Check className="size-5" aria-hidden />بار تحویل داده شد</h2>{cv<boolean>(s, "feature.telemetry") && <Link href={`/certificate/?t=${o.consignee.token}`} className="inline-flex h-11 items-center font-bold text-accent-600">مشاهده‌ی گواهی زنجیره‌ی سرد</Link>}</Card>}
         {driver && o.assignedAt && <Card className="space-y-1 p-5 text-sm"><div className="text-ink-3">راننده</div><div className="font-black">{first}</div></Card>}
         <Card className="p-5"><h2 className="mb-3 font-extrabold">روند سفر</h2><StatusTimeline o={o} /></Card>
         <RouteLine from={o.origin.city} to={o.dest.city} />

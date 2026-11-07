@@ -12,7 +12,9 @@ import type { Order, Thermo, Vehicle } from "@/lib/types";
 
 const nfa = (n: number) => new Intl.NumberFormat("fa-IR", { useGrouping: false }).format(n);
 
-export function SensorBadge({ className }: { className?: string }) {
+export function SensorBadge({ className, force }: { className?: string; force?: boolean }) {
+  const on = cv<boolean>(useStore(), "feature.sensor");
+  if (!on && !force) return null;
   return <span className={`inline-flex items-center gap-1 rounded-full bg-accent-50 px-2.5 py-1 text-xs font-extrabold text-accent-700 ring-1 ring-accent-600/20 ${className ?? ""}`}><Radio className="size-3.5" aria-hidden />سنسور کامیونت متصل</span>;
 }
 

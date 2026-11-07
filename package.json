@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "npx serve out",
     "typecheck": "tsc --noEmit",
-    "e2e": "node tests/e2e/marketplace.mjs && node tests/e2e/wizard.mjs && node tests/e2e/telemetry.mjs && node tests/e2e/audit.mjs",
+    "e2e": "node tests/e2e/auth.mjs && node tests/e2e/landing.mjs && node tests/e2e/shipper.mjs && node tests/e2e/driver.mjs && node tests/e2e/m4.mjs && node tests/e2e/admin.mjs && node tests/e2e/m6.mjs && node tests/e2e/m7.mjs && node tests/e2e/m8.mjs && node tests/e2e/atlas.mjs && node tests/e2e/slugs.mjs",
     "test:db": "bash supabase/tests/run.sh",
-    "test:ledger": "tsx tests/ledger.test.ts"
+    "test:ledger": "tsx tests/ledger.test.ts",
+    "e2e:widths": "node tests/e2e/qa-widths.mjs"
   },
   "dependencies": {
     "leaflet": "^1.9.4",

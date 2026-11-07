@@ -93,7 +93,7 @@ export function StyleGuide() {
       <Spec title="برچسب‌ها و وضعیت‌ها" spec={["Badge: ارتفاع ~۲۴، متن ۱۲px/۷۰۰، حلقه‌ی ۱px هم‌رنگ", "تُن‌ها: ok · warn · danger · info · neutral · brand", "هر ۱۷ وضعیت سفارش با StatusBadge و متن فارسی ثابت"]} wide>
         <div className="space-y-3"><Row label="Badge">{(["ok", "warn", "danger", "info", "neutral", "brand"] as const).map((t) => <Badge key={t} tone={t}>{t}</Badge>)}<Badge tone="ok" dot>با نقطه</Badge></Row>
           <Row label="Pill (ادمین)">{(["ok", "warn", "danger", "info", "neutral"] as const).map((t) => <Pill key={t} tone={t}>{t}</Pill>)}</Row>
-          <Row label="پرو/سنسور"><ProBadge /><SensorBadge /></Row>
+          <Row label="پرو/سنسور"><ProBadge /><SensorBadge force /></Row>
           <div><Cap>وضعیت‌های سفارش</Cap><div className="flex flex-wrap gap-2">{SAMPLE_STATUSES.map((s) => <StatusBadge key={s} status={s} />)}</div></div></div>
       </Spec>
 
@@ -118,7 +118,7 @@ export function StyleGuide() {
 
       <Spec title="آواتار، تاج پرو و پروفایل" spec={["Avatar: ۴۰/۴۸/۸۴؛ رنگ از hue ثابت هر کاربر؛ پرو: تاج + حلقه‌ی طلایی", "ProfileHero: کاور ۹۶–۱۲۸ تخت (نه گرادیان)، آواتار نیمه‌روی کاور، نام زیر آواتار", "تم پرو: سرمه‌ای + طلایی؛ تاج بالای آواتار"]} wide>
         <div className="mb-4 flex items-end gap-4"><Avatar name="علی رضایی" size={40} /><Avatar name="علی رضایی" size={48} hue={30} /><Avatar name="مجتبی سلیمانی" pro size={84} hue={260} /><CrownMark className="h-8 w-12" /></div>
-        <div className="grid gap-4 md:grid-cols-2"><ProfileHero name="محمدرضا کریمی" headline="کامیون ۱۰ تن · عضو از ۱۴ ماه پیش" hue={300} verified rating={4.4} ratingCount={13} badges={<Badge tone="ok">مدارک تأییدشده</Badge>} stats={[{ label: "سفر", value: "۲۰" }, { label: "وقت‌شناسی", value: "۸۸٪" }, { label: "نظافت", value: "۹۰" }]} /><ProfileHero name="مجتبی سلیمانی" headline="ولوو FL · مدل ۱۳۹۳" hue={220} pro verified rating={4.6} ratingCount={60} badges={<><ProBadge /><SensorBadge /></>} stats={[{ label: "سفر", value: "۹۸" }, { label: "وقت‌شناسی", value: "۸۷٪" }, { label: "لغو", value: "۰٪" }]} /></div>
+        <div className="grid gap-4 md:grid-cols-2"><ProfileHero name="محمدرضا کریمی" headline="کامیون ۱۰ تن · عضو از ۱۴ ماه پیش" hue={300} verified rating={4.4} ratingCount={13} badges={<Badge tone="ok">مدارک تأییدشده</Badge>} stats={[{ label: "سفر", value: "۲۰" }, { label: "وقت‌شناسی", value: "۸۸٪" }, { label: "نظافت", value: "۹۰" }]} /><ProfileHero name="مجتبی سلیمانی" headline="ولوو FL · مدل ۱۳۹۳" hue={220} pro verified rating={4.6} ratingCount={60} badges={<><ProBadge /><SensorBadge force /></>} stats={[{ label: "سفر", value: "۹۸" }, { label: "وقت‌شناسی", value: "۸۷٪" }, { label: "لغو", value: "۰٪" }]} /></div>
         <div className="mt-3"><ReviewItem name="پیمان طاهری" rating={5} text="به‌موقع رسید و دما کاملاً ثابت بود." at="۲۲ مرداد" /></div>
       </Spec>
 

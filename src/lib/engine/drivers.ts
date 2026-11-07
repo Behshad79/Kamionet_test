@@ -1,4 +1,4 @@
-import { cv } from "../config";
+import { cv, sensorLinked } from "../config";
 import { rng } from "../rng";
 import { A, bal } from "../ledger";
 import { matchVehicle } from "../matching";
@@ -107,7 +107,7 @@ export function smartPick(s: State, o: Order, exclude: string[] = []): DriverPro
   const r = rng(s.seq * 2654435761);
   return r.weighted(pool, (d) => {
     const st = driverStats(s, d.personId);
-    return Math.max(0.1, st.rating * st.rating) * (0.5 + st.onTime) * (d.vehicle.thermo?.connected ? 1.4 : 1);
+    return Math.max(0.1, st.rating * st.rating) * (0.5 + st.onTime) * (sensorLinked(s, d) ? 1.4 : 1);
   });
 }
 

@@ -1,4 +1,4 @@
-import type { ConfigChange, State } from "./types";
+import type { ConfigChange, DriverProfile, State } from "./types";
 
 /**
  * Every business number lives here as an admin-editable default.
@@ -35,13 +35,13 @@ export const CONFIG_DEFS: CfgDef[] = [
   { key: "official.slaMin", group: G.features, label: "مهلت صدور حواله‌ی رسمی (دقیقه)", kind: "min", default: 15, help: "به مشتری نمایش داده می‌شود؛ حواله را تیم کامیونت مهر و بارگذاری می‌کند" },
   { key: "complaint.replyMin", group: G.support, label: "مهلت پاسخ طرف مقابل به شکایت (دقیقه، بعد از آن به پشتیبانی می‌رود)", kind: "min", default: 15 },
   { key: "chat.afterDoneH", group: G.support, label: "گفتگوی سفارش پس از تحویل تا (ساعت) باز می‌ماند", kind: "hour", default: 2 },
-  { key: "feature.telemetry", group: G.features, label: "دماسنج و دمای لحظه‌ای", kind: "bool", default: true, help: "خاموش: نمودار دما و ردیابی دما برای صاحب بار و گیرنده نمایش داده نمی‌شود" },
+  { key: "feature.telemetry", group: G.features, label: "دماسنج و دمای لحظه‌ای", kind: "bool", default: false, help: "خارج از اسکوپ V1 (نیاز به سخت‌افزار سنسور). خاموش: نمودار دما، گواهی زنجیره‌ی سرد و ردیابی دما برای صاحب بار و گیرنده نمایش داده نمی‌شود" },
   { key: "feature.insurance", group: G.features, label: "بیمه‌ی بار", kind: "bool", default: true, help: "خاموش: مرحله‌ی بیمه در ثبت سفارش حذف می‌شود" },
   { key: "feature.recurring", group: G.features, label: "سفارش تکرارشونده", kind: "bool", default: true },
   { key: "feature.coupons", group: G.features, label: "کد تخفیف", kind: "bool", default: true },
   { key: "feature.tips", group: G.features, label: "انعام و جذب سریع", kind: "bool", default: true },
   { key: "feature.pro", group: G.features, label: "سرویس کامیونت پرو", kind: "bool", default: true, help: "خاموش: صاحب بار فقط سرویس استاندارد را می‌بیند" },
-  { key: "feature.sensor", group: G.features, label: "برنامه‌ی اتصال دماسنج راننده", kind: "bool", default: true, help: "امتیاز و نشان «سنسور متصل»" },
+  { key: "feature.sensor", group: G.features, label: "برنامه‌ی اتصال دماسنج راننده", kind: "bool", default: false, help: "خارج از اسکوپ V1. روشن: امتیاز، نشان «سنسور متصل» و اولویت در رتبه‌بندی" },
   { key: "feature.guestBrowse", group: G.features, label: "مرور بار برای بازدیدکننده‌ی ثبت‌نام‌نکرده", kind: "bool", default: true },
   { key: "commission.standard", group: G.fees, label: "کارمزد پایه", kind: "pct", default: 0.2 },
   { key: "commission.pro", group: G.fees, label: "کارمزد رانندگان پرو", kind: "pct", default: 0.18 },
@@ -117,6 +117,9 @@ export function cv<T = number>(s: Pick<State, "config">, key: string): T {
   if (!d) throw new Error(`unknown config key ${key}`);
   return d.default as T;
 }
+
+/** Sensor link counts (badge, ranking, Pro XP) only while the sensor programme is switched on. */
+export const sensorLinked = (s: Pick<State, "config">, d: Pick<DriverProfile, "vehicle">) => cv<boolean>(s, "feature.sensor") && !!d.vehicle.thermo?.connected;
 
 /** Apply any scheduled change whose effective time has arrived. */
 export function applyScheduledConfig(s: State, now: number) {

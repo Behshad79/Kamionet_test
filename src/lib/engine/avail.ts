@@ -1,3 +1,4 @@
+import { sensorLinked } from "../config";
 import { matchVehicle } from "../matching";
 import type { Availability, CargoKind, Order, OrderInput, PayTerms, Rial, State } from "../types";
 import { DAY, HOUR, MIN, driverOf, fail, notify, now, ok, person, uid, type Result } from "./core";
@@ -60,7 +61,7 @@ export function suggestFree(s: State, p: Probe): { a: Availability; score: numbe
     if (!announcementFits(s, a, p)) continue;
     const d = driverOf(s, a.driverId)!;
     const st = driverStats(s, a.driverId);
-    out.push({ a, score: st.rating * 10 + (d.vehicle.thermo?.connected ? 6 : 0) + (d.pro.status === "pro" ? 4 : 0) });
+    out.push({ a, score: st.rating * 10 + (sensorLinked(s, d) ? 6 : 0) + (d.pro.status === "pro" ? 4 : 0) });
   }
   return out.sort((x, y) => y.score - x.score);
 }

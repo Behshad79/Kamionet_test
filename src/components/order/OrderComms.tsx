@@ -4,7 +4,7 @@ import { MessageCircle, Phone, Send, ShieldAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "../Toaster";
 import { Badge, Button, Card, Field, Select, Sheet, Textarea } from "../ui";
-import { COMPLAINT_CATEGORIES, commsWritable, escalateComplaint, fileComplaint, markChatRead, replyComplaint, resolveComplaint, sendChat, startCall, unreadCount } from "@/lib/engine/comms";
+import { COMPLAINT_CATEGORIES, commsWritable, escalateComplaint, fileComplaint, markChatRead, PHONE_LIVE, replyComplaint, resolveComplaint, sendChat, unreadCount } from "@/lib/engine/comms";
 import { person } from "@/lib/engine/core";
 import { hhmm, jShort } from "@/lib/format";
 import { act, useStore } from "@/lib/store";
@@ -13,8 +13,8 @@ import type { Complaint, Order } from "@/lib/types";
 const ST: Record<Complaint["status"], [string, "warn" | "info" | "ok" | "danger"]> = { OPEN: ["در انتظار پاسخ", "warn"], ANSWERED: ["پاسخ داده شد", "info"], RESOLVED: ["حل‌شده", "ok"], ESCALATED: ["ارجاع به پشتیبانی", "danger"] };
 
 /**
- * Chat + in-app call + complaints between the shipper and the confirmed driver of one order.
- * Opens when the driver confirms (numbers stay hidden until the deposit), read-only after a short grace period once delivered.
+ * Chat + phone call (native dialer, V1 has no VoIP) + complaints between the shipper and the confirmed driver of one order.
+ * Chat opens when the driver confirms; the phone number is shown only after the deposit (PHONE_LIVE) and never after delivery.
  */
 export function OrderComms({ o, meId }: { o: Order; meId: string }) {
   const s = useStore();
@@ -45,10 +45,10 @@ export function OrderComms({ o, meId }: { o: Order; meId: string }) {
         </form>
       ) : <p className="text-xs text-ink-3">گفتگو پس از تحویل بسته می‌شود؛ تاریخچه فقط برای شما و پشتیبانی کامیونت قابل مشاهده است.</p>}
       <div className="flex flex-wrap gap-2">
-        {writable && <Button variant="secondary" size="sm" onClick={() => { const r = act((x) => startCall(x, meId, o.id)); if (!r.ok) toast(r.error, "err"); }}><Phone className="size-4" aria-hidden />تماس درون‌برنامه‌ای</Button>}
+        {peer && PHONE_LIVE.includes(o.status) && <a href={`tel:${peer.phone}`} className="inline-flex h-11 items-center gap-2 rounded-ui border border-line bg-white px-4 text-sm font-bold"><Phone className="size-4" aria-hidden />تماس تلفنی</a>}
         <Button variant="secondary" size="sm" onClick={() => setCOpen(true)}><ShieldAlert className="size-4" aria-hidden />ثبت شکایت / مشکل</Button>
       </div>
-      <p className="text-[11px] leading-6 text-ink-4">گفتگو و تماس‌های این سفارش برای کیفیت و رسیدگی به شکایت‌ها ثبت می‌شود و شماره‌ی شما در تماس درون‌برنامه‌ای نمایش داده نمی‌شود.</p>
+      <p className="text-[11px] leading-6 text-ink-4">گفتگوی این سفارش برای کیفیت و رسیدگی به شکایت‌ها ثبت می‌شود. شماره‌ی تماس فقط پس از پرداخت بیعانه و تا پیش از تحویل نمایش داده می‌شود.</p>
 
       {complaints.map((c) => <ComplaintCard key={c.id} c={c} meId={meId} />)}
       <ComplaintSheet open={cOpen} onClose={() => setCOpen(false)} o={o} role={role} meId={meId} />

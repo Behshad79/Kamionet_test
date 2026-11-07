@@ -7,6 +7,7 @@ import { person } from "@/lib/engine/core";
 import { CARGO, degrees, fa, jDateTime, tempRange, weightLabel } from "@/lib/format";
 import { useQueryParam } from "@/lib/hooks";
 import { useStore } from "@/lib/store";
+import { cv } from "@/lib/config";
 import { excursions, readings, stats, telemetryOf } from "@/lib/telemetry";
 import { VEHICLES } from "@/lib/vehicles";
 
@@ -16,6 +17,7 @@ export default function Page() {
   const t = useQueryParam("t");
   const id = useQueryParam("id");
   if (!s.ready || t === undefined || id === undefined) return <div className="p-8"><Skeleton className="h-96" /></div>;
+  if (!cv<boolean>(s, "feature.telemetry")) return <div className="p-10 text-center font-bold">گواهی زنجیره‌ی سرد در این نسخه فعال نیست.</div>;
   const o = s.orders.find((x) => (t ? x.consignee.token === t : x.id === id));
   if (!o || !o.loadedAt || o.tempMin === undefined || o.tempMax === undefined) return <div className="p-10 text-center font-bold">گواهی برای این سفارش موجود نیست (سفر هنوز آغاز نشده یا بار بدون کنترل دماست).</div>;
   const tel = telemetryOf(o);

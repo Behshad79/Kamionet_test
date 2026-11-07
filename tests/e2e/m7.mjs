@@ -18,17 +18,11 @@ await dr.getByRole("button", { name: "ارسال پیام" }).click();
 await sh.waitForSelector("text=حدود نیم ساعت دیگر", { timeout: 8000 });
 ok(true, "shipper receives the driver's reply (cross-tab sync)");
 
-/* in-app call: ring → answer → end */
-await sh.getByRole("button", { name: "تماس درون‌برنامه‌ای" }).click();
-await dr.waitForSelector('[role="alertdialog"]', { timeout: 8000 });
-ok(await dr.getByText(/تماس ورودی/).first().isVisible(), "driver sees the incoming call");
-await dr.getByRole("button", { name: "پاسخ" }).click();
-await sh.waitForSelector("text=در مکالمه", { timeout: 8000 });
-ok(true, "call connected on both sides");
-await sh.getByRole("button", { name: "پایان تماس" }).click();
-await sh.waitForTimeout(600);
-let st = await readState(sh);
-ok(st.calls.some((c) => c.orderId === id && c.status === "ENDED"), "call logged as ended");
+/* calls: native dialer only (V1 has no VoIP) */
+ok(await sh.getByRole("button", { name: "تماس درون‌برنامه‌ای" }).count() === 0, "no in-app call button");
+ok(await sh.locator('a[href^="tel:"]', { hasText: "تماس تلفنی" }).count() > 0, "shipper calls the driver through the phone dialer");
+ok(await dr.locator('a[href^="tel:"]', { hasText: "تماس تلفنی" }).count() > 0, "driver calls the shipper through the phone dialer");
+let st;
 
 /* complaint raised by the driver, answered by the shipper */
 await dr.getByRole("button", { name: "ثبت شکایت / مشکل" }).click();

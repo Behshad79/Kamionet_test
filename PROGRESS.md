@@ -25,6 +25,8 @@
 ## Done
 - M6 complete. Remaining before production: see DECISIONS.md (real gateway/SMS/Shahkar/maps/VoIP, backend migration).
 
+- **V1 scope alignment**: telemetry/sensor off by default, cold-chain certificate gated, in-app calls replaced by the phone dialer, public copy rewritten, `npm run e2e` fixed (it pointed at missing files), e2e updated, `docs/LARAVEL_MIGRATION.md`.
+
 ## Resume notes
 - Run: `npm run dev`; tests: `npm run test:ledger` (add `--small` for a quick run), `npm run e2e` (legacy, to be rewritten), `npm run test:db`.
 - Design system: /DESIGN_SYSTEM.md. Assumptions: /DECISIONS.md.

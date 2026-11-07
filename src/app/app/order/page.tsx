@@ -161,7 +161,7 @@ function Detail({ o, meId, fav }: { o: Order; meId: string; fav: string[] }) {
           {["DELIVERED", "COMPLETED"].includes(o.status) && o.driverId && (
             <Card className="space-y-3 p-5">
               <h2 className="font-extrabold">نظر شما</h2>
-              {transit && o.tempMin !== undefined && <Link href={`/certificate/?id=${o.id}`} className="flex h-11 items-center justify-center rounded-ui border border-line font-bold">گواهی زنجیره‌ی سرد (PDF)</Link>}
+              {transit && cv<boolean>(s, "feature.telemetry") && o.tempMin !== undefined && <Link href={`/certificate/?id=${o.id}`} className="flex h-11 items-center justify-center rounded-ui border border-line font-bold">گواهی زنجیره‌ی سرد (PDF)</Link>}
               {reviewed ? <p className="flex items-center gap-2 text-sm text-ok"><CheckCircle2 className="size-4" aria-hidden />نظر شما ثبت شده است.</p> : <ReviewForm personId={meId} orderId={o.id} role="shipper" />}
               {cv<boolean>(s, "feature.tips") && <Button variant="secondary" block onClick={() => setPayOpen("tip")}>انعام به راننده</Button>}
             </Card>

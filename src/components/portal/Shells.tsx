@@ -10,7 +10,6 @@ import { getViewAs, logout, PORTAL_LOGIN } from "@/lib/store";
 import type { PortalId } from "@/lib/types";
 import { Logo, PortalCue, ProBadge } from "../brand";
 import { Skeleton, cx } from "../ui";
-import { CallLayer } from "../CallLayer";
 import { SupportWidget } from "../SupportWidget";
 import { DemoDrawer, openDemo } from "./DemoDrawer";
 import { DEMO_MODE } from "@/lib/store";
@@ -105,7 +104,6 @@ export function ShipperShell({ children }: { children: ReactNode }) {
       </div>
       <BottomBar items={nav} path={g.path} className="lg:hidden" />
       <SupportWidget portal="shipper" />
-      <CallLayer meId={g.me?.id} />
       <DemoDrawer />
     </div>
   );
@@ -138,7 +136,6 @@ export function DriverShell({ children }: { children: ReactNode }) {
       <div className="mx-auto max-w-2xl p-4">{children}</div>
       <BottomBar items={DRIVER_NAV} path={g.path} large />
       <SupportWidget portal="driver" />
-      <CallLayer meId={g.me?.id} />
       <DemoDrawer />
     </div>
   );

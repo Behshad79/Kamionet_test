@@ -81,13 +81,13 @@ function Hero() {
         <div className="space-y-7">
           <span className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-extrabold text-accent-700 shadow-soft ring-1 ring-white/70"><span className="relative flex size-2"><span className="live-ring absolute inset-0 rounded-full bg-ok" /><span className="relative size-2 rounded-full bg-ok" /></span>مخصوص زنجیره‌ی سرد ایران</span>
           <h1 className="text-balance text-[40px] font-black leading-[1.2] tracking-tight lg:text-[58px]">بار یخچالی‌تان را به <span className="text-grad">کامیونِ مناسب</span> بسپارید</h1>
-          <p className="max-w-xl text-lg leading-8 text-ink-2">مستقیم، شفاف، بیمه‌شده. قیمت را خودتان می‌گذارید، دمای بار را لحظه‌به‌لحظه می‌بینید و پول تا تحویل سالم نزد کامیونت امانت می‌ماند.</p>
+          <p className="max-w-xl text-lg leading-8 text-ink-2">مستقیم، شفاف، بیمه‌شده. قیمت را خودتان می‌گذارید، مسیر کامیون را روی نقشه دنبال می‌کنید و پول تا تحویل سالم نزد کامیونت امانت می‌ماند.</p>
           <div className="flex flex-wrap gap-3">
             <ButtonLink href="/app/login/" size="lg" className="rounded-full! px-8!">ثبت بار</ButtonLink>
             <ButtonLink href="/driver/login/" size="lg" variant="secondary" className="rounded-full! px-7!"><Truck className="size-5" aria-hidden />راننده هستم</ButtonLink>
           </div>
           <ul className="flex flex-wrap gap-2 text-sm font-bold text-ink-2">
-            {["پرداخت امانی تا تحویل", "ثبت و گزارش دما", "بیمه‌ی محموله", "تحویل با کد گیرنده"].map((x) => <li key={x} className="glass flex items-center gap-1.5 rounded-full px-3 py-1.5 ring-1 ring-white/70"><BadgeCheck className="size-4 text-ok" aria-hidden />{x}</li>)}
+            {["پرداخت امانی تا تحویل", "رهگیری زنده‌ی مسیر", "بیمه‌ی محموله", "تحویل با کد گیرنده"].map((x) => <li key={x} className="glass flex items-center gap-1.5 rounded-full px-3 py-1.5 ring-1 ring-white/70"><BadgeCheck className="size-4 text-ok" aria-hidden />{x}</li>)}
           </ul>
         </div>
         <div className="relative">
@@ -132,7 +132,7 @@ const STEPS = {
     { t: "بار را ثبت کنید", d: "مبدأ، مقصد، دما و وزن را وارد کنید؛ قیمت پیشنهادی بازار را می‌بینید و کرایه را خودتان می‌گذارید.", i: MapPinned },
     { t: "راننده‌ی تأییدشده انتخاب می‌کند", d: "رانندگان احراز‌شده بار را برمی‌دارند؛ یا راننده‌ی پرو را مستقیم انتخاب کنید.", i: Truck },
     { t: "بیعانه بپردازید", d: "با پرداخت بیعانه، آدرس دقیق و مشخصات راننده باز و بارنامه صادر می‌شود.", i: Wallet },
-    { t: "زنده رهگیری کنید", d: "مسیر و دمای بار را ببینید؛ گیرنده با کد یک‌بارمصرف تحویل می‌گیرد.", i: Thermometer },
+    { t: "زنده رهگیری کنید", d: "موقعیت کامیون را روی نقشه ببینید؛ گیرنده با کد یک‌بارمصرف تحویل می‌گیرد.", i: MapPinned },
   ],
   driver: [
     { t: "ثبت‌نام و احراز", d: "مدارک و خودرو را یک‌بار ثبت کنید؛ بررسی سریع است و هر زمان می‌توانید ادامه دهید.", i: FileCheck2 },
@@ -166,12 +166,12 @@ function HowItWorks() {
 }
 
 const FEATURES = [
-  { i: Thermometer, t: "دمای زنده و گزارش انحراف", d: "نمودار دما در تمام مسیر ثبت می‌شود و هر خروج از بازه با ساعت و شدت مشخص است." },
+  { i: Thermometer, t: "تطبیق دما و خودرو", d: "بازه‌ی دمای لازم در سفارش و بارنامه ثبت می‌شود و فقط خودروهایی بار را می‌بینند که یخچالشان همان بازه را پوشش می‌دهد." },
   { i: ShieldCheck, t: "بیمه‌ی محموله", d: "از میان طرح‌های پایه تا جامع بر پایه‌ی ارزش اعلامی بار انتخاب کنید." },
   { i: Wallet, t: "پرداخت امانی", d: "بیعانه و مابقی نزد کامیونت می‌ماند و پس از تحویل با کد گیرنده آزاد می‌شود." },
   { i: Handshake, t: "ارزیابی دوطرفه و کور", d: "هر دو طرف نظر می‌دهند و نظرها هم‌زمان آشکار می‌شوند؛ بدون سوگیری." },
-  { i: MapPinned, t: "رهگیری برای گیرنده", d: "پیوند اختصاصی بدون نیاز به نصب برنامه؛ مسیر، دما و کد تحویل." },
-  { i: FileCheck2, t: "بارنامه و گواهی زنجیره‌ی سرد", d: "بارنامه‌ی نسخه‌دار و گواهی PDF دما پس از هر سفر." },
+  { i: MapPinned, t: "رهگیری برای گیرنده", d: "پیوند اختصاصی بدون نیاز به نصب برنامه؛ موقعیت کامیون، وضعیت سفر و کد تحویل." },
+  { i: FileCheck2, t: "بارنامه و سوابق سفر", d: "بارنامه‌ی نسخه‌دار کامیونت، عکس بار در مبدأ و تاریخچه‌ی کامل هر مرحله‌ی سفر." },
 ];
 
 function Features() {
@@ -294,7 +294,7 @@ function LiveLoads() {
 
 const FAQ: [string, string][] = [
   ["پول من کجا نگه داشته می‌شود؟", "بیعانه و مابقی کرایه در حساب امانی کامیونت می‌ماند و پس از تحویل با کد گیرنده و گذشت پنجره‌ی اعتراض به راننده منتقل می‌شود."],
-  ["اگر دمای بار از بازه خارج شود چه می‌شود؟", "هر انحراف با زمان و شدت ثبت می‌شود، به شما اعلان می‌رسد و در گواهی سفر می‌آید. با بیمه‌ی مناسب می‌توانید خسارت را پیگیری کنید."],
+  ["دمای بار در مسیر چطور تضمین می‌شود؟", "بازه‌ی دمای مجاز در سفارش و بارنامه ثبت می‌شود و فقط خودرویی که یخچالش آن بازه را پوشش می‌دهد می‌تواند بار را بپذیرد. گیرنده پیش از اعلام کد تحویل، بار را بررسی می‌کند؛ اگر مشکلی باشد کد را نمی‌دهد و پرونده از طریق پشتیبانی و بیمه‌ی انتخابی پیگیری می‌شود."],
   ["قیمت را چه کسی تعیین می‌کند؟", "صاحب بار. سیستم بازه‌ی رایج مسیر را نشان می‌دهد تا قیمت واقع‌بینانه بگذارید."],
   ["راننده‌ها چطور تأیید می‌شوند؟", "تطبیق هویت، گواهینامه، مدارک خودرو و بررسی انسانی. رانندگان پرو بازرسی خودرو هم دارند."],
   ["لغو سفارش هزینه دارد؟", "پیش از تأیید راننده رایگان است. پس از آن بسته به زمان لغو، جدول شفافی اعمال می‌شود و مبلغ دقیق پیش از تأیید نمایش داده می‌شود."],
@@ -341,7 +341,7 @@ function Footer() {
         <div><Logo /><p className="mt-3 text-sm leading-7 text-ink-3">مستقیم، شفاف، بیمه‌شده. حمل بار یخچال‌دار در سراسر ایران.</p></div>
         <FooterCol title="محصول" links={[["صاحب بار", "/app/login/"], ["راننده", "/driver/login/"], ["کامیونت پرو", "#pro"]]} />
         <FooterCol title="راهنما" links={[["چطور کار می‌کند", "#how"], ["سؤالات پرتکرار", "#faq"], ["ناوگان", "#fleet"]]} />
-        <FooterCol title="بلاگ" links={[["هزینه‌ی حمل بار یخچالی", "/blog/refrigerated-freight-cost-iran/"], ["رهگیری دمای بار", "/blog/cold-chain-temperature-monitoring/"], ["همه‌ی مقاله‌ها", "/blog/"]]} />
+        <FooterCol title="بلاگ" links={[["هزینه‌ی حمل بار یخچالی", "/blog/refrigerated-freight-cost-iran/"], ["کنترل دمای بار در مسیر", "/blog/cold-chain-temperature-monitoring/"], ["همه‌ی مقاله‌ها", "/blog/"]]} />
         <FooterCol title="ورود" links={[["انتخاب پورتال", "/login/"], ["مدیریت", "/admin/login/"], ["راهنمای طراح", "/handoff/"]]} />
       </div>
       <div className="border-t border-line py-4 text-center text-xs text-ink-3">© ۱۴۰۵ کامیونت · نسخه‌ی نمایشی؛ داده‌ها و بیمه‌گران نمونه هستند.</div>

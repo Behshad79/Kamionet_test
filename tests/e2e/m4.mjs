@@ -47,8 +47,9 @@ ok(true, "/track/demo sample link works");
 
 /* ───── certificate + support ───── */
 const cert = await mk(); await cert.goto(`${B}/certificate/?t=${token}`);
-await cert.waitForSelector("text=گواهی زنجیره‌ی سرد");
-ok(true, "certificate renders");
+await cert.waitForSelector("text=گواهی زنجیره‌ی سرد در این نسخه فعال نیست");
+ok(true, "cold-chain certificate disabled while feature.telemetry is off (V1)");
+ok(await tr.getByText("مشاهده‌ی گواهی زنجیره‌ی سرد").count() === 0, "tracking page has no certificate link");
 await sh.goto(`${B}/app/wallet/`);
 await sh.getByRole("button", { name: /^پشتیبانی/ }).click();
 ok(await sh.getByText("پشتیبانی مالی و کیف پول").first().isVisible(), "support widget opens on the finance channel from the wallet");
